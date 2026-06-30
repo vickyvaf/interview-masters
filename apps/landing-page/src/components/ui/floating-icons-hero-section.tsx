@@ -153,7 +153,7 @@ const FloatingIconsHero = React.forwardRef<
           },
         }}
       >
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground flex flex-col items-center gap-0 leading-none">
+        <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-foreground flex flex-col items-center gap-0 leading-none">
           {title.map((line, idx) => (
             <span key={idx} className="block overflow-hidden h-[1.12em] relative flex items-center justify-center">
               {line.split('').map((char, charIdx) => (
@@ -179,7 +179,7 @@ const FloatingIconsHero = React.forwardRef<
           ))}
         </h1>
         <motion.div
-          className="flex flex-wrap justify-center max-w-xl mx-auto mt-6 text-lg text-muted-foreground text-center leading-snug"
+          className="flex flex-wrap justify-center max-w-xl mx-auto mt-4 md:mt-6 text-sm sm:text-base md:text-lg text-muted-foreground text-center leading-snug"
           variants={{
             hidden: {},
             visible: {
@@ -213,8 +213,9 @@ const FloatingIconsHero = React.forwardRef<
             </span>
           ))}
         </motion.div>
-        <div className="overflow-hidden w-full mt-10 flex justify-center">
+        <div className="overflow-hidden w-full mt-8 md:mt-10 flex justify-center px-6">
           <motion.div
+            className="w-full sm:w-auto"
             variants={{
               hidden: { y: '100%', opacity: 0 },
               visible: {
@@ -230,7 +231,7 @@ const FloatingIconsHero = React.forwardRef<
             <Button
               asChild
               size="lg"
-              className="px-8 py-6 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+              className="w-full sm:w-auto px-6 py-4 md:px-8 md:py-6 text-sm md:text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
             >
               <a href={ctaHref}>{ctaText}</a>
             </Button>

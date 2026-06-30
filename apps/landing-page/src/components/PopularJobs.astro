@@ -1,0 +1,109 @@
+---
+// SVG Icons
+const IconCode = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m10 10-2 2 2 2" /><path d="m14 14 2-2-2-2" /></svg>`;
+const IconBriefcase = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></svg>`;
+const IconCpu = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10"><rect width="16" height="16" x="4" y="4" rx="2" /><rect width="6" height="6" x="9" y="9" rx="1" /><path d="M9 1v3" /><path d="M15 1v3" /><path d="M9 20v3" /><path d="M15 20v3" /><path d="M20 9h3" /><path d="M20 15h3" /><path d="M1 9h3" /><path d="M1 15h3" /></svg>`;
+const IconTrendingUp = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" /></svg>`;
+const IconPalette = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.63-.77 1.63-1.7 0-.42-.16-.83-.44-1.14-.28-.31-.44-.73-.44-1.16 0-.93.77-1.7 1.7-1.7h1.93C19.92 16.3 22 14.1 22 11.5 22 6.3 17.5 2 12 2Z" /></svg>`;
+const IconLayers = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10"><path d="m12 3-10 5 10 5 10-5-10-5Z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" /></svg>`;
+
+const jobs = [
+  {
+    title: "Software Engineer",
+    description: "Prepare for coding rounds, system design, and algorithmic problem-solving at top-tier tech companies.",
+    metadata: "Available: 85 Mock Interviews",
+    icon: IconCode
+  },
+  {
+    title: "Product Manager",
+    description: "Master product strategy, metric execution, system design, and behavioral frameworks.",
+    metadata: "Available: 42 Mock Interviews",
+    icon: IconBriefcase
+  },
+  {
+    title: "Data Science & AI",
+    description: "Practice machine learning design, probability, statistical models, and SQL challenges.",
+    metadata: "Available: 38 Mock Interviews",
+    icon: IconCpu
+  },
+  {
+    title: "Consulting & Finance",
+    description: "Ace case studies, financial evaluation frameworks, models, and market sizing estimations.",
+    metadata: "Available: 50 Mock Interviews",
+    icon: IconTrendingUp
+  },
+  {
+    title: "Product Designer",
+    description: "Perfect your portfolio presentations, interactive design critique, and whiteboard execution challenges.",
+    metadata: "Available: 29 Mock Interviews",
+    icon: IconPalette
+  },
+  {
+    title: "Operations & Management",
+    description: "Align logistic planning, operational cases, supply chain systems, and team management cases.",
+    metadata: "Available: 31 Mock Interviews",
+    icon: IconLayers
+  }
+];
+---
+
+<section class="w-full pt-32 pb-20 bg-background">
+  <div class="max-w-5xl mx-auto px-6">
+    <!-- Header -->
+    <div class="flex items-end justify-between mb-10">
+      <div class="flex flex-col gap-2">
+        <h2 class="text-3xl font-extrabold text-foreground tracking-tight">Popular Curated Job Tracks</h2>
+        <p class="text-sm text-muted-foreground">Follow a clear mock-practice track and master the tools needed to land top roles.</p>
+      </div>
+      <a href="#" class="text-sm font-semibold text-foreground/80 hover:text-foreground hover:underline flex items-center gap-1 transition-colors">
+        View more
+      </a>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {jobs.map((job) => (
+        <div class="job-card relative group flex flex-col md:flex-row gap-6 p-6 rounded-3xl bg-card border border-border/40 hover:border-border/80 opacity-0 translate-y-8 transition-all duration-700 ease-out transform">
+          <!-- Icon Graphic Area -->
+          <div class="flex-shrink-0 w-20 h-20 rounded-2xl flex items-center justify-center bg-muted/20 border border-border/30 text-foreground/80">
+            <Fragment set:html={job.icon} />
+          </div>
+
+          <!-- Content Area -->
+          <div class="flex-1 flex flex-col justify-between">
+            <div>
+              <a href="#" class="inline-flex items-center gap-1 text-lg font-bold text-foreground hover:text-primary transition-colors group">
+                {job.title}
+                <span class="transform group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+              </a>
+              <p class="text-sm text-muted-foreground mt-2 leading-relaxed">{job.description}</p>
+            </div>
+            
+            <div>
+              <hr class="border-border/20 my-4" />
+              <span class="text-xs font-semibold text-muted-foreground/80">{job.metadata}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.remove('opacity-0', 'translate-y-8');
+        entry.target.classList.add('opacity-100', 'translate-y-0');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.1
+  });
+
+  document.querySelectorAll('.job-card').forEach((card) => {
+    observer.observe(card);
+  });
+</script>

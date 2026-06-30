@@ -1,0 +1,10 @@
+{
+  "name": "interview-masters",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev:landing": "pnpm --filter apps-landing-page dev",
+    "build:landing": "pnpm --filter apps-landing-page build",
+    "preview:landing": "pnpm --filter apps-landing-page preview"
+  }
+}

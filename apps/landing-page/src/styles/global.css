@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Light Mode */
+    --background: #FFFFFF;
+    --foreground: #09090b;
+    --primary: #09090b;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F4F4F5;
+    --secondary-foreground: #09090b;
+    --accent: #F4F4F5;
+    --accent-foreground: #09090b;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --ring: #09090b;
+    --input: #E4E4E7;
+    --border: #E4E4E7;
+    --muted: #F4F4F5;
+    --muted-foreground: #71717a;
+    --card: #FFFFFF;
+    --card-foreground: #09090b;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Dark Mode */
+      --background: #08080a;
+      --foreground: #FFFFFF;
+      --primary: #FFFFFF;
+      --primary-foreground: #08080a;
+      --secondary: #1A1A1A;
+      --secondary-foreground: #FFFFFF;
+      --accent: #1A1A1A;
+      --accent-foreground: #FFFFFF;
+      --destructive: #EF4444;
+      --destructive-foreground: #FFFFFF;
+      --ring: #FFFFFF;
+      --input: #2A2A2A;
+      --border: #2A2A2A;
+      --muted: #1A1A1A;
+      --muted-foreground: #888888;
+      --card: #141414;
+      --card-foreground: #FFFFFF;
+    }
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+}

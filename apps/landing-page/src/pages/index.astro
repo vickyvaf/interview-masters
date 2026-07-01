@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import PopularJobs from '../components/PopularJobs.astro';
@@ -21,6 +22,7 @@ import Footer from '../components/Footer.astro';
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 	</head>
 	<body style="margin:0;padding:0;font-family:'Inter',sans-serif;">
+		<Navbar client:load />
 		<div class="relative">
 			<HeroSection client:load />
 			<AnnouncementBanner client:load />

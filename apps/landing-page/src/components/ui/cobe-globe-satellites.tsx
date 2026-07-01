@@ -6,6 +6,7 @@ import createGlobe from "cobe"
 interface SatelliteMarker {
   id: string
   location: [number, number]
+  emoji?: string
 }
 
 interface GlobeSatellitesProps {
@@ -15,22 +16,22 @@ interface GlobeSatellitesProps {
 }
 
 const defaultMarkers: SatelliteMarker[] = [
-  { id: "sat-1", location: [45.0, -120.0] },
-  { id: "sat-2", location: [30.0, 45.0] },
-  { id: "sat-3", location: [-15.0, 100.0] },
-  { id: "sat-4", location: [60.0, -30.0] },
-  { id: "sat-5", location: [-40.0, -60.0] },
-  { id: "sat-6", location: [10.0, 150.0] },
-  { id: "sat-7", location: [55.0, 80.0] },
-  { id: "sat-8", location: [-25.0, 20.0] },
-  { id: "sat-9", location: [70.0, 25.0] },
-  { id: "sat-10", location: [-5.0, -75.0] },
-  { id: "sat-11", location: [35.0, -95.0] },
-  { id: "sat-12", location: [-50.0, 140.0] },
-  { id: "sat-13", location: [20.0, -20.0] },
-  { id: "sat-14", location: [50.0, 120.0] },
-  { id: "sat-15", location: [-30.0, 70.0] },
-  { id: "sat-16", location: [5.0, -150.0] },
+  { id: "sat-1", location: [45.0, -120.0], emoji: "👩‍💻" },
+  { id: "sat-2", location: [30.0, 45.0], emoji: "👨‍💻" },
+  { id: "sat-3", location: [-15.0, 100.0], emoji: "🧕" },
+  { id: "sat-4", location: [60.0, -30.0], emoji: "👨‍🦱" },
+  { id: "sat-5", location: [-40.0, -60.0], emoji: "👱‍♀️" },
+  { id: "sat-6", location: [10.0, 150.0], emoji: "👦" },
+  { id: "sat-7", location: [55.0, 80.0], emoji: "👩‍💼" },
+  { id: "sat-8", location: [-25.0, 20.0], emoji: "👨‍💼" },
+  { id: "sat-9", location: [70.0, 25.0], emoji: "👨‍🎨" },
+  { id: "sat-10", location: [-5.0, -75.0], emoji: "👩‍⚕️" },
+  { id: "sat-11", location: [35.0, -95.0], emoji: "👨‍🚀" },
+  { id: "sat-12", location: [-50.0, 140.0], emoji: "👴" },
+  { id: "sat-13", location: [20.0, -20.0], emoji: "👵" },
+  { id: "sat-14", location: [50.0, 120.0], emoji: "👱‍♂️" },
+  { id: "sat-15", location: [-30.0, 70.0], emoji: "👨‍🎓" },
+  { id: "sat-16", location: [5.0, -150.0], emoji: "👩‍🎓" },
 ]
 
 export function GlobeSatellites({
@@ -173,7 +174,7 @@ export function GlobeSatellites({
             transition: "opacity 0.3s, filter 0.3s",
           }}
         >
-          🛰️
+          {m.emoji || "🧑"}
         </div>
       ))}
     </div>

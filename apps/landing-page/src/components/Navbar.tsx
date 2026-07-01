@@ -27,25 +27,22 @@ export default function Navbar() {
 
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-[99] transition-all duration-300 ${
-        scrolled 
-          ? 'bg-background/80 backdrop-blur-md border-b border-border/40 py-3 md:py-4 shadow-sm' 
-          : 'bg-transparent py-4 md:py-6'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-[99] transition-all duration-300 ${scrolled
+        ? 'bg-background/80 backdrop-blur-md py-3 md:py-4 shadow-sm'
+        : 'bg-transparent py-4 md:py-6'
+        }`}
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
+      <div className="max-w-5xl mx-auto px-6 flex items-center justify-between relative">
         {/* Brand/Logo */}
-        <a href="#" className="flex items-center gap-2 group">
-          <span className="font-extrabold text-foreground text-lg sm:text-xl tracking-tight group-hover:opacity-85 transition-opacity">
-            Interview Masters
-          </span>
+        <a href="#" className="flex items-center group z-10">
+          <img src="/logo.png" alt="Interview Masters Logo" className="w-8 h-8 object-contain" />
         </a>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
           {navLinks.map((link) => (
             <a
               key={link.name}
@@ -58,7 +55,7 @@ export default function Navbar() {
         </nav>
 
         {/* CTA Buttons */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-4 z-10">
           <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
             Sign In
           </a>

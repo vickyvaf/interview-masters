@@ -21,7 +21,7 @@ export default function AnnouncementBanner() {
           Read the Release Notes &rarr;
         </a>
       </div>
-      <div className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-2xl overflow-hidden border border-border/40">
+      <div className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-full overflow-hidden border border-border/40 bg-muted">
         <img src="/announcement-logo.png" alt="Emoji logo" className="w-full h-full object-cover" />
       </div>
     </motion.div>

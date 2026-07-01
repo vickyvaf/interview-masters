@@ -1,25 +1,31 @@
 ---
-import '../styles/global.css';
-import Navbar from '../components/Navbar';
-import HeroSection from '../components/HeroSection';
-import AnnouncementBanner from '../components/AnnouncementBanner';
-import PopularJobs from '../components/PopularJobs.astro';
-import LearnSection from '../components/LearnSection.astro';
-import GlobeSection from '../components/GlobeSection.astro';
-import Footer from '../components/Footer.astro';
+import "../styles/global.css";
+import Navbar from "../components/Navbar";
+import HeroSection from "../components/HeroSection";
+import AnnouncementBanner from "../components/AnnouncementBanner";
+import PopularJobs from "../components/PopularJobs.astro";
+import LearnSection from "../components/LearnSection.astro";
+import GlobeSection from "../components/GlobeSection.astro";
+import Footer from "../components/Footer.astro";
 ---
 
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/png" href="/logo.png" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<meta name="description" content="AI-powered mock interview practice for any role — with instant, structured feedback." />
-		<title>Interview Masters — Practice Interviews. Land the Job.</title>
+		<meta
+			name="description"
+			content="AI-powered mock interview practice for any role — with instant, structured feedback."
+		/>
+		<title>Interview Masters - Ace Your Interview</title>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link class="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
 	</head>
 	<body style="margin:0;padding:0;font-family:'Inter',sans-serif;">
 		<Navbar client:load />

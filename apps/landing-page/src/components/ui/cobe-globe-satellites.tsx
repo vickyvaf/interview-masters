@@ -142,7 +142,7 @@ export function GlobeSatellites({
         <defs>
           <filter id="sticker-outline-sat">
             <feMorphology in="SourceAlpha" result="Dilated" operator="dilate" radius="2" />
-            <feFlood floodColor="#ffffff" result="OutlineColor" />
+            <feFlood floodColor="var(--card)" result="OutlineColor" />
             <feComposite in="OutlineColor" in2="Dilated" operator="in" result="Outline" />
             <feMerge>
               <feMergeNode in="Outline" />

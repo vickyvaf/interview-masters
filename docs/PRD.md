@@ -42,7 +42,7 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 - **Platform URL**: https:// (Placeholder / To Be Determined)
 - **Tech Stack**:
   - **Frontend**: Astro (Landing Page), React / Vite (Dashboard)
-  - **Backend**: Node.js
+  - **Backend**: FastAPI (Python)
   - **Database**: Supabase (PostgreSQL)
 - **Core Functionality**:
   - Role-specific interactive question generation.
@@ -66,6 +66,22 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 - Analyzes candidate answers for structure (STAR method), relevance, and brevity.
 - Highlights ramblings or areas lacking specific evidence.
 - Provides a revised version ("What you could have said") to guide improvement.
+
+### D. Voice-Enabled Backend Services & APIs (FastAPI)
+- **Architecture**: Modular and layered structure (`app/api`, `app/services`, `app/schemas`, `app/core`).
+- **Core AI Voice Flow**: Client audio input → Speech-to-Text (STT) → LLM/Chat Engine → Text-to-Speech (TTS) → Client audio response.
+- **Service Layers**:
+  - `transcription_service.py` (STT using Vosk engine wrapper/placeholder)
+  - `chat_service.py` (LLM-based interview response generation)
+  - `tts_service.py` (TTS using Piper engine wrapper/placeholder)
+- **REST HTTP Endpoints**:
+  - `GET /health` - Health check endpoint.
+  - `POST /transcribe` - Transcribes speech/audio to text.
+  - `POST /chat` - Generates chat response text from conversation history.
+  - `POST /speak` - Generates audio speech from text.
+  - `POST /voice-chat` - Combined pipeline (audio-to-audio).
+- **WebSocket Endpoint**:
+  - `WS /ws/voice` - Real-time full-duplex session using a Connection Manager with custom event events (`session.started`, `user.transcript`, `assistant.text`, `assistant.audio.ready`, `error`).
 
 ---
 

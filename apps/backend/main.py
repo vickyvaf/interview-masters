@@ -1,20 +1,6 @@
-# ponytail: simple fastapi backend server
-# pyrefly: ignore [missing-import]
-from fastapi import FastAPI
-# pyrefly: ignore [missing-import]
-from fastapi.middleware.cors import CORSMiddleware
+# ponytail: entrypoint script running the modular app
+import uvicorn
+from app.main import app
 
-app = FastAPI(title="Interview Masters Backend")
-
-# Enable CORS for frontend clients
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/")
-def read_root():
-    return {"status": "ok", "message": "Backend is running (Python FastAPI)"}
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

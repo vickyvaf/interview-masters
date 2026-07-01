@@ -15,11 +15,11 @@ export default function AnnouncementBanner() {
     >
       <div className="flex flex-col justify-center text-left">
         <h2 className="text-lg md:text-2xl font-extrabold text-foreground tracking-tight leading-tight">
-          Today, Interview Masters<br className="hidden md:inline" /> launches public beta
+          Today, Interview Masters is ready to<br className="hidden md:inline" /> help you land your dream job
         </h2>
-        <a href="#" className="mt-3 text-xs md:text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
-          Read the Release Notes
-        </a>
+        <span className="mt-3 text-xs md:text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
+          Explore our interactive tracks
+        </span>
       </div>
       <div className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-full overflow-hidden border border-border/40 bg-muted">
         <img src="/announcement-logo.png" alt="Emoji logo" className="w-full h-full object-cover" />

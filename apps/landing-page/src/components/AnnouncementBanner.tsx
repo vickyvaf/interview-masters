@@ -18,7 +18,7 @@ export default function AnnouncementBanner() {
           Today, Interview Masters<br className="hidden md:inline" /> launches public beta
         </h2>
         <a href="#" className="mt-3 text-xs md:text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
-          Read the Release Notes &rarr;
+          Read the Release Notes
         </a>
       </div>
       <div className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-full overflow-hidden border border-border/40 bg-muted">

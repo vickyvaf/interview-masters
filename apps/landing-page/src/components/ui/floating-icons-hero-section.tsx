@@ -126,7 +126,7 @@ const FloatingIconsHero = React.forwardRef<
       )}
       {...props}
     >
-      <div className="absolute inset-0 w-full h-full">
+      <div className="absolute inset-0 w-full h-full z-0">
         {activeIcons.map((activeIcon, index) => (
           <Icon
             key={activeIcon.id}

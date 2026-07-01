@@ -18,20 +18,20 @@ interface GlobeSatellitesProps {
 const defaultMarkers: SatelliteMarker[] = [
   { id: "sat-1", location: [45.0, -120.0], emoji: "👩‍💻" },
   { id: "sat-2", location: [30.0, 45.0], emoji: "👨‍💻" },
-  { id: "sat-3", location: [-15.0, 100.0], emoji: "🧕" },
+  { id: "sat-3", location: [20.5937, 78.9629], emoji: "🧕" },
   { id: "sat-4", location: [60.0, -30.0], emoji: "👨‍🦱" },
   { id: "sat-5", location: [-40.0, -60.0], emoji: "👱‍♀️" },
-  { id: "sat-6", location: [10.0, 150.0], emoji: "👦" },
+  { id: "sat-6", location: [-3.316694, 114.590111], emoji: "👦" },
   { id: "sat-7", location: [55.0, 80.0], emoji: "👩‍💼" },
   { id: "sat-8", location: [-25.0, 20.0], emoji: "👨‍💼" },
   { id: "sat-9", location: [70.0, 25.0], emoji: "👨‍🎨" },
   { id: "sat-10", location: [-5.0, -75.0], emoji: "👩‍⚕️" },
   { id: "sat-11", location: [35.0, -95.0], emoji: "👨‍🚀" },
-  { id: "sat-12", location: [-50.0, 140.0], emoji: "👴" },
-  { id: "sat-13", location: [20.0, -20.0], emoji: "👵" },
+  { id: "sat-12", location: [-25.2744, 133.7751], emoji: "👴" },
+  { id: "sat-13", location: [23.4241, 25.6628], emoji: "👵" },
   { id: "sat-14", location: [50.0, 120.0], emoji: "👱‍♂️" },
-  { id: "sat-15", location: [-30.0, 70.0], emoji: "👨‍🎓" },
-  { id: "sat-16", location: [5.0, -150.0], emoji: "👩‍🎓" },
+  { id: "sat-15", location: [31.224361, 121.469170], emoji: "👨‍🎓" },
+  { id: "sat-16", location: [-8.577515, -42.245185], emoji: "👩‍🎓" },
 ]
 
 export function GlobeSatellites({
@@ -85,7 +85,9 @@ export function GlobeSatellites({
     const canvas = canvasRef.current
     let globe: ReturnType<typeof createGlobe> | null = null
     let animationId: number
-    let phi = 0
+    const initialPhi = 137.95 * Math.PI / 180
+    const initialTheta = -4.46 * Math.PI / 180
+    let phi = initialPhi
 
     function init() {
       const width = canvas.offsetWidth
@@ -94,7 +96,7 @@ export function GlobeSatellites({
       globe = createGlobe(canvas, {
         devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
         width, height: width,
-        phi: 0, theta: 0.2, dark: 0.01, diffuse: 1.5,
+        phi: initialPhi, theta: initialTheta, dark: 0.01, diffuse: 1.5,
         mapSamples: 16000, mapBrightness: 9,
         baseColor: [0.95, 0.95, 0.95],
         markerColor: [0.9, 0.9, 0.9],
@@ -108,7 +110,7 @@ export function GlobeSatellites({
         if (!isPausedRef.current) phi += speed
         globe!.update({
           phi: phi + phiOffsetRef.current + dragOffset.current.phi,
-          theta: 0.2 + thetaOffsetRef.current + dragOffset.current.theta,
+          theta: initialTheta + thetaOffsetRef.current + dragOffset.current.theta,
         })
         animationId = requestAnimationFrame(animate)
       }
@@ -162,7 +164,6 @@ export function GlobeSatellites({
           key={m.id}
           style={{
             position: "absolute",
-            // @ts-expect-error CSS Anchor Positioning
             positionAnchor: `--cobe-${m.id}`,
             bottom: "anchor(top)",
             left: "anchor(center)",

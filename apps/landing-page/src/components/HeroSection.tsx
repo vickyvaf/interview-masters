@@ -29,7 +29,7 @@ export default function HeroSection() {
     <FloatingIconsHero
       title={['Ace Your Interview', 'Land the Job']}
       subtitle="Get your highest salary potential with realistic preparation and instant feedback."
-      ctaText="Start Practicing Free"
+      ctaText="Start Practicing"
       ctaHref="#"
       icons={demoIcons}
     />

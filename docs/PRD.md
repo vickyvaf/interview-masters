@@ -40,6 +40,10 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 
 ### First Prototype Target
 - **Platform URL**: https:// (Placeholder / To Be Determined)
+- **Tech Stack**:
+  - **Frontend**: Astro (Landing Page), React / Vite (Dashboard)
+  - **Backend**: Node.js
+  - **Database**: Supabase (PostgreSQL)
 - **Core Functionality**:
   - Role-specific interactive question generation.
   - Audio/text-based mock response capture.

@@ -63,6 +63,10 @@ A **24-year-old recent college graduate** applying for their first serious full-
 
 ### First Prototype
 - **Platform URL**: https:// *(To Be Determined)*
+- **Tech Stack**:
+  - **Frontend**: Astro (Landing Page), React / Vite (Dashboard)
+  - **Backend**: Node.js
+  - **Database**: Supabase (PostgreSQL)
 - **Core Functionality**:
   - Role-specific interactive question generation
   - Text or voice-based mock response capture
@@ -111,7 +115,7 @@ flowchart LR
         A3[Feedback & Suggestion\nGenerator]
     end
 
-    subgraph Storage["🗄️ Database"]
+    subgraph Storage["🗄️ Database (Supabase)"]
         S1[User Profiles]
         S2[Session History]
         S3[Score & Progress]

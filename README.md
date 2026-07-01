@@ -133,6 +133,122 @@ flowchart LR
     B4 --> User
 ```
 
+### Database Schema (ERD)
+
+```mermaid
+erDiagram
+    users {
+        uuid id PK
+        string email UK
+        string full_name
+        string role "e.g., student, job_seeker, admin"
+        string tier "e.g., free, pro, b2b"
+        string subscription_status "e.g., active, inactive, canceled"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    organizations {
+        uuid id PK
+        string name
+        string subscription_tier "e.g., b2b"
+        integer max_members
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    organization_members {
+        uuid id PK
+        uuid organization_id FK
+        uuid user_id FK
+        string role "e.g., admin, member"
+        timestamp created_at
+    }
+
+    subscriptions {
+        uuid id PK
+        uuid user_id FK "Nullable (for B2B/Team)"
+        uuid organization_id FK "Nullable (for individual Pro)"
+        string tier "e.g., pro, b2b"
+        string status "e.g., active, past_due, canceled, unpaid"
+        decimal price
+        string billing_cycle "e.g., monthly, yearly"
+        timestamp current_period_start
+        timestamp current_period_end
+        boolean cancel_at_period_end
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    payments {
+        uuid id PK
+        uuid subscription_id FK
+        uuid user_id FK
+        string invoice_id
+        string payment_gateway "e.g., midtrans, stripe"
+        string transaction_id
+        decimal amount
+        string status "e.g., pending, settlement, capture, expire, refund"
+        string payment_method "e.g., gopay, qris, credit_card, va"
+        timestamp paid_at
+        timestamp created_at
+    }
+
+    mock_interviews {
+        uuid id PK
+        uuid user_id FK
+        string target_role
+        text job_description "Nullable"
+        string status "e.g., started, completed, abandoned"
+        integer pre_confidence_score "1-5"
+        integer post_confidence_score "1-5"
+        integer overall_score "0-100"
+        timestamp created_at
+        timestamp completed_at
+    }
+
+    interview_questions {
+        uuid id PK
+        uuid mock_interview_id FK
+        text question_text
+        integer sequence_number
+        timestamp created_at
+    }
+
+    interview_answers {
+        uuid id PK
+        uuid interview_question_id FK
+        text answer_text
+        string response_mode "e.g., text, voice"
+        integer voice_duration_seconds "Nullable"
+        timestamp created_at
+    }
+
+    ai_feedbacks {
+        uuid id PK
+        uuid interview_answer_id FK
+        integer structure_score "0-100"
+        integer relevance_score "0-100"
+        integer brevity_score "0-100"
+        integer overall_score "0-100"
+        text feedback_text
+        text highlights_rambling
+        text what_you_could_have_said
+        timestamp created_at
+    }
+
+    users ||--o{ organization_members : "belongs to"
+    organizations ||--o{ organization_members : "contains"
+    users ||--o{ subscriptions : "owns"
+    organizations ||--o{ subscriptions : "owns"
+    subscriptions ||--o{ payments : "has"
+    users ||--o{ payments : "makes"
+    users ||--o{ mock_interviews : "takes"
+    mock_interviews ||--o{ interview_questions : "contains"
+    interview_questions ||--o| interview_answers : "has"
+    interview_answers ||--o| ai_feedbacks : "receives"
+```
+
 ---
 
 ## 6. Business Flow Diagrams
@@ -277,3 +393,4 @@ stateDiagram-v2
 |---|---|
 | [docs/PRD.md](./docs/PRD.md) | Full Product Requirements Document |
 | [docs/DIAGRAM.md](./docs/DIAGRAM.md) | All business flow diagrams |
+| [docs/ERD.md](./docs/ERD.md) | Database Entity Relationship Diagram (ERD) |

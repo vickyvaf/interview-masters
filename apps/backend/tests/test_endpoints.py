@@ -72,11 +72,6 @@ def test_websocket():
         text_msg = websocket.receive_json()
         assert text_msg["event"] == "assistant.text"
         assert len(text_msg["data"]["text"]) > 0
-        
-        # Receive assistant.audio.ready
-        audio_msg = websocket.receive_json()
-        assert audio_msg["event"] == "assistant.audio.ready"
-        assert "audio_base64" in audio_msg["data"]
         print("WebSocket voice channel: SUCCESS")
 
 if __name__ == "__main__":

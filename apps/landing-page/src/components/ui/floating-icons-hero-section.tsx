@@ -82,30 +82,34 @@ const FloatingIconsHero = React.forwardRef<
       'w-20 h-20 md:w-22 md:h-22 rounded-[28px]',
     ];
 
-    // Define 12 distinct, non-overlapping coordinate zones to prevent logos from overlapping
-    const zones = [
-      { minTop: 8,  maxTop: 22, minLeft: 4,   maxLeft: 20 },  // Top Left
-      { minTop: 24, maxTop: 38, minLeft: 6,   maxLeft: 22 },  // Middle-Top Left
-      { minTop: 40, maxTop: 54, minLeft: 4,   maxLeft: 20 },  // Middle-Bottom Left
-      { minTop: 56, maxTop: 70, minLeft: 6,   maxLeft: 22 },  // Bottom-Middle Left
-      { minTop: 72, maxTop: 82, minLeft: 4,   maxLeft: 20 },  // Bottom Left
-      { minTop: 8,  maxTop: 22, minLeft: 76,  maxLeft: 94 },  // Top Right
-      { minTop: 24, maxTop: 38, minLeft: 74,  maxLeft: 92 },  // Middle-Top Right
-      { minTop: 40, maxTop: 54, minLeft: 76,  maxLeft: 94 },  // Middle-Bottom Right
-      { minTop: 56, maxTop: 70, minLeft: 74,  maxLeft: 92 },  // Bottom-Middle Right
-      { minTop: 72, maxTop: 82, minLeft: 76,  maxLeft: 94 },  // Bottom Right
-      { minTop: 5,  maxTop: 16, minLeft: 35,  maxLeft: 65 },  // Top Center
-      { minTop: 74, maxTop: 84, minLeft: 35,  maxLeft: 65 },  // Bottom Center
+    // Define 12 well-spaced, staggered anchor points to guarantee no overlapping
+    const anchorPoints = [
+      { top: 12, left: 8 },   // Top Left
+      { top: 28, left: 16 },  // Middle-Top Left
+      { top: 44, left: 8 },   // Middle-Bottom Left
+      { top: 60, left: 16 },  // Bottom-Middle Left
+      { top: 76, left: 8 },   // Bottom Left
+      { top: 12, left: 90 },  // Top Right
+      { top: 28, left: 80 },  // Middle-Top Right
+      { top: 44, left: 90 },  // Middle-Bottom Right
+      { top: 60, left: 80 },  // Bottom-Middle Right
+      { top: 76, left: 90 },  // Bottom Right
+      { top: 10, left: 48 },  // Top Center
+      { top: 82, left: 48 },  // Bottom Center
     ];
 
-    // Shuffle zones to randomize which logo goes to which sector
-    const shuffledZones = zones.sort(() => 0.5 - Math.random());
+    // Shuffle anchor points to randomize which logo goes to which coordinate
+    const shuffledPoints = anchorPoints.sort(() => 0.5 - Math.random());
 
     const instances = selected.map((icon, idx) => {
-      const zone = shuffledZones[idx] || { minTop: 50, maxTop: 50, minLeft: 50, maxLeft: 50 };
+      const anchor = shuffledPoints[idx] || { top: 50, left: 50 };
       
-      const top = Math.floor(Math.random() * (zone.maxTop - zone.minTop)) + zone.minTop;
-      const left = Math.floor(Math.random() * (zone.maxLeft - zone.minLeft)) + zone.minLeft;
+      // Add a small jitter (+/- 2%) to keep a random feel without overlapping
+      const jitterTop = (Math.random() - 0.5) * 4; // range [-2, 2]
+      const jitterLeft = (Math.random() - 0.5) * 4; // range [-2, 2]
+
+      const top = Math.max(5, Math.min(95, anchor.top + jitterTop));
+      const left = Math.max(5, Math.min(95, anchor.left + jitterLeft));
 
       const sizeClass = sizes[Math.floor(Math.random() * sizes.length)];
       return {

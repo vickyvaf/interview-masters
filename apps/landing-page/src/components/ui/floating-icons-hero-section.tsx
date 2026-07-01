@@ -71,9 +71,9 @@ const FloatingIconsHero = React.forwardRef<
   const [activeIcons, setActiveIcons] = React.useState<ActiveIcon[]>([]);
 
   React.useEffect(() => {
-    // Select 7 random icons
+    // Select 12 random icons
     const shuffled = [...icons].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 7);
+    const selected = shuffled.slice(0, 12);
 
     // Medium sizes: scale from ~56px to ~88px
     const sizes = [
@@ -82,15 +82,20 @@ const FloatingIconsHero = React.forwardRef<
       'w-20 h-20 md:w-22 md:h-22 rounded-[28px]',
     ];
 
-    // Define 7 distinct, non-overlapping coordinate zones to prevent logos from overlapping
+    // Define 12 distinct, non-overlapping coordinate zones to prevent logos from overlapping
     const zones = [
-      { minTop: 8,  maxTop: 28, minLeft: 6,   maxLeft: 24 },  // Top Left
-      { minTop: 38, maxTop: 58, minLeft: 4,   maxLeft: 20 },  // Middle Left
-      { minTop: 68, maxTop: 88, minLeft: 6,   maxLeft: 24 },  // Bottom Left
-      { minTop: 8,  maxTop: 28, minLeft: 74,  maxLeft: 92 },  // Top Right
-      { minTop: 38, maxTop: 58, minLeft: 76,  maxLeft: 94 },  // Middle Right
-      { minTop: 68, maxTop: 88, minLeft: 74,  maxLeft: 92 },  // Bottom Right
-      { minTop: 5,  maxTop: 18, minLeft: 38,  maxLeft: 60 },  // Top Center
+      { minTop: 8,  maxTop: 22, minLeft: 4,   maxLeft: 20 },  // Top Left
+      { minTop: 24, maxTop: 38, minLeft: 6,   maxLeft: 22 },  // Middle-Top Left
+      { minTop: 40, maxTop: 54, minLeft: 4,   maxLeft: 20 },  // Middle-Bottom Left
+      { minTop: 56, maxTop: 70, minLeft: 6,   maxLeft: 22 },  // Bottom-Middle Left
+      { minTop: 72, maxTop: 82, minLeft: 4,   maxLeft: 20 },  // Bottom Left
+      { minTop: 8,  maxTop: 22, minLeft: 76,  maxLeft: 94 },  // Top Right
+      { minTop: 24, maxTop: 38, minLeft: 74,  maxLeft: 92 },  // Middle-Top Right
+      { minTop: 40, maxTop: 54, minLeft: 76,  maxLeft: 94 },  // Middle-Bottom Right
+      { minTop: 56, maxTop: 70, minLeft: 74,  maxLeft: 92 },  // Bottom-Middle Right
+      { minTop: 72, maxTop: 82, minLeft: 76,  maxLeft: 94 },  // Bottom Right
+      { minTop: 5,  maxTop: 16, minLeft: 35,  maxLeft: 65 },  // Top Center
+      { minTop: 74, maxTop: 84, minLeft: 35,  maxLeft: 65 },  // Bottom Center
     ];
 
     // Shuffle zones to randomize which logo goes to which sector

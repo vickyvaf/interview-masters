@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Box, Flex, Text, Button, SegmentedControl } from "@radix-ui/themes";
 import {
@@ -26,6 +26,7 @@ interface SidebarItemProps {
   icon: React.ReactNode;
   isActive: boolean;
   isCollapsed?: boolean;
+  onClick?: () => void;
 }
 
 function SidebarItem({
@@ -34,6 +35,7 @@ function SidebarItem({
   icon,
   isActive,
   isCollapsed,
+  onClick,
 }: SidebarItemProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -45,6 +47,7 @@ function SidebarItem({
         width: "100%",
         display: "block",
       }}
+      onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -131,6 +134,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const saved = localStorage.getItem("sidebar-collapsed");
     return saved ? JSON.parse(saved) : false;
   });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const toggleCollapsed = () => {
     setIsCollapsed((prev: boolean) => {
@@ -138,6 +151,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       localStorage.setItem("sidebar-collapsed", JSON.stringify(next));
       return next;
     });
+  };
+
+  const handleItemClick = () => {
+    if (isMobile) {
+      setIsCollapsed(true);
+    }
   };
 
   const menuItems = [
@@ -156,19 +175,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { label: "Pengaturan", path: "/settings", icon: <GearIcon /> },
   ];
 
+  const sidebarWidth = isMobile
+    ? isCollapsed
+      ? "64px"
+      : "100vw"
+    : isCollapsed
+      ? "64px"
+      : "260px";
+
   return (
-    <Flex style={{ height: "100vh", width: "100vw", overflow: "hidden" }}>
+    <Flex style={{ height: "100vh", width: "100vw", overflow: "hidden", position: "relative" }}>
       {/* Sidebar */}
       <Box
         style={{
-          width: isCollapsed ? "64px" : "260px",
+          width: sidebarWidth,
           flexShrink: 0,
           borderRight: "1px solid var(--gray-4)",
           backgroundColor: "var(--gray-2)",
           padding: "24px 0",
           boxSizing: "border-box",
-          transition: "width 0.2s ease",
-          position: "relative",
+          transition: "width 0.2s ease, padding 0.2s ease",
+          position: isMobile ? "absolute" : "relative",
+          zIndex: 100,
+          height: "100%",
+          overflow: "visible",
         }}
       >
         {/* Toggle Button in the top-right edge of the sidebar, aligned with the logo */}
@@ -180,7 +210,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             right: "-12px",
             top: "38px",
             transform: "translateY(-50%)",
-            zIndex: 10,
+            zIndex: 110,
             cursor: "pointer",
             width: "24px",
             height: "24px",
@@ -252,6 +282,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 icon={item.icon}
                 isActive={location.pathname === item.path}
                 isCollapsed={isCollapsed}
+                onClick={handleItemClick}
               />
             ))}
           </Flex>
@@ -268,6 +299,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   icon={item.icon}
                   isActive={location.pathname === item.path}
                   isCollapsed={isCollapsed}
+                  onClick={handleItemClick}
                 />
               ))}
             </Flex>
@@ -351,6 +383,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           height: "100%",
           overflowY: "auto",
           backgroundColor: "var(--gray-1)",
+          paddingLeft: isMobile ? "64px" : "0px",
         }}
       >
         {children}

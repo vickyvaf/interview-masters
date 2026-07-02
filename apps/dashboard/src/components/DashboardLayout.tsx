@@ -127,7 +127,18 @@ function SidebarItem({
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const { theme, setTheme } = useDashboardTheme();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  const toggleCollapsed = () => {
+    setIsCollapsed((prev: boolean) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", JSON.stringify(next));
+      return next;
+    });
+  };
 
   const menuItems = [
     { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
@@ -163,7 +174,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Toggle Button in the top-right edge of the sidebar, aligned with the logo */}
         <Button
           variant="soft"
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={toggleCollapsed}
           style={{
             position: "absolute",
             right: "-12px",

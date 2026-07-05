@@ -8,7 +8,9 @@ import App from './App'
 function Main() {
   const { resolvedTheme } = useDashboardTheme()
   return (
-    <Theme panelBackground="solid" appearance={resolvedTheme}>
+    <Theme panelBackground="solid" appearance={resolvedTheme}
+      accentColor="blue"
+    >
       <App />
     </Theme>
   )

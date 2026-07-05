@@ -36,6 +36,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [theme])
 
+  useEffect(() => {
+    const root = window.document.documentElement
+    root.classList.remove('light', 'dark')
+    root.classList.add(resolvedTheme)
+  }, [resolvedTheme])
+
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
       {children}

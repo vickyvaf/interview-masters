@@ -8,8 +8,6 @@ importers:
 
   .: {}
 
-  apps/backend: {}
-
   apps/dashboard:
     dependencies:
       '@radix-ui/react-icons':

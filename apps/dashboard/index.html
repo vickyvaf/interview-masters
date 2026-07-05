@@ -1,50 +1,28 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Interview Masters - Dashboard</title>
-    <style>
-      :root {
-        --bg-app: #09090b;
-        --bg-box: #18181b;
-        --border-box: #27272a;
-        --text-primary: #fafafa;
-        --text-secondary: #a1a1aa;
-        --bg-label: rgba(0, 0, 0, 0.4);
-        --bg-retry: #27272a;
-        --border-retry: #3f3f46;
-        --ai-avatar-bg: #27272a;
-        --ai-pulse-bg: #fafafa;
-      }
 
-      @media (prefers-color-scheme: light) {
-        :root {
-          --bg-app: #f4f4f5;
-          --bg-box: #ffffff;
-          --border-box: #e4e4e7;
-          --text-primary: #09090b;
-          --text-secondary: #71717a;
-          --bg-label: rgba(244, 244, 245, 0.8);
-          --bg-retry: #e4e4e7;
-          --border-retry: #d4d4d8;
-          --ai-avatar-bg: #e4e4e7;
-          --ai-pulse-bg: #09090b;
-        }
-      }
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview Masters - Dashboard</title>
+  <style>
+    html,
+    body,
+    #root,
+    .rt-Theme {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-app) !important;
+    }
+  </style>
+</head>
 
-      html, body, #root {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        background-color: var(--bg-app);
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

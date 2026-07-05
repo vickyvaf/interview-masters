@@ -40,7 +40,7 @@ export default function Settings() {
                 <Text size="2" weight="bold">Peran / Pekerjaan Saat Ini</Text>
                 <Box maxWidth="240px">
                   <Select.Root defaultValue="job_seeker">
-                    <Select.Trigger />
+                    <Select.Trigger style={{ width: '100%' }} />
                     <Select.Content>
                       <Select.Item value="student">Mahasiswa / Fresh Graduate</Select.Item>
                       <Select.Item value="job_seeker">Pencari Kerja Aktif</Select.Item>
@@ -71,7 +71,7 @@ export default function Settings() {
                   <Text size="2" weight="bold">Bahasa Wawancara Utama</Text>
                   <Box>
                     <Select.Root defaultValue="id">
-                      <Select.Trigger />
+                      <Select.Trigger style={{ width: '100%' }} />
                       <Select.Content>
                         <Select.Item value="id">Bahasa Indonesia (ID)</Select.Item>
                         <Select.Item value="en">English (EN)</Select.Item>

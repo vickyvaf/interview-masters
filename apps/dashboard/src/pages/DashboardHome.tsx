@@ -1,6 +1,6 @@
-import { Card, Button, Text, Heading, Flex, Container, Grid, Badge, Table, Box, Progress } from '@radix-ui/themes'
+import { Card, Button, Text, Heading, Flex, Container, Grid, Badge, Table, Box, Progress, Tooltip, IconButton } from '@radix-ui/themes'
 import { Link } from 'react-router-dom'
-import { PlusIcon, ChevronRightIcon, ArrowUpIcon } from '@radix-ui/react-icons'
+import { PlusIcon, ChevronRightIcon, ArrowUpIcon, QuestionMarkCircledIcon } from '@radix-ui/react-icons'
 
 export default function DashboardHome() {
   return (
@@ -15,7 +15,7 @@ export default function DashboardHome() {
             </Text>
           </Box>
           <Button asChild>
-            <Link to="/playground" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <Link to="/interview" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
               <PlusIcon width="16" height="16" /> Mulai Interview Baru
             </Link>
           </Button>
@@ -62,7 +62,23 @@ export default function DashboardHome() {
 
         {/* Section 2: AI Feedbacks Analysis (PRD / ERD ai_feedbacks) */}
         <Box>
-          <Heading size="4" mb="3">Analisis Kriteria AI</Heading>
+          <Flex align="center" gap="2" mb="3">
+            <Heading size="4">Analisis Kriteria AI</Heading>
+            <Tooltip content={
+              <Box style={{ padding: '4px' }}>
+                <Text size="2" weight="bold" as="div" mb="2">Skema Penilaian AI</Text>
+                <Flex direction="column" gap="1">
+                  <Text size="1">• <strong>80% - 100%:</strong> Bagus (Standard Industri)</Text>
+                  <Text size="1">• <strong>60% - 79%:</strong> Cukup (Perlu Penyempurnaan)</Text>
+                  <Text size="1">• <strong>&lt; 60%:</strong> Kurang (Perlu Latihan Intensif)</Text>
+                </Flex>
+              </Box>
+            }>
+              <IconButton variant="ghost" size="1" style={{ cursor: 'pointer', borderRadius: '50%' }}>
+                <QuestionMarkCircledIcon width="16" height="16" />
+              </IconButton>
+            </Tooltip>
+          </Flex>
           <Grid columns={{ initial: '1', md: '3' }} gap="4">
             <Card size="2">
               <Flex direction="column" gap="2">

@@ -19,17 +19,17 @@ export default function Billing() {
           <Flex justify="between" align="center" wrap="wrap" gap="4">
             <Flex direction="column" gap="1">
               <Flex align="center" gap="2">
-                <Text size="2" weight="bold" color="gray" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <Text size="2" weight="bold" color="gray">
                   Paket Aktif Anda
                 </Text>
                 <Badge color="blue" variant="solid">Free Trial</Badge>
               </Flex>
-              <Heading size="4">Free Tier (Gratis)</Heading>
+              <Heading size="2">Free Tier (Gratis)</Heading>
               <Text size="2" color="gray">
                 Sisa kuota: <strong>3 mock interviews</strong> bulan ini.
               </Text>
             </Flex>
-            <Button size="3" variant="soft" color="blue">
+            <Button variant="soft" color="blue">
               Upgrade ke Pro
             </Button>
           </Flex>
@@ -180,7 +180,7 @@ export default function Billing() {
             <Flex direction="column" gap="1">
               <Heading size="3">Kebutuhan Organisasi / B2B?</Heading>
               <Text size="2" color="gray">
-                Kami menyediakan lisensi massal, dasbor HR terintegrasi, dan kustomisasi pelacakan kandidat untuk universitas atau bootcamp.
+                Kami menyediakan lisensi massal, dasboard HR terintegrasi, dan kustomisasi pelacakan kandidat untuk universitas atau bootcamp.
               </Text>
             </Flex>
             <Button size="2" variant="outline">

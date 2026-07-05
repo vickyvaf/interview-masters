@@ -161,7 +161,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const menuItems = [
     { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
-    { label: "Mulai Interview", path: "/playground", icon: <PlayIcon /> },
+    { label: "Mulai Interview", path: "/interview", icon: <PlayIcon /> },
     {
       label: "Riwayat & Evaluasi",
       path: "/history",

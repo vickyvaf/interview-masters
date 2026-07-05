@@ -7,6 +7,7 @@ export default function Playground() {
   // Webcam refs & state
   const videoRef = useRef<HTMLVideoElement>(null)
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null)
+  const webcamStreamRef = useRef<MediaStream | null>(null)
   const [webcamError, setWebcamError] = useState<string | null>(null)
 
   // WebSocket state
@@ -63,6 +64,32 @@ export default function Playground() {
   const [statusText, setStatusText] = useState('Ready to listen')
   const [statusOpacity, setStatusOpacity] = useState(1)
 
+  // Unmount cleanup: release all hardware and network resources
+  useEffect(() => {
+    return () => {
+      // 1. Stop webcam stream tracks
+      if (webcamStreamRef.current) {
+        webcamStreamRef.current.getTracks().forEach((track) => track.stop())
+      }
+      // 2. Cancel speech synthesis (TTS)
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel()
+      }
+      // 3. Stop speech recognition (STT)
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop()
+        } catch (e) {}
+      }
+      // 4. Close WebSocket connection
+      if (wsRef.current) {
+        try {
+          wsRef.current.close()
+        } catch (e) {}
+      }
+    }
+  }, [])
+
   // 1. Setup Webcam Feed
   useEffect(() => {
     let activeStream: MediaStream | null = null
@@ -75,6 +102,7 @@ export default function Playground() {
           videoRef.current.srcObject = null
         }
         setWebcamStream(null)
+        webcamStreamRef.current = null
         return
       }
 
@@ -84,6 +112,7 @@ export default function Playground() {
           audio: false
         })
         activeStream = mediaStream
+        webcamStreamRef.current = mediaStream
         setWebcamStream(mediaStream)
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream

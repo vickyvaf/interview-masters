@@ -3,7 +3,7 @@ import { CheckIcon, StarIcon } from '@radix-ui/react-icons'
 
 export default function Billing() {
   return (
-    <Container size="4" style={{ padding: '40px 24px' }}>
+    <Container size="3" style={{ padding: '40px 24px' }}>
       <Flex direction="column" gap="5">
         {/* Header Section */}
         <Box>
@@ -50,7 +50,7 @@ export default function Billing() {
                   <Heading size="3">Free</Heading>
                   <Text size="1" color="gray">Untuk perkenalan awal</Text>
                 </Flex>
-                
+
                 <Flex align="baseline" gap="1">
                   <Text size="6" weight="bold">Rp 0</Text>
                   <Text size="2" color="gray">/ bulan</Text>
@@ -87,13 +87,13 @@ export default function Billing() {
                     <Heading size="3">Pro</Heading>
                     <Text size="1" color="gray">Untuk pencari kerja aktif</Text>
                   </Flex>
-                  <Badge color="indigo" size="2" variant="solid">
+                  <Badge size="2" variant="solid">
                     <Flex align="center" gap="1">
                       <StarIcon /> Populer
                     </Flex>
                   </Badge>
                 </Flex>
-                
+
                 <Flex align="baseline" gap="1">
                   <Text size="6" weight="bold">Rp 99.000</Text>
                   <Text size="2" color="gray">/ bulan</Text>
@@ -123,7 +123,7 @@ export default function Billing() {
                 </Flex>
 
 
-                <Button size="2" variant="solid" color="indigo" style={{ marginTop: 'auto' }}>
+                <Button size="2" variant="solid" style={{ marginTop: 'auto' }}>
                   Langganan Pro
                 </Button>
               </Flex>
@@ -139,7 +139,7 @@ export default function Billing() {
                   </Flex>
                   <Text size="1" color="gray">Persiapan intensif waktu singkat</Text>
                 </Flex>
-                
+
                 <Flex align="baseline" gap="1">
                   <Text size="6" weight="bold">Rp 390.000</Text>
                   <Text size="2" color="gray">/ paket (~$25)</Text>

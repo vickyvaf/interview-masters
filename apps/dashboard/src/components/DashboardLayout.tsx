@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Box, Flex, Text, Button, SegmentedControl } from "@radix-ui/themes";
+import { Box, Flex, Button, SegmentedControl } from "@radix-ui/themes";
 import {
   DashboardIcon,
   PlayIcon,
@@ -251,19 +251,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
+                width: isCollapsed ? "100%" : "auto"
               }}
             >
-              <img
-                src="/logo.png"
-                alt="Interview Masters"
-                style={{ width: "28px", height: "28px" }}
-              />
+              {isCollapsed ? (
+                <img
+                  src="/logo.png"
+                  alt="Interview Masters"
+                  style={{ width: "28px", height: "28px", objectFit: "contain" }}
+                />
+              ) : (
+                <img
+                  src="/logo-new.png"
+                  alt="Interview Masters"
+                  style={{ height: "28px", objectFit: "contain" }}
+                />
+              )}
             </span>
-            {!isCollapsed && (
-              <Text size="3" weight="bold" style={{ marginLeft: "12px" }}>
-                {/*Interview Masters*/}
-              </Text>
-            )}
           </Flex>
 
           {/* Navigation Links */}

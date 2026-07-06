@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Text, Flex, Card, Box, Badge, IconButton, Button, Grid, AlertDialog } from '@radix-ui/themes'
 import { ReloadIcon, ArrowLeftIcon, SpeakerLoudIcon, SpeakerOffIcon, CameraIcon } from '@radix-ui/react-icons'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
 
 const getRoleLabel = (roleKey?: string) => {
   switch (roleKey) {
@@ -26,6 +28,26 @@ export default function Practice() {
   const { role } = location.state || {}
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
   const [errorDialogText, setErrorDialogText] = useState<string | null>(null)
+
+  // Fetch candidate's profile full name
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfileName'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+
+      if (error) return null
+      return data
+    }
+  })
+
+  const displayName = userProfile?.full_name || 'Candidate'
 
   // Webcam refs & state
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -502,7 +524,7 @@ export default function Practice() {
             {history.map((msg, idx) => (
               <Flex key={idx} gap="2" style={{ fontSize: '14px', lineHeight: '1.5' }}>
                 <Text size="2" weight="bold" color={msg.role === 'user' ? 'green' : 'blue'} style={{ minWidth: '75px' }}>
-                  {msg.role === 'user' ? 'Candidate:' : 'AI:'}
+                  {msg.role === 'user' ? `${displayName}:` : 'AI:'}
                 </Text>
                 <Text size="2" color="gray" style={{ flexGrow: 1 }}>{msg.text.replace(/\*/g, '')}</Text>
               </Flex>
@@ -536,7 +558,7 @@ export default function Practice() {
                   borderRadius: '50%',
                   backgroundColor: webcamStream ? 'var(--green-9)' : 'var(--red-9)'
                 }} />
-                YOU (CANDIDATE)
+                {displayName.toUpperCase()} (ANDA)
               </Flex>
             </Badge>
           </Box>

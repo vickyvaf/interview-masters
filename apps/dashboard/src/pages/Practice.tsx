@@ -479,25 +479,62 @@ export default function Practice() {
           </Box>
 
           {/* AI Pulse Circle & Status */}
+          <style>{`
+            @keyframes waveScale {
+              0% {
+                transform: scale(1);
+                opacity: 0.8;
+              }
+              100% {
+                transform: scale(2.2);
+                opacity: 0;
+              }
+            }
+            .pulse-wave {
+              position: absolute;
+              width: 80px;
+              height: 80px;
+              border-radius: 50%;
+              background-color: var(--blue-a4);
+              animation: waveScale 2s infinite linear;
+              z-index: 1;
+            }
+            .wave-2 {
+              animation-delay: 1s;
+            }
+            .ai-speaking-pulse {
+              box-shadow: 0 0 20px var(--blue-6);
+            }
+          `}</style>
           <Flex direction="column" align="center" gap="3" style={{ marginBottom: '40px' }}>
-            <div style={{
-              position: 'relative',
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--blue-a3)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}>
+            <div 
+              className={isSpeaking ? "ai-speaking-pulse" : ""}
+              style={{
+                position: 'relative',
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--blue-a3)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {isSpeaking && (
+                <>
+                  <div className="pulse-wave wave-1" />
+                  <div className="pulse-wave wave-2" />
+                </>
+              )}
               <div
                 style={{
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
                   backgroundColor: 'var(--blue-9)',
-                  transform: isSpeaking ? 'scale(1.3)' : isThinking ? 'scale(1.1)' : 'scale(1.0)',
-                  opacity: isSpeaking ? 0.9 : isThinking ? 0.6 : 1,
+                  zIndex: 2,
+                  transform: isSpeaking ? 'scale(1.2)' : isThinking ? 'scale(1.1)' : 'scale(1.0)',
                   transition: 'all 0.3s ease'
                 }}
               />

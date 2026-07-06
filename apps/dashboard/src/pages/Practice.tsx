@@ -43,6 +43,8 @@ export default function Practice() {
   const [history, setHistory] = useState<{ role: 'user' | 'assistant'; text: string }[]>([])
   const [hasGreeted, setHasGreeted] = useState(false)
   const [greetingActive, setGreetingActive] = useState(false)
+  const [showReadyModal, setShowReadyModal] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
   const historyEndRef = useRef<HTMLDivElement>(null)
 
   const isMicMutedRef = useRef(isMicMuted)
@@ -240,41 +242,65 @@ export default function Practice() {
     }
   }, [])
 
-  // 2b. Automatically greet user on connection success
+  // 2b. Trigger "Apakah Anda Sudah Siap" modal on connection success
   useEffect(() => {
-    if (wsStatus === 'connected' && !hasGreeted) {
-      setHasGreeted(true)
-      setGreetingActive(true)
-      
-      const getGreetingTime = () => {
-        const hour = new Date().getHours()
-        if (hour < 11) return 'pagi'
-        if (hour < 15) return 'siang'
-        if (hour < 18) return 'sore'
-        return 'malam'
-      }
-
-      const roleLabel = getRoleLabel(role)
-      const greetingText = `Halo, selamat ${getGreetingTime()}. Saya adalah pewawancara AI Anda hari ini. Selamat datang di simulasi wawancara untuk posisi ${roleLabel}. Mari kita mulai. Silakan perkenalkan diri Anda terlebih dahulu.`
-
-      setHistory((prev) => [...prev, { role: 'assistant', text: greetingText }])
-
-      setIsThinking(false)
-      const utterance = new SpeechSynthesisUtterance(greetingText)
-      utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
-      utterance.onstart = () => setIsSpeaking(true)
-      utterance.onend = () => {
-        setIsSpeaking(false)
-        setGreetingActive(false)
-      }
-      utterance.onerror = () => {
-        setIsSpeaking(false)
-        setGreetingActive(false)
-      }
-      window.speechSynthesis.cancel()
-      window.speechSynthesis.speak(utterance)
+    if (wsStatus === 'connected' && !hasGreeted && !showReadyModal && countdown === null) {
+      setShowReadyModal(true)
     }
-  }, [wsStatus, hasGreeted, role])
+  }, [wsStatus, hasGreeted])
+
+  const handleStartPractice = () => {
+    setShowReadyModal(false)
+    setCountdown(3)
+  }
+
+  // 2c. Countdown tick effect
+  useEffect(() => {
+    if (countdown === null) return
+
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    } else {
+      triggerGreeting()
+      setCountdown(null)
+    }
+  }, [countdown])
+
+  const triggerGreeting = () => {
+    setHasGreeted(true)
+    setGreetingActive(true)
+    
+    const getGreetingTime = () => {
+      const hour = new Date().getHours()
+      if (hour < 11) return 'pagi'
+      if (hour < 15) return 'siang'
+      if (hour < 18) return 'sore'
+      return 'malam'
+    }
+
+    const roleLabel = getRoleLabel(role)
+    const greetingText = `Halo, selamat ${getGreetingTime()}. Saya adalah pewawancara AI Anda hari ini. Selamat datang di simulasi wawancara untuk posisi ${roleLabel}. Mari kita mulai. Silakan perkenalkan diri Anda terlebih dahulu.`
+
+    setHistory((prev) => [...prev, { role: 'assistant', text: greetingText }])
+
+    setIsThinking(false)
+    const utterance = new SpeechSynthesisUtterance(greetingText)
+    utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => {
+      setIsSpeaking(false)
+      setGreetingActive(false)
+    }
+    utterance.onerror = () => {
+      setIsSpeaking(false)
+      setGreetingActive(false)
+    }
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(utterance)
+  }
 
   // 3. Status text transitions
   let targetText = 'Ready to listen'
@@ -624,6 +650,46 @@ export default function Practice() {
           </Flex>
         </AlertDialog.Content>
       </AlertDialog.Root>
+
+      {/* AlertDialog for Readiness Prompt */}
+      <AlertDialog.Root open={showReadyModal} onOpenChange={setShowReadyModal}>
+        <AlertDialog.Content style={{ maxWidth: 400 }}>
+          <AlertDialog.Title>Apakah Anda Sudah Siap?</AlertDialog.Title>
+          <AlertDialog.Description size="2" mb="4">
+            Koneksi ke AI pewawancara telah terhubung. Pastikan kamera dan mikrofon Anda berfungsi dengan baik sebelum memulai simulasi.
+          </AlertDialog.Description>
+          <Flex gap="3" justify="end">
+            <AlertDialog.Cancel>
+              <Button variant="soft" color="gray" onClick={() => navigate('/interview')} style={{ cursor: 'pointer' }}>Batal</Button>
+            </AlertDialog.Cancel>
+            <AlertDialog.Action>
+              <Button onClick={handleStartPractice} style={{ cursor: 'pointer' }}>Mulai Sekarang</Button>
+            </AlertDialog.Action>
+          </Flex>
+        </AlertDialog.Content>
+      </AlertDialog.Root>
+
+      {/* Full-screen Countdown Overlay */}
+      {countdown !== null && (
+        <Flex
+          position="fixed"
+          inset="0"
+          align="center"
+          justify="center"
+          style={{
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <Flex direction="column" align="center" gap="4">
+            <Text size="9" weight="bold" style={{ fontSize: '120px', color: 'var(--accent-9)', textShadow: '0 0 20px var(--accent-5)' }}>
+              {countdown}
+            </Text>
+            <Text size="5" weight="bold" color="gray">Bersiaplah...</Text>
+          </Flex>
+        </Flex>
+      )}
     </Flex>
   )
 }

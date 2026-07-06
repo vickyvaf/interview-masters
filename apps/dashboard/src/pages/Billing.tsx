@@ -35,6 +35,7 @@ export default function Billing() {
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
+  const [activePlan, setActivePlan] = useState<'pro' | 'sprint' | null>(null)
 
   // Query 1: Fetch user billing profile details
   const { data: profile, isLoading: loadingProfile } = useQuery({
@@ -112,10 +113,14 @@ export default function Billing() {
       setToastType('error')
       setToastMessage('Gagal mengalihkan ke pembayaran: ' + err.message)
       setToastOpen(true)
+    },
+    onSettled: () => {
+      setActivePlan(null)
     }
   })
 
   const handleUpgrade = (plan: 'pro' | 'sprint') => {
+    setActivePlan(plan)
     upgradeMutation.mutate(plan)
   }
 
@@ -233,7 +238,7 @@ export default function Billing() {
                 variant="soft"
                 color="blue"
                 onClick={() => handleUpgrade('pro')}
-                loading={upgradeMutation.isPending}
+                loading={upgradeMutation.isPending && activePlan === 'pro'}
               >
                 Upgrade ke Pro
               </Button>
@@ -330,7 +335,7 @@ export default function Billing() {
                   variant={tier === 'pro' ? 'outline' : 'solid'}
                   disabled={tier === 'pro'}
                   onClick={() => handleUpgrade('pro')}
-                  loading={upgradeMutation.isPending}
+                  loading={upgradeMutation.isPending && activePlan === 'pro'}
                   style={{ marginTop: 'auto' }}
                 >
                   {tier === 'pro' ? 'Paket Aktif' : 'Langganan Pro'}
@@ -380,7 +385,7 @@ export default function Billing() {
                   variant="solid" 
                   color="orange" 
                   onClick={() => handleUpgrade('sprint')}
-                  loading={upgradeMutation.isPending}
+                  loading={upgradeMutation.isPending && activePlan === 'sprint'}
                   disabled={tier === 'pro'}
                   style={{ marginTop: 'auto', cursor: 'pointer' }}
                 >

@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Container, Heading, Text, Flex, Card, Button, Separator, Box, Grid, TextField, TextArea, Select, Switch } from '@radix-ui/themes'
+import { Container, Heading, Text, Flex, Card, Button, Separator, Box, Grid, TextField, TextArea, Select, Switch, Skeleton, IconButton } from '@radix-ui/themes'
 import { Link } from 'react-router-dom'
-import { PersonIcon, MixerHorizontalIcon, GearIcon, Link2Icon } from '@radix-ui/react-icons'
+import { PersonIcon, MixerHorizontalIcon, GearIcon, Link2Icon, Cross2Icon } from '@radix-ui/react-icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import * as Toast from '@radix-ui/react-toast'
 
 export default function Settings() {
   const queryClient = useQueryClient()
+
+  // Toast state
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState<'success' | 'error'>('success')
 
   // Profile fields state
   const [fullName, setFullName] = useState('')
@@ -90,11 +96,15 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userProfile'] })
-      alert('Pengaturan berhasil disimpan!')
+      setToastType('success')
+      setToastMessage('Pengaturan berhasil disimpan!')
+      setToastOpen(true)
     },
     onError: (err: any) => {
       console.error('Error updating settings:', err.message)
-      alert('Gagal menyimpan: ' + err.message)
+      setToastType('error')
+      setToastMessage('Gagal menyimpan: ' + err.message)
+      setToastOpen(true)
     }
   })
 
@@ -111,11 +121,45 @@ export default function Settings() {
     })
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    window.location.href = '/'
+  }
+
   if (isLoading) {
     return (
       <Container size="3" style={{ padding: '40px 24px' }}>
-        <Flex justify="center" align="center" style={{ minHeight: '50vh' }}>
-          <Text size="3" color="gray">Memuat data pengaturan...</Text>
+        <Flex direction="column" gap="5">
+          {/* Header Skeleton */}
+          <Box>
+            <Skeleton height="32px" width="150px" style={{ marginBottom: '8px' }} />
+            <Skeleton height="16px" width="320px" />
+          </Box>
+
+          <Separator size="4" />
+
+          {/* Section 1: Profil Skeleton */}
+          <Box>
+            <Skeleton height="24px" width="120px" style={{ marginBottom: '12px' }} />
+            <Card size="3">
+              <Flex direction="column" gap="4">
+                <Grid columns={{ initial: '1', md: '2' }} gap="4">
+                  <Flex direction="column" gap="1">
+                    <Skeleton height="16px" width="80px" style={{ marginBottom: '4px' }} />
+                    <Skeleton height="36px" width="100%" />
+                  </Flex>
+                  <Flex direction="column" gap="1">
+                    <Skeleton height="16px" width="80px" style={{ marginBottom: '4px' }} />
+                    <Skeleton height="36px" width="100%" />
+                  </Flex>
+                </Grid>
+                <Flex direction="column" gap="1">
+                  <Skeleton height="16px" width="150px" style={{ marginBottom: '4px' }} />
+                  <Skeleton height="36px" width="240px" />
+                </Flex>
+              </Flex>
+            </Card>
+          </Box>
         </Flex>
       </Container>
     )
@@ -280,7 +324,7 @@ export default function Settings() {
         </Box>
 
         {/* Action Buttons */}
-        <Flex direction={{ initial: 'column-reverse', sm: 'row' }} gap="3" justify="end" style={{ marginTop: '16px' }}>
+        <Flex direction={{ initial: 'column-reverse', sm: 'row' }} gap="3" justify="between" style={{ marginTop: '16px' }}>
           <style>{`
             @media (max-width: 600px) {
               .action-button-mobile {
@@ -288,24 +332,91 @@ export default function Settings() {
               }
             }
           `}</style>
-          <Button 
-            variant="soft" 
-            color="gray" 
-            disabled={saveMutation.isPending}
-            className="action-button-mobile"
-          >
-            Batal
-          </Button>
-          <Button 
-            variant="solid" 
-            onClick={handleSave} 
-            loading={saveMutation.isPending}
-            className="action-button-mobile"
-          >
-            Simpan Perubahan
-          </Button>
+          <Box>
+            <Button
+              variant="outline"
+              color="red"
+              onClick={handleLogout}
+              className="action-button-mobile"
+            >
+              Keluar / Logout
+            </Button>
+          </Box>
+          <Flex gap="3" direction={{ initial: 'column-reverse', sm: 'row' }} className="action-button-mobile">
+            <Button 
+              variant="soft" 
+              color="gray" 
+              disabled={saveMutation.isPending}
+              className="action-button-mobile"
+            >
+              Batal
+            </Button>
+            <Button 
+              variant="solid" 
+              onClick={handleSave} 
+              loading={saveMutation.isPending}
+              className="action-button-mobile"
+            >
+              Simpan Perubahan
+            </Button>
+          </Flex>
         </Flex>
       </Flex>
+
+      <Toast.Provider swipeDirection="right">
+        <Toast.Root
+          open={toastOpen}
+          onOpenChange={setToastOpen}
+          style={{
+            background: toastType === 'success' ? 'var(--green-3)' : 'var(--red-3)',
+            border: `1px solid ${toastType === 'success' ? 'var(--green-6)' : 'var(--red-6)'}`,
+            borderRadius: '8px',
+            boxShadow: 'var(--shadow-4)',
+            padding: '16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'start',
+            gap: '12px',
+            position: 'relative',
+          }}
+        >
+          <Flex direction="column" gap="1" style={{ flexGrow: 1 }}>
+            <Toast.Title style={{ fontWeight: 'bold', fontSize: '14px', color: toastType === 'success' ? 'var(--green-11)' : 'var(--red-11)' }}>
+              {toastType === 'success' ? 'Sukses' : 'Gagal'}
+            </Toast.Title>
+            <Toast.Description style={{ fontSize: '13px', color: toastType === 'success' ? 'var(--green-11)' : 'var(--red-11)' }}>
+              {toastMessage}
+            </Toast.Description>
+          </Flex>
+          <Toast.Close asChild>
+            <IconButton
+              size="1"
+              variant="ghost"
+              color={toastType === 'success' ? 'green' : 'red'}
+              style={{ cursor: 'pointer', borderRadius: '50%', marginTop: '-2px' }}
+            >
+              <Cross2Icon width="14" height="14" />
+            </IconButton>
+          </Toast.Close>
+        </Toast.Root>
+
+        <Toast.Viewport
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            width: '320px',
+            maxWidth: '100vw',
+            margin: 0,
+            listStyle: 'none',
+            zIndex: 9999,
+            outline: 'none',
+          }}
+        />
+      </Toast.Provider>
     </Container>
   )
 }

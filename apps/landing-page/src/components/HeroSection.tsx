@@ -30,7 +30,7 @@ export default function HeroSection() {
       title={['Ace Your Interview', 'Land the Job']}
       subtitle="Get your highest salary potential with realistic preparation and instant feedback."
       ctaText="Start Practicing"
-      ctaHref="https://dashboard-interviewmasters.netlify.app/register"
+      ctaHref={`${import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/register`}
       icons={demoIcons}
     />
   );

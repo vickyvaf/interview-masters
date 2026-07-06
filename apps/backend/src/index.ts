@@ -7,7 +7,8 @@ import path from 'path'
 
 // Load environment variables
 dotenv.config()
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env.local') })
+const isProd = process.env.NODE_ENV === 'production'
+dotenv.config({ path: path.resolve(process.cwd(), isProd ? '../../.env.production' : '../../.env.local') })
 
 const app = new Hono()
 app.use('*', cors())

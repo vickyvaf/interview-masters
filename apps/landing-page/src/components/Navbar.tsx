@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 export default function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
+  const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173';
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -56,7 +57,7 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-4 z-10">
-          <a href="https://dashboard-interviewmasters.netlify.app/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
+          <a href={`${dashboardUrl}/login`} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
             Sign In
           </a>
           <Button
@@ -64,7 +65,7 @@ export default function Navbar() {
             size="sm"
             className="rounded-xl px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <a href="https://dashboard-interviewmasters.netlify.app/register">Start Free</a>
+            <a href={`${dashboardUrl}/register`}>Start Free</a>
           </Button>
         </div>
 
@@ -123,7 +124,7 @@ export default function Navbar() {
               <hr className="border-border/40" />
               <div className="flex flex-col gap-3 pb-2">
                 <a
-                  href="https://dashboard-interviewmasters.netlify.app/login"
+                  href={`${dashboardUrl}/login`}
                   onClick={() => setIsOpen(false)}
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
                 >
@@ -133,7 +134,7 @@ export default function Navbar() {
                   asChild
                   className="w-full rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground text-center"
                 >
-                  <a href="https://dashboard-interviewmasters.netlify.app/register" onClick={() => setIsOpen(false)}>Start Free</a>
+                  <a href={`${dashboardUrl}/register`} onClick={() => setIsOpen(false)}>Start Free</a>
                 </Button>
               </div>
             </div>

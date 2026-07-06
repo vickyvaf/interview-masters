@@ -12,6 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   integrations: [react()],
   vite: {
+    envDir: path.resolve(__dirname, '../../'),
     plugins: [tailwindcss()],
     resolve: {
       alias: {

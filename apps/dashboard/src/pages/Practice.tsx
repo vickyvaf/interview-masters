@@ -170,7 +170,7 @@ export default function Practice() {
 
   // 2. Setup WebSocket Connection to Backend
   useEffect(() => {
-    const wsUrl = 'ws://localhost:5005/ws/voice'
+    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:5005/ws/voice'
     const socket = new WebSocket(wsUrl)
     wsRef.current = socket
 

@@ -90,26 +90,97 @@ app.post('/webhook/mayar', async (c) => {
         const supabaseUrl = process.env.SUPABASE_URL
         const supabaseKey = process.env.SUPABASE_SECRET_KEY
 
-        const res = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(customerEmail)}`, {
-          method: 'PATCH',
+        // 1. Fetch user by email to get their ID
+        const userRes = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(customerEmail)}`, {
           headers: {
             'apikey': supabaseKey || '',
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify({
-            tier: 'pro',
-            subscription_status: 'active',
-            updated_at: new Date().toISOString()
-          })
+            'Authorization': `Bearer ${supabaseKey}`
+          }
         })
-
-        if (!res.ok) {
-          throw new Error(`Failed to update user in Supabase: ${await res.text()}`)
+        if (!userRes.ok) {
+          throw new Error(`Failed to query user: ${await userRes.text()}`)
         }
+        const users = await userRes.json()
+        const user = users?.[0]
         
-        console.log(`[Webhook] Successfully upgraded ${customerEmail} in database.`)
+        if (user) {
+          // 2. Update user tier to PRO
+          const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': supabaseKey || '',
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              tier: 'pro',
+              subscription_status: 'active',
+              updated_at: new Date().toISOString()
+            })
+          })
+          if (!updateRes.ok) {
+            console.error(`[Webhook] Failed to update user tier: ${await updateRes.text()}`)
+          }
+
+          // 3. Insert or update subscriptions table
+          const subRes = await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseKey || '',
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              tier: 'pro',
+              status: 'active',
+              price: body.data?.amount || 99000,
+              billing_cycle: 'monthly',
+              current_period_start: new Date().toISOString(),
+              current_period_end: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+          })
+          
+          let subscriptionId = null
+          if (subRes.ok) {
+            const subs = await subRes.json()
+            subscriptionId = subs?.[0]?.id
+          } else {
+            console.error(`[Webhook] Failed to create subscription row: ${await subRes.text()}`)
+          }
+
+          // 4. Insert into payments table
+          const payRes = await fetch(`${supabaseUrl}/rest/v1/payments`, {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseKey || '',
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              user_id: user.id,
+              subscription_id: subscriptionId,
+              invoice_id: body.data?.id || 'INV-' + Date.now(),
+              payment_gateway: 'mayar',
+              transaction_id: body.data?.id || 'TX-' + Date.now(),
+              amount: body.data?.amount || 99000,
+              status: 'settlement',
+              payment_method: body.data?.paymentMethod || 'va',
+              paid_at: new Date().toISOString(),
+              created_at: new Date().toISOString()
+            })
+          })
+          if (!payRes.ok) {
+            console.error(`[Webhook] Failed to create payment row: ${await payRes.text()}`)
+          }
+
+          console.log(`[Webhook] Successfully updated and synced ${customerEmail} in database.`)
+        } else {
+          console.warn(`[Webhook] User with email ${customerEmail} not found in database.`)
+        }
       }
     }
 

@@ -18,7 +18,7 @@ app.get('/health', (c) => c.json({ status: 'healthy' }))
 // Create Mayar Payment Link Checkout Session
 app.post('/payments/create-checkout', async (c) => {
   try {
-    const { email, name } = await c.req.json()
+    const { email, name, plan } = await c.req.json()
     if (!email) {
       return c.json({ error: 'Email is required' }, 400)
     }
@@ -31,6 +31,11 @@ app.post('/payments/create-checkout', async (c) => {
     const isProduction = process.env.NODE_ENV === 'production'
     const mayarDomain = isProduction ? 'api.mayar.id' : 'api.mayar.club'
 
+    const isSprint = plan === 'sprint'
+    const amount = isSprint ? 390000 : 99000
+    const description = isSprint ? '14-Day Sprint - Interview Masters' : 'Pro Subscription - Interview Masters'
+    const itemDesc = isSprint ? 'Persiapan intensif simulasi wawancara AI (14 Hari)' : 'Pro Subscription - 1 Bulan'
+
     const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     const response = await fetch(`https://${mayarDomain}/hl/v1/invoice/create`, {
       method: 'POST',
@@ -41,20 +46,21 @@ app.post('/payments/create-checkout', async (c) => {
       body: JSON.stringify({
         name: name || 'Candidate',
         email: email,
-        amount: 99000,
+        amount,
         mobile: '08123456789',
         redirectUrl: `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success`,
-        description: 'Pro Subscription - Interview Masters',
+        description,
         expiredAt,
         items: [
           {
             quantity: 1,
-            rate: 99000,
-            description: 'Pro Subscription - 1 Bulan'
+            rate: amount,
+            description: itemDesc
           }
         ],
         extraData: {
-          productType: 'subscription'
+          productType: 'subscription',
+          plan: plan || 'pro'
         }
       })
     })

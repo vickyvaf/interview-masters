@@ -76,7 +76,7 @@ export default function Billing() {
 
   // Mutation: Request checkout link from backend
   const upgradeMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (plan: 'pro' | 'sprint') => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user logged in')
 
@@ -87,7 +87,8 @@ export default function Billing() {
         },
         body: JSON.stringify({
           email: user.email,
-          name: user.user_metadata?.full_name || user.user_metadata?.name || 'Candidate'
+          name: user.user_metadata?.full_name || user.user_metadata?.name || 'Candidate',
+          plan
         })
       })
 
@@ -114,8 +115,8 @@ export default function Billing() {
     }
   })
 
-  const handleUpgrade = () => {
-    upgradeMutation.mutate()
+  const handleUpgrade = (plan: 'pro' | 'sprint') => {
+    upgradeMutation.mutate(plan)
   }
 
   const isLoading = loadingProfile || loadingCount
@@ -231,7 +232,7 @@ export default function Billing() {
               <Button
                 variant="soft"
                 color="blue"
-                onClick={handleUpgrade}
+                onClick={() => handleUpgrade('pro')}
                 loading={upgradeMutation.isPending}
               >
                 Upgrade ke Pro
@@ -328,7 +329,7 @@ export default function Billing() {
                   size="2"
                   variant={tier === 'pro' ? 'outline' : 'solid'}
                   disabled={tier === 'pro'}
-                  onClick={handleUpgrade}
+                  onClick={() => handleUpgrade('pro')}
                   loading={upgradeMutation.isPending}
                   style={{ marginTop: 'auto' }}
                 >
@@ -374,7 +375,15 @@ export default function Billing() {
                   </Flex>
                 </Flex>
 
-                <Button size="2" variant="solid" color="orange" style={{ marginTop: 'auto' }}>
+                <Button 
+                  size="2" 
+                  variant="solid" 
+                  color="orange" 
+                  onClick={() => handleUpgrade('sprint')}
+                  loading={upgradeMutation.isPending}
+                  disabled={tier === 'pro'}
+                  style={{ marginTop: 'auto', cursor: 'pointer' }}
+                >
                   Beli Paket Sprint
                 </Button>
               </Flex>

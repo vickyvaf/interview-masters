@@ -1,7 +1,162 @@
-import { Container, Heading, Text, Flex, Grid, Card, Button, Badge, Separator, Box } from '@radix-ui/themes'
-import { CheckIcon, StarIcon } from '@radix-ui/react-icons'
+import { Container, Heading, Text, Flex, Grid, Card, Button, Badge, Separator, Box, Skeleton, IconButton } from '@radix-ui/themes'
+import { CheckIcon, StarIcon, Cross2Icon } from '@radix-ui/react-icons'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
+import * as Toast from '@radix-ui/react-toast'
+import { useState } from 'react'
 
 export default function Billing() {
+  const queryClient = useQueryClient()
+
+  // Toast state
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState<'success' | 'error'>('success')
+
+  // Query 1: Fetch user billing profile details
+  const { data: profile, isLoading: loadingProfile } = useQuery({
+    queryKey: ['billingProfile'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('tier, subscription_status')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+      return data
+    }
+  })
+
+  // Query 2: Fetch count of mock interviews taken this month
+  const { data: monthCount, isLoading: loadingCount } = useQuery({
+    queryKey: ['monthInterviewsCount'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+
+      const { count, error } = await supabase
+        .from('mock_interviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth)
+
+      if (error) throw error
+      return count || 0
+    }
+  })
+
+  // Mutation: Upgrade account to Pro
+  const upgradeMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
+      const { error } = await supabase
+        .from('users')
+        .update({
+          tier: 'pro',
+          subscription_status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billingProfile'] })
+      setToastType('success')
+      setToastMessage('Selamat! Upgrade ke Pro Berhasil.')
+      setToastOpen(true)
+    },
+    onError: (err: any) => {
+      console.error('Error upgrading:', err.message)
+      setToastType('error')
+      setToastMessage('Gagal memproses upgrade: ' + err.message)
+      setToastOpen(true)
+    }
+  })
+
+  const handleUpgrade = () => {
+    upgradeMutation.mutate()
+  }
+
+  const isLoading = loadingProfile || loadingCount
+
+  if (isLoading) {
+    return (
+      <Container size="3" style={{ padding: '40px 24px' }}>
+        <Flex direction="column" gap="5">
+          {/* Header Skeleton */}
+          <Box>
+            <Skeleton height="32px" width="220px" style={{ marginBottom: '8px' }} />
+            <Skeleton height="16px" width="450px" />
+          </Box>
+
+          {/* Active Package Banner Skeleton */}
+          <Card size="3" style={{ background: 'var(--accent-2)' }}>
+            <Flex justify="between" align="center" wrap="wrap" gap="4">
+              <Flex direction="column" gap="2">
+                <Flex align="center" gap="2">
+                  <Skeleton height="16px" width="100px" />
+                  <Skeleton height="20px" width="80px" />
+                </Flex>
+                <Skeleton height="24px" width="150px" />
+                <Skeleton height="16px" width="260px" />
+              </Flex>
+              <Skeleton height="36px" width="120px" />
+            </Flex>
+          </Card>
+
+          <Separator size="4" />
+
+          {/* Price Grid Skeleton */}
+          <Box>
+            <Skeleton height="24px" width="180px" style={{ marginBottom: '16px' }} />
+            <Grid columns={{ initial: '1', md: '3' }} gap="4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} size="3">
+                  <Flex direction="column" gap="4" style={{ height: '100%' }}>
+                    <Box>
+                      <Skeleton height="24px" width="80px" style={{ marginBottom: '6px' }} />
+                      <Skeleton height="14px" width="120px" />
+                    </Box>
+                    <Skeleton height="36px" width="100px" />
+                    <Separator size="4" />
+                    <Flex direction="column" gap="2">
+                      <Skeleton height="16px" width="100%" />
+                      <Skeleton height="16px" width="80%" />
+                      <Skeleton height="16px" width="90%" />
+                    </Flex>
+                  </Flex>
+                </Card>
+              ))}
+            </Grid>
+          </Box>
+        </Flex>
+      </Container>
+    )
+  }
+
+  // Active status details
+  const tier = profile?.tier || 'free'
+  
+  // Calculate remaining quota for Free tier
+  const totalLimit = 3
+  const currentCount = monthCount || 0
+  const remainingQuota = Math.max(0, totalLimit - currentCount)
+
+  const getTierBadge = () => {
+    if (tier === 'pro') return <Badge color="green" variant="solid">Pro Plan</Badge>
+    if (tier === 'b2b') return <Badge color="purple" variant="solid">B2B Enterprise</Badge>
+    return <Badge color="blue" variant="solid">Free Trial</Badge>
+  }
+
   return (
     <Container size="3" style={{ padding: '40px 24px' }}>
       <Flex direction="column" gap="5">
@@ -13,7 +168,6 @@ export default function Billing() {
           </Text>
         </Box>
 
-
         {/* Current Subscription Status */}
         <Card size="3" style={{ background: 'var(--accent-2)' }}>
           <Flex justify="between" align="center" wrap="wrap" gap="4">
@@ -22,22 +176,39 @@ export default function Billing() {
                 <Text size="2" weight="bold" color="gray">
                   Paket Aktif Anda
                 </Text>
-                <Badge color="blue" variant="solid">Free Trial</Badge>
+                {getTierBadge()}
               </Flex>
-              <Heading size="2">Free Tier (Gratis)</Heading>
+              <Heading size="2">
+                {tier === 'pro' && 'Pro Tier (Langganan)'}
+                {tier === 'b2b' && 'B2B Enterprise (Organisasi)'}
+                {tier === 'free' && 'Free Tier (Gratis)'}
+              </Heading>
               <Text size="2" color="gray">
-                Sisa kuota: <strong>3 mock interviews</strong> bulan ini.
+                {tier === 'free' ? (
+                  <>
+                    Sisa kuota: <strong>{remainingQuota} mock interviews</strong> dari {totalLimit} limit bulan ini.
+                  </>
+                ) : (
+                  <>
+                    Kuota Anda: <strong>Sesi latihan tanpa batas (unlimited)</strong>.
+                  </>
+                )}
               </Text>
             </Flex>
-            <Button variant="soft" color="blue">
-              Upgrade ke Pro
-            </Button>
+            {tier === 'free' && (
+              <Button 
+                variant="soft" 
+                color="blue" 
+                onClick={handleUpgrade}
+                loading={upgradeMutation.isPending}
+              >
+                Upgrade ke Pro
+              </Button>
+            )}
           </Flex>
         </Card>
 
-
         <Separator size="4" />
-
 
         {/* Pricing Grid */}
         <Box>
@@ -56,9 +227,7 @@ export default function Billing() {
                   <Text size="2" color="gray">/ bulan</Text>
                 </Flex>
 
-
                 <Separator size="4" />
-
 
                 <Flex direction="column" gap="2" style={{ flexGrow: 1 }}>
                   <Flex align="center" gap="2">
@@ -71,16 +240,19 @@ export default function Billing() {
                   </Flex>
                 </Flex>
 
-
-                <Button size="2" variant="outline" disabled style={{ marginTop: 'auto' }}>
-                  Paket Aktif
+                <Button 
+                  size="2" 
+                  variant="outline" 
+                  disabled={tier === 'free'} 
+                  style={{ marginTop: 'auto' }}
+                >
+                  {tier === 'free' ? 'Paket Aktif' : 'Free Tier'}
                 </Button>
               </Flex>
             </Card>
 
-
             {/* Pro Plan */}
-            <Card size="3" style={{ border: '2px solid var(--accent-9)' }}>
+            <Card size="3" style={{ border: tier === 'pro' ? '2px solid var(--green-9)' : '2px solid var(--accent-9)' }}>
               <Flex direction="column" gap="4" style={{ height: '100%' }}>
                 <Flex justify="between" align="start">
                   <Flex direction="column" gap="1">
@@ -99,9 +271,7 @@ export default function Billing() {
                   <Text size="2" color="gray">/ bulan</Text>
                 </Flex>
 
-
                 <Separator size="4" />
-
 
                 <Flex direction="column" gap="2" style={{ flexGrow: 1 }}>
                   <Flex align="center" gap="2">
@@ -122,9 +292,15 @@ export default function Billing() {
                   </Flex>
                 </Flex>
 
-
-                <Button size="2" variant="solid" style={{ marginTop: 'auto' }}>
-                  Langganan Pro
+                <Button 
+                  size="2" 
+                  variant={tier === 'pro' ? 'outline' : 'solid'} 
+                  disabled={tier === 'pro'}
+                  onClick={handleUpgrade}
+                  loading={upgradeMutation.isPending}
+                  style={{ marginTop: 'auto' }}
+                >
+                  {tier === 'pro' ? 'Paket Aktif' : 'Langganan Pro'}
                 </Button>
               </Flex>
             </Card>
@@ -183,13 +359,67 @@ export default function Billing() {
                 Kami menyediakan lisensi massal, dasboard HR terintegrasi, dan kustomisasi pelacakan kandidat untuk universitas atau bootcamp.
               </Text>
             </Flex>
-            <Button size="2" variant="outline">
-              Hubungi Kami
+            <Button size="2" variant="outline" disabled={tier === 'b2b'}>
+              {tier === 'b2b' ? 'Aktif' : 'Hubungi Kami'}
             </Button>
           </Flex>
         </Card>
       </Flex>
+
+      <Toast.Provider swipeDirection="right">
+        <Toast.Root
+          open={toastOpen}
+          onOpenChange={setToastOpen}
+          style={{
+            background: toastType === 'success' ? 'var(--green-3)' : 'var(--red-3)',
+            border: `1px solid ${toastType === 'success' ? 'var(--green-6)' : 'var(--red-6)'}`,
+            borderRadius: '8px',
+            boxShadow: 'var(--shadow-4)',
+            padding: '16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'start',
+            gap: '12px',
+            position: 'relative',
+          }}
+        >
+          <Flex direction="column" gap="1" style={{ flexGrow: 1 }}>
+            <Toast.Title style={{ fontWeight: 'bold', fontSize: '14px', color: toastType === 'success' ? 'var(--green-11)' : 'var(--red-11)' }}>
+              {toastType === 'success' ? 'Sukses' : 'Gagal'}
+            </Toast.Title>
+            <Toast.Description style={{ fontSize: '13px', color: toastType === 'success' ? 'var(--green-11)' : 'var(--red-11)' }}>
+              {toastMessage}
+            </Toast.Description>
+          </Flex>
+          <Toast.Close asChild>
+            <IconButton
+              size="1"
+              variant="ghost"
+              color={toastType === 'success' ? 'green' : 'red'}
+              style={{ cursor: 'pointer', borderRadius: '50%', marginTop: '-2px' }}
+            >
+              <Cross2Icon width="14" height="14" />
+            </IconButton>
+          </Toast.Close>
+        </Toast.Root>
+
+        <Toast.Viewport
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            width: '320px',
+            maxWidth: '100vw',
+            margin: 0,
+            listStyle: 'none',
+            zIndex: 9999,
+            outline: 'none',
+          }}
+        />
+      </Toast.Provider>
     </Container>
   )
 }
-

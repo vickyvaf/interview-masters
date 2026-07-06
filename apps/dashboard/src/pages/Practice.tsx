@@ -595,7 +595,7 @@ export default function Practice() {
                   borderRadius: '50%',
                   backgroundColor: webcamStream ? 'var(--green-9)' : 'var(--red-9)'
                 }} />
-                {displayName.toUpperCase()} (ANDA)
+                {displayName.toUpperCase()}
               </Flex>
             </Badge>
           </Box>

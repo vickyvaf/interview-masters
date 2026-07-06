@@ -15,17 +15,6 @@ app.use('*', cors())
 
 app.get('/health', (c) => c.json({ status: 'healthy' }))
 
-// Basic fallback endpoints (matching FastAPI endpoints, though browser uses WS)
-app.post('/chat', async (c) => {
-  try {
-    const body = await c.req.json()
-    const reply = await generateGeminiResponse(body.message, body.history)
-    return c.json({ response: reply, tokens_used: reply.split(/\s+/).length })
-  } catch (err: any) {
-    return c.json({ error: err.message }, 500)
-  }
-})
-
 const port = Number(process.env.PORT) || 5005
 const server = serve({
   fetch: app.fetch,

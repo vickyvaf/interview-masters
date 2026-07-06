@@ -1,12 +1,21 @@
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Card, Flex, Text, Button, Box } from '@radix-ui/themes'
+import { supabase } from '../lib/supabase'
 
 export default function Login() {
-  const navigate = useNavigate()
 
-  const handleGoogleLogin = () => {
-    // Simulate login by navigating to dashboard
-    navigate('/dashboard')
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      })
+      if (error) throw error
+    } catch (err: any) {
+      console.error('Error logging in with Google:', err.message)
+    }
   }
 
   return (

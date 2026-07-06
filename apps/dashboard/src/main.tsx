@@ -3,7 +3,10 @@ import { createRoot } from 'react-dom/client'
 import '@radix-ui/themes/styles.css'
 import { Theme } from '@radix-ui/themes'
 import { ThemeProvider, useDashboardTheme } from './components/ThemeProvider'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
+
+const queryClient = new QueryClient()
 
 function Main() {
   const { resolvedTheme } = useDashboardTheme()
@@ -11,7 +14,9 @@ function Main() {
     <Theme panelBackground="solid" appearance={resolvedTheme}
       accentColor="blue"
     >
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </Theme>
   )
 }

@@ -13,6 +13,8 @@
     "build:dashboard": "pnpm --filter apps-dashboard build",
     "build:backend": "pnpm --filter apps-backend build",
     "start:backend": "NODE_ENV=production pnpm --filter apps-backend start",
-    "preview:landing": "pnpm --filter apps-landing-page preview"
+    "preview:landing": "pnpm --filter apps-landing-page preview",
+    "db:migrate": "cd supabase && ./migrate.sh",
+    "db:migrate:prod": "cd supabase && ./migrate.sh production"
   }
 }

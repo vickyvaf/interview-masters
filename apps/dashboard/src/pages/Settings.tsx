@@ -1,8 +1,126 @@
+import { useState, useEffect } from 'react'
 import { Container, Heading, Text, Flex, Card, Button, Separator, Box, Grid, TextField, TextArea, Select, Switch } from '@radix-ui/themes'
 import { Link } from 'react-router-dom'
 import { PersonIcon, MixerHorizontalIcon, GearIcon, Link2Icon } from '@radix-ui/react-icons'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
 
 export default function Settings() {
+  const queryClient = useQueryClient()
+
+  // Profile fields state
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState('job_seeker')
+  const [tier, setTier] = useState('free')
+
+  // Interview preference state
+  const [targetRole, setTargetRole] = useState('')
+  const [interviewLanguage, setInterviewLanguage] = useState('id')
+  const [jobDescription, setJobDescription] = useState('')
+  const [resume, setResume] = useState('')
+
+  // Settings / Feature state
+  const [cameraOn, setCameraOn] = useState(true)
+
+  // React Query: Fetch user profile
+  const { data: userProfile, isLoading } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Self-heal: insert user row if not found
+          const newProfile = {
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            avatar_url: user.user_metadata?.avatar_url || ''
+          }
+          const { data: inserted, error: insertError } = await supabase
+            .from('users')
+            .insert(newProfile)
+            .select()
+            .single()
+
+          if (insertError) throw insertError
+          return { ...inserted, authEmail: user.email, authFullName: user.user_metadata?.full_name || user.user_metadata?.name }
+        }
+        throw error
+      }
+      return { ...data, authEmail: user.email, authFullName: user.user_metadata?.full_name || user.user_metadata?.name }
+    }
+  })
+
+  // Sync loaded user profile data with component state
+  useEffect(() => {
+    if (userProfile) {
+      setFullName(userProfile.full_name || userProfile.authFullName || '')
+      setEmail(userProfile.email || userProfile.authEmail || '')
+      setRole(userProfile.role || 'job_seeker')
+      setTier(userProfile.tier || 'free')
+      setTargetRole(userProfile.target_role || '')
+      setInterviewLanguage(userProfile.interview_language || 'id')
+      setJobDescription(userProfile.job_description || '')
+      setResume(userProfile.resume || '')
+      setCameraOn(userProfile.camera_on ?? true)
+    }
+  }, [userProfile])
+
+  // React Query: Mutation for saving user settings
+  const saveMutation = useMutation({
+    mutationFn: async (updatedFields: any) => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
+      const { error } = await supabase
+        .from('users')
+        .update(updatedFields)
+        .eq('id', user.id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+      alert('Pengaturan berhasil disimpan!')
+    },
+    onError: (err: any) => {
+      console.error('Error updating settings:', err.message)
+      alert('Gagal menyimpan: ' + err.message)
+    }
+  })
+
+  const handleSave = () => {
+    saveMutation.mutate({
+      full_name: fullName,
+      role,
+      target_role: targetRole,
+      interview_language: interviewLanguage,
+      job_description: jobDescription,
+      resume,
+      camera_on: cameraOn,
+      updated_at: new Date().toISOString()
+    })
+  }
+
+  if (isLoading) {
+    return (
+      <Container size="3" style={{ padding: '40px 24px' }}>
+        <Flex justify="center" align="center" style={{ minHeight: '50vh' }}>
+          <Text size="3" color="gray">Memuat data pengaturan...</Text>
+        </Flex>
+      </Container>
+    )
+  }
+
   return (
     <Container size="3" style={{ padding: '40px 24px' }}>
       <Flex direction="column" gap="5">
@@ -28,18 +146,27 @@ export default function Settings() {
               <Grid columns={{ initial: '1', md: '2' }} gap="4">
                 <Flex direction="column" gap="1">
                   <Text size="2" weight="bold">Nama Lengkap</Text>
-                  <TextField.Root placeholder="Masukkan nama lengkap Anda" defaultValue="John Doe" />
+                  <TextField.Root 
+                    placeholder="Masukkan nama lengkap Anda" 
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
                 </Flex>
                 <Flex direction="column" gap="1">
                   <Text size="2" weight="bold">Alamat Email</Text>
-                  <TextField.Root placeholder="Masukkan email Anda" defaultValue="johndoe@example.com" type="email" />
+                  <TextField.Root 
+                    placeholder="Masukkan email Anda" 
+                    value={email}
+                    disabled
+                    type="email" 
+                  />
                 </Flex>
               </Grid>
 
               <Flex direction="column" gap="1">
                 <Text size="2" weight="bold">Peran / Pekerjaan Saat Ini</Text>
                 <Box maxWidth="240px">
-                  <Select.Root defaultValue="job_seeker">
+                  <Select.Root value={role} onValueChange={setRole}>
                     <Select.Trigger style={{ width: '100%' }} />
                     <Select.Content>
                       <Select.Item value="student">Mahasiswa / Fresh Graduate</Select.Item>
@@ -53,7 +180,7 @@ export default function Settings() {
           </Card>
         </Box>
 
-        {/* Section 2: Preferensi Wawancara (refer PRD & ERD) */}
+        {/* Section 2: Preferensi Wawancara */}
         <Box>
           <Heading size="4" mb="3">
             <Flex align="center" gap="2">
@@ -65,12 +192,16 @@ export default function Settings() {
               <Grid columns={{ initial: '1', md: '2' }} gap="4">
                 <Flex direction="column" gap="1">
                   <Text size="2" weight="bold">Target Jabatan / Posisi Kerja</Text>
-                  <TextField.Root placeholder="e.g. Software Engineer, Marketing Lead" defaultValue="Software Engineer" />
+                  <TextField.Root 
+                    placeholder="e.g. Software Engineer, Marketing Lead" 
+                    value={targetRole}
+                    onChange={(e) => setTargetRole(e.target.value)}
+                  />
                 </Flex>
                 <Flex direction="column" gap="1">
                   <Text size="2" weight="bold">Bahasa Wawancara Utama</Text>
                   <Box>
-                    <Select.Root defaultValue="id">
+                    <Select.Root value={interviewLanguage} onValueChange={setInterviewLanguage}>
                       <Select.Trigger style={{ width: '100%' }} />
                       <Select.Content>
                         <Select.Item value="id">Bahasa Indonesia (ID)</Select.Item>
@@ -83,18 +214,28 @@ export default function Settings() {
 
               <Flex direction="column" gap="1">
                 <Text size="2" weight="bold">Deskripsi Pekerjaan Default (Job Description)</Text>
-                <TextArea placeholder="Tempel deskripsi pekerjaan target Anda di sini agar AI menyesuaikan pertanyaannya secara otomatis..." rows={5} />
+                <TextArea 
+                  placeholder="Tempel deskripsi pekerjaan target Anda di sini agar AI menyesuaikan pertanyaannya secara otomatis..." 
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  rows={5} 
+                />
               </Flex>
 
               <Flex direction="column" gap="1">
                 <Text size="2" weight="bold">Resume / Ringkasan Pengalaman</Text>
-                <TextArea placeholder="Tempel ringkasan CV / Resume Anda di sini..." rows={5} />
+                <TextArea 
+                  placeholder="Tempel ringkasan CV / Resume Anda di sini..." 
+                  value={resume}
+                  onChange={(e) => setResume(e.target.value)}
+                  rows={5} 
+                />
               </Flex>
             </Flex>
           </Card>
         </Box>
 
-        {/* Section 3: Konfigurasi Perangkat (refer Playground & backend config) */}
+        {/* Section 3: Konfigurasi Perangkat */}
         <Box>
           <Heading size="4" mb="3">
             <Flex align="center" gap="2">
@@ -108,29 +249,13 @@ export default function Settings() {
                   <Text size="2" weight="bold">Aktifkan Kamera Saat Mulai</Text>
                   <Text size="1" color="gray" as="div">Membuka umpan balik kamera secara otomatis ketika sesi dimulai.</Text>
                 </Box>
-                <Switch defaultChecked />
-              </Flex>
-
-              <Separator size="4" />
-
-              <Flex justify="between" align="center">
-                <Box>
-                  <Text size="2" weight="bold">Mode Respons Default</Text>
-                  <Text size="1" color="gray" as="div">Pilih antara menggunakan input suara (STT) atau pengetikan teks manual.</Text>
-                </Box>
-                <Select.Root defaultValue="voice">
-                  <Select.Trigger />
-                  <Select.Content>
-                    <Select.Item value="voice">Suara / Audio</Select.Item>
-                    <Select.Item value="text">Teks / Chat</Select.Item>
-                  </Select.Content>
-                </Select.Root>
+                <Switch checked={cameraOn} onCheckedChange={setCameraOn} />
               </Flex>
             </Flex>
           </Card>
         </Box>
 
-        {/* Section 4: Informasi Langganan (refer ERD & Billing) */}
+        {/* Section 4: Informasi Langganan */}
         <Box>
           <Heading size="4" mb="3">
             <Flex align="center" gap="2">
@@ -140,9 +265,11 @@ export default function Settings() {
           <Card size="3" style={{ background: 'var(--gray-2)' }}>
             <Flex justify="between" align="center" wrap="wrap" gap="3">
               <Box>
-                <Text size="2" weight="bold">Tipe Langganan Anda: Free Tier</Text>
+                <Text size="2" weight="bold">Tipe Langganan Anda: {tier.toUpperCase()} Tier</Text>
                 <Text size="1" color="gray" as="div">
-                  Upgrade ke Pro untuk simulasi tanpa batas dan analisis mendalam dari AI.
+                  {tier === 'free' 
+                    ? 'Upgrade ke Pro untuk simulasi tanpa batas dan analisis mendalam dari AI.' 
+                    : 'Terima kasih telah menggunakan paket premium kami.'}
                 </Text>
               </Box>
               <Button asChild variant="outline">
@@ -153,11 +280,28 @@ export default function Settings() {
         </Box>
 
         {/* Action Buttons */}
-        <Flex gap="3" justify="end" style={{ marginTop: '16px' }}>
-          <Button variant="soft" color="gray">
+        <Flex direction={{ initial: 'column-reverse', sm: 'row' }} gap="3" justify="end" style={{ marginTop: '16px' }}>
+          <style>{`
+            @media (max-width: 600px) {
+              .action-button-mobile {
+                width: 100% !important;
+              }
+            }
+          `}</style>
+          <Button 
+            variant="soft" 
+            color="gray" 
+            disabled={saveMutation.isPending}
+            className="action-button-mobile"
+          >
             Batal
           </Button>
-          <Button variant="solid">
+          <Button 
+            variant="solid" 
+            onClick={handleSave} 
+            loading={saveMutation.isPending}
+            className="action-button-mobile"
+          >
             Simpan Perubahan
           </Button>
         </Flex>

@@ -69,7 +69,7 @@ A **24-year-old recent college graduate** applying for their first serious full-
   - **Database**: Supabase (PostgreSQL)
 - **Core Functionality**:
   - Role-specific interactive question generation
-  - Text or voice-based mock response capture
+  - Voice-only mock response capture
   - Actionable feedback on structure, clarity, and relevance
 
 ---
@@ -82,7 +82,7 @@ A **24-year-old recent college graduate** applying for their first serious full-
 
 ### B. Interactive Mock Interview Session
 - AI generates questions sequentially based on role and JD.
-- Candidates respond via text or voice (speech-to-text).
+- Candidates respond via voice only (text-chat mode removed for strict voice focus).
 - Realistic pacing that simulates a real interview flow.
 
 ### C. Instant AI Feedback Engine
@@ -93,9 +93,8 @@ A **24-year-old recent college graduate** applying for their first serious full-
 ### D. Voice-Enabled Backend Services & APIs (Hono / Node.js)
 - **Architecture**: TypeScript codebase powered by Hono for HTTP API routing and Node's native websocket capabilities for real-time streams.
 - **Core AI Voice Flow**: User voice input transcribed to text at frontend → Sent over WebSocket to backend → LLM/Chat Engine generates response → Sent back to frontend → Read aloud via text-to-speech.
-- **REST HTTP Endpoints**:
+- REST HTTP Endpoints:
   - `GET /health` - Health check endpoint.
-  - `POST /chat` - Generates chat response text from conversation history (fallback endpoint).
 - **WebSocket Endpoint**:
   - `WS /ws/voice` - Real-time interview session using WebSocket connection handling events like `session.started`, `user.transcript`, `assistant.text`, and `error`.
 
@@ -153,6 +152,8 @@ erDiagram
         string role "e.g., student, job_seeker, admin"
         string tier "e.g., free, pro, b2b"
         string subscription_status "e.g., active, inactive, canceled"
+        string target_role "e.g., software_engineer"
+        text job_description "Default job description template"
         timestamp created_at
         timestamp updated_at
     }
@@ -308,7 +309,7 @@ flowchart TD
     M1([Candidate]) --> M2{Tier}
     M2 -- Free --> M3[3 Mock Interviews / Month\nBasic Feedback]
     M2 -- Pro --> M4[Unlimited Sessions\nAdvanced Feedback\nRole-Specific Deep Dive\nProgress Analytics]
-    M2 -- Team / B2B --> M5[Bulk Licenses\nHR Dashboard\nCandidate Tracking\nWhite-label Option]
+    M2 -- Team / B2B --> M5[Bulk Licenses\nHR Dashboard\nCandidate Tracking\nWhite-label Option\n*Link Hidden for MVP*]
 
     M3 --> M6{Upgrade?}
     M6 -- Yes --> M4
@@ -326,7 +327,7 @@ flowchart TD
 |---|---|---|---|
 | **Free** | Rp 0 / month | 3 mock interviews/month, basic feedback | First-time users, students |
 | **Pro** | Rp 99.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers |
-| **Team / B2B** | Custom | Bulk licenses, HR dashboard, candidate tracking, white-label | Bootcamps, universities, enterprise HR |
+| **Team / B2B** *(Link Hidden for MVP)* | Custom | Bulk licenses, HR dashboard, candidate tracking, white-label | Bootcamps, universities, enterprise HR |
 
 ### Payment System Flow
 
@@ -338,8 +339,7 @@ flowchart TD
     P2 -- B2B --> P5[Contact Sales\nCustom Quote & Invoice]
 
     P4 --> P6{Payment Method}
-    P6 -- GoPay / OVO / QRIS --> P7[Midtrans Gateway]
-    P6 -- VA / Bank Transfer --> P7
+    P6 -- QRIS / VA / Cards / E-Wallet --> P7[Mayar Gateway]
     P6 -- Credit Card --> P8{Region}
     P8 -- Indonesia --> P7
     P8 -- International --> P9[Stripe Gateway]
@@ -376,7 +376,7 @@ stateDiagram-v2
 ```
 
 ### Payment Gateways
-- 🇮🇩 **Indonesia (primary)**: Midtrans — GoPay, OVO, QRIS, Virtual Account, credit card.
+- 🇮🇩 **Primary Subscription Billing**: Mayar — supports local Indonesian payment methods (QRIS, VA, credit cards, e-wallets) with native subscription management.
 - 🌍 **International (future)**: Stripe — credit/debit card and regional payment methods.
 
 ### Refund & Cancellation Policy

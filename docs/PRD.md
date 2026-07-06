@@ -46,7 +46,7 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
   - **Database**: Supabase (PostgreSQL)
 - **Core Functionality**:
   - Role-specific interactive question generation.
-  - Audio/text-based mock response capture.
+  - Voice-only mock response capture (with settings-based defaults).
   - Actionable feedback highlighting structural improvements, clarity, and relevance.
 
 ---
@@ -54,12 +54,12 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 ## 4. Key MVP Features (Proposed Scope)
 
 ### A. Role Selection & Interview Context Setup
-- Users can select their target role (e.g., Software Engineer, Product Manager, Marketing Associate).
+- Users can select or write their target role.
 - Users can upload/paste the job description to personalize questions.
 
 ### B. Interactive Mock Interview Session
 - AI generates questions sequentially based on the role and job description.
-- Candidates can respond via text (or voice input using speech-to-text).
+- Candidates respond via voice only (text-chat mode removed for strict voice focus).
 - Realistic pacing simulating a real interview flow.
 
 ### C. Instant AI Feedback Engine
@@ -72,7 +72,6 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 - **Core AI Voice Flow**: User voice input transcribed to text at frontend → Sent over WebSocket to backend → LLM/Chat Engine generates response → Sent back to frontend → Read aloud via text-to-speech.
 - **REST HTTP Endpoints**:
   - `GET /health` - Health check endpoint.
-  - `POST /chat` - Generates chat response text from conversation history (fallback endpoint).
 - **WebSocket Endpoint**:
   - `WS /ws/voice` - Real-time interview session using WebSocket connection handling events like `session.started`, `user.transcript`, `assistant.text`, and `error`.
 
@@ -95,18 +94,17 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 |---|---|---|---|
 | **Free** | Rp 0 / month | 3 mock interviews/month, basic feedback | First-time users, students |
 | **Pro** | Rp 99.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers |
-| **Team / B2B** | Custom | Bulk licenses, HR dashboard, candidate tracking, white-label | Bootcamps, universities, enterprise HR |
+| **Team / B2B** *(Link Hidden for MVP)* | Custom | Bulk licenses, HR dashboard, candidate tracking, white-label | Bootcamps, universities, enterprise HR |
 
 ### Payment Flow
-1. User selects a plan (Free → Pro upgrade, or B2B inquiry).
-2. For **Pro**: user is directed to checkout (Stripe / Midtrans).
+1. User selects a plan (Free → Pro upgrade).
+2. For **Pro**: user is directed to checkout via **Mayar**.
 3. Payment gateway processes the transaction and returns a webhook confirmation.
 4. Backend activates Pro entitlement on the user account immediately.
-5. Monthly auto-renewal via saved card; cancellation allowed anytime (no lock-in).
-6. For **B2B**: custom quote → invoice → bank transfer or corporate card.
+5. Monthly subscription billing managed by Mayar portal.
 
 ### Payment Gateway
-- **Indonesia (primary)**: Midtrans — supports GoPay, OVO, QRIS, VA, credit card.
+- **Primary Subscription Billing**: Mayar — supports local Indonesian payment methods (QRIS, VA, credit cards, e-wallets) with native subscription management.
 - **International (future)**: Stripe — supports credit/debit card and regional methods.
 
 ### Refund & Cancellation Policy

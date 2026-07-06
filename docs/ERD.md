@@ -13,6 +13,8 @@ erDiagram
         string role "e.g., student, job_seeker, admin"
         string tier "e.g., free, pro, b2b"
         string subscription_status "e.g., active, inactive, canceled"
+        string target_role "e.g., software_engineer"
+        text job_description "Default job description template"
         timestamp created_at
         timestamp updated_at
     }

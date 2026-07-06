@@ -41,6 +41,7 @@ export default function Practice() {
   const [isMicMuted, setIsMicMuted] = useState(() => localStorage.getItem('isMicMuted') === 'true')
   const [isCameraOff, setIsCameraOff] = useState(() => localStorage.getItem('isCameraOff') === 'true')
   const [history, setHistory] = useState<{ role: 'user' | 'assistant'; text: string }[]>([])
+  const [hasGreeted, setHasGreeted] = useState(false)
   const historyEndRef = useRef<HTMLDivElement>(null)
 
   const isMicMutedRef = useRef(isMicMuted)
@@ -237,6 +238,35 @@ export default function Practice() {
       }
     }
   }, [])
+
+  // 2b. Automatically greet user on connection success
+  useEffect(() => {
+    if (wsStatus === 'connected' && !hasGreeted) {
+      setHasGreeted(true)
+      
+      const getGreetingTime = () => {
+        const hour = new Date().getHours()
+        if (hour < 11) return 'pagi'
+        if (hour < 15) return 'siang'
+        if (hour < 18) return 'sore'
+        return 'malam'
+      }
+
+      const roleLabel = getRoleLabel(role)
+      const greetingText = `Halo, selamat ${getGreetingTime()}. Saya adalah pewawancara AI Anda hari ini. Selamat datang di simulasi wawancara untuk posisi ${roleLabel}. Mari kita mulai. Silakan perkenalkan diri Anda terlebih dahulu.`
+
+      setHistory((prev) => [...prev, { role: 'assistant', text: greetingText }])
+
+      setIsThinking(false)
+      const utterance = new SpeechSynthesisUtterance(greetingText)
+      utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
+      utterance.onstart = () => setIsSpeaking(true)
+      utterance.onend = () => setIsSpeaking(false)
+      utterance.onerror = () => setIsSpeaking(false)
+      window.speechSynthesis.cancel()
+      window.speechSynthesis.speak(utterance)
+    }
+  }, [wsStatus, hasGreeted, role])
 
   // 3. Status text transitions
   let targetText = 'Ready to listen'

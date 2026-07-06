@@ -15,6 +15,108 @@ app.use('*', cors())
 
 app.get('/health', (c) => c.json({ status: 'healthy' }))
 
+// Create Mayar Payment Link Checkout Session
+app.post('/payments/create-checkout', async (c) => {
+  try {
+    const { email, name } = await c.req.json()
+    if (!email) {
+      return c.json({ error: 'Email is required' }, 400)
+    }
+
+    const MAYAR_API_KEY = process.env.MAYAR_API_KEY
+    if (!MAYAR_API_KEY) {
+      return c.json({ error: 'Mayar API Key is not configured on server' }, 500)
+    }
+
+    const response = await fetch('https://api.mayar.id/hl/v1/invoice/create', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${MAYAR_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: name || 'Candidate',
+        email: email,
+        amount: 99000,
+        mobile: '08123456789',
+        redirectUrl: `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success`,
+        description: 'Pro Subscription - Interview Masters'
+      })
+    })
+
+    const data: any = await response.json()
+    if (data.status === 'success' && data.data?.link) {
+      return c.json({ checkoutUrl: data.data.link })
+    } else {
+      console.error('Mayar Error response:', data)
+      return c.json({ error: data.message || 'Failed to create Mayar checkout link' }, 500)
+    }
+  } catch (err: any) {
+    console.error('Checkout error:', err)
+    return c.json({ error: err.message }, 500)
+  }
+})
+
+// Mayar Webhook Signature Validation & Database Update
+app.post('/webhook/mayar', async (c) => {
+  try {
+    const signature = c.req.header('x-mayar-signature')
+    const rawBody = await c.req.text()
+    
+    // Validate signature
+    const secret = process.env.MAYAR_WEBHOOK_SECRET || ''
+    const { createHmac } = await import('crypto')
+    const computedSignature = createHmac('sha256', secret)
+      .update(rawBody)
+      .digest('hex')
+
+    if (signature !== computedSignature) {
+      console.error('[Webhook] Invalid webhook signature. Received:', signature, 'Computed:', computedSignature)
+      return c.json({ error: 'Invalid signature' }, 401)
+    }
+
+    const body = JSON.parse(rawBody)
+    console.log('[Webhook] Received validated Mayar event:', body.event)
+
+    const allowedEvents = ['payment.received', 'payment.success', 'subscription.created']
+    if (allowedEvents.includes(body.event) || body.event?.startsWith('payment')) {
+      const customerEmail = body.data?.customerEmail
+      if (customerEmail) {
+        console.log(`[Webhook] Upgrading user with email: ${customerEmail} to PRO tier.`)
+        
+        const supabaseUrl = process.env.SUPABASE_URL
+        const supabaseKey = process.env.SUPABASE_SECRET_KEY
+
+        const res = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(customerEmail)}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabaseKey || '',
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({
+            tier: 'pro',
+            subscription_status: 'active',
+            updated_at: new Date().toISOString()
+          })
+        })
+
+        if (!res.ok) {
+          throw new Error(`Failed to update user in Supabase: ${await res.text()}`)
+        }
+        
+        console.log(`[Webhook] Successfully upgraded ${customerEmail} in database.`)
+      }
+    }
+
+    return c.json({ received: true })
+  } catch (err: any) {
+    console.error('[Webhook] Error handling webhook:', err)
+    return c.json({ error: err.message }, 500)
+  }
+})
+
 const port = Number(process.env.PORT) || 5005
 const server = serve({
   fetch: app.fetch,

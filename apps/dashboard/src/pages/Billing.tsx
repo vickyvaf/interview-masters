@@ -3,10 +3,33 @@ import { CheckIcon, StarIcon, Cross2Icon } from '@radix-ui/react-icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import * as Toast from '@radix-ui/react-toast'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function Billing() {
   const queryClient = useQueryClient()
+
+  // Check URL params for payment status
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('payment') === 'success') {
+      setToastType('success')
+      setToastMessage('Pembayaran sedang diproses! Paket Pro Anda akan segera aktif.')
+      setToastOpen(true)
+      
+      // Clear URL params so the toast doesn't re-trigger on refresh
+      window.history.replaceState({}, document.title, window.location.pathname)
+      
+      // Invalidate queries to get updated tier
+      const interval = setInterval(() => {
+        queryClient.invalidateQueries({ queryKey: ['billingProfile'] })
+      }, 3000)
+
+      // Stop polling after 15 seconds
+      return () => {
+        clearInterval(interval)
+      }
+    }
+  }, [queryClient])
 
   // Toast state
   const [toastOpen, setToastOpen] = useState(false)
@@ -51,33 +74,42 @@ export default function Billing() {
     }
   })
 
-  // Mutation: Upgrade account to Pro
+  // Mutation: Request checkout link from backend
   const upgradeMutation = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user logged in')
 
-      const { error } = await supabase
-        .from('users')
-        .update({
-          tier: 'pro',
-          subscription_status: 'active',
-          updated_at: new Date().toISOString()
+      const response = await fetch('http://localhost:5005/payments/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: user.email,
+          name: user.user_metadata?.full_name || user.user_metadata?.name || 'Candidate'
         })
-        .eq('id', user.id)
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const errData = await response.json()
+        throw new Error(errData.error || 'Failed to generate checkout link')
+      }
+
+      const data = await response.json()
+      return data.checkoutUrl
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['billingProfile'] })
-      setToastType('success')
-      setToastMessage('Selamat! Upgrade ke Pro Berhasil.')
-      setToastOpen(true)
+    onSuccess: (checkoutUrl) => {
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl
+      } else {
+        throw new Error('No checkout URL returned')
+      }
     },
     onError: (err: any) => {
-      console.error('Error upgrading:', err.message)
+      console.error('Error creating checkout:', err.message)
       setToastType('error')
-      setToastMessage('Gagal memproses upgrade: ' + err.message)
+      setToastMessage('Gagal mengalihkan ke pembayaran: ' + err.message)
       setToastOpen(true)
     }
   })
@@ -145,7 +177,7 @@ export default function Billing() {
 
   // Active status details
   const tier = profile?.tier || 'free'
-  
+
   // Calculate remaining quota for Free tier
   const totalLimit = 3
   const currentCount = monthCount || 0
@@ -196,9 +228,9 @@ export default function Billing() {
               </Text>
             </Flex>
             {tier === 'free' && (
-              <Button 
-                variant="soft" 
-                color="blue" 
+              <Button
+                variant="soft"
+                color="blue"
                 onClick={handleUpgrade}
                 loading={upgradeMutation.isPending}
               >
@@ -240,10 +272,10 @@ export default function Billing() {
                   </Flex>
                 </Flex>
 
-                <Button 
-                  size="2" 
-                  variant="outline" 
-                  disabled={tier === 'free'} 
+                <Button
+                  size="2"
+                  variant="outline"
+                  disabled={tier === 'free'}
                   style={{ marginTop: 'auto' }}
                 >
                   {tier === 'free' ? 'Paket Aktif' : 'Free Tier'}
@@ -292,9 +324,9 @@ export default function Billing() {
                   </Flex>
                 </Flex>
 
-                <Button 
-                  size="2" 
-                  variant={tier === 'pro' ? 'outline' : 'solid'} 
+                <Button
+                  size="2"
+                  variant={tier === 'pro' ? 'outline' : 'solid'}
                   disabled={tier === 'pro'}
                   onClick={handleUpgrade}
                   loading={upgradeMutation.isPending}
@@ -318,7 +350,7 @@ export default function Billing() {
 
                 <Flex align="baseline" gap="1">
                   <Text size="6" weight="bold">Rp 390.000</Text>
-                  <Text size="2" color="gray">/ paket (~$25)</Text>
+                  <Text size="2" color="gray">/ paket</Text>
                 </Flex>
 
                 <Separator size="4" />

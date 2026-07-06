@@ -39,7 +39,8 @@ export default function Navbar() {
       <div className="max-w-5xl mx-auto px-6 flex items-center justify-between relative">
         {/* Brand/Logo */}
         <a href="#" className="flex items-center group z-10">
-          <img src="/logo.png" alt="Interview Masters Logo" className="w-8 h-8 object-contain" />
+          {/* Old Logo: <img src="/logo.png" alt="Interview Masters Logo" className="w-8 h-8 object-contain" /> */}
+          <img src="/logo-new.png" alt="Interview Masters Logo" className="h-8 object-contain" />
         </a>
 
         {/* Desktop Navigation */}

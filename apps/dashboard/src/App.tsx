@@ -12,6 +12,8 @@ import Interview from './pages/Interview'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
+import { Flex, Spinner, Text } from '@radix-ui/themes'
+
 function App() {
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -32,9 +34,17 @@ function App() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-        <p>Loading...</p>
-      </div>
+      <Flex 
+        height="100vh" 
+        align="center" 
+        justify="center" 
+        direction="column" 
+        gap="3" 
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
+        <Spinner size="3" />
+        <Text size="2" color="gray" style={{ letterSpacing: '0.05em', fontWeight: 500 }}>MEMUAT DASHBOARD...</Text>
+      </Flex>
     )
   }
 

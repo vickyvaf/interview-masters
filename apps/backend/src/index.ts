@@ -31,6 +31,7 @@ app.post('/payments/create-checkout', async (c) => {
     const isProduction = process.env.NODE_ENV === 'production'
     const mayarDomain = isProduction ? 'api.mayar.id' : 'api.mayar.club'
 
+    const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     const response = await fetch(`https://${mayarDomain}/hl/v1/invoice/create`, {
       method: 'POST',
       headers: {
@@ -43,7 +44,18 @@ app.post('/payments/create-checkout', async (c) => {
         amount: 99000,
         mobile: '08123456789',
         redirectUrl: `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success`,
-        description: 'Pro Subscription - Interview Masters'
+        description: 'Pro Subscription - Interview Masters',
+        expiredAt,
+        items: [
+          {
+            quantity: 1,
+            rate: 99000,
+            description: 'Pro Subscription - 1 Bulan'
+          }
+        ],
+        extraData: {
+          productType: 'subscription'
+        }
       })
     })
 

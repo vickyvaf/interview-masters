@@ -7,7 +7,6 @@ import {
   ActivityLogIcon,
   CardStackIcon,
   GearIcon,
-  PersonIcon,
   SunIcon,
   MoonIcon,
   LaptopIcon,
@@ -168,7 +167,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: <ActivityLogIcon />,
     },
     { label: "Billing & Langganan", path: "/billing", icon: <CardStackIcon /> },
-    { label: "Organisasi", path: "/organization", icon: <PersonIcon /> },
   ];
 
   const bottomItems = [

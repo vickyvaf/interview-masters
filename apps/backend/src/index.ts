@@ -28,7 +28,10 @@ app.post('/payments/create-checkout', async (c) => {
       return c.json({ error: 'Mayar API Key is not configured on server' }, 500)
     }
 
-    const response = await fetch('https://api.mayar.id/hl/v1/invoice/create', {
+    const isProduction = process.env.NODE_ENV === 'production'
+    const mayarDomain = isProduction ? 'api.mayar.id' : 'api.mayar.club'
+
+    const response = await fetch(`https://${mayarDomain}/hl/v1/invoice/create`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${MAYAR_API_KEY}`,

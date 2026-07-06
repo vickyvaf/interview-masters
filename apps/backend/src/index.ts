@@ -52,7 +52,8 @@ app.post('/payments/create-checkout', async (c) => {
       return c.json({ checkoutUrl: data.data.link })
     } else {
       console.error('Mayar Error response:', data)
-      return c.json({ error: data.message || 'Failed to create Mayar checkout link' }, 500)
+      const errorMsg = data.message || (data.errors ? JSON.stringify(data.errors) : JSON.stringify(data))
+      return c.json({ error: errorMsg }, 500)
     }
   } catch (err: any) {
     console.error('Checkout error:', err)

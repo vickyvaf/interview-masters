@@ -60,7 +60,7 @@ app.post('/payments/create-checkout', async (c) => {
     })
 
     const data: any = await response.json()
-    if (data.status === 'success' && data.data?.link) {
+    if (data.data?.link) {
       return c.json({ checkoutUrl: data.data.link })
     } else {
       console.error('Mayar Error response:', data)

@@ -72,6 +72,8 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 - **Core AI Voice Flow**: User voice input transcribed to text at frontend → Sent over WebSocket to backend → LLM/Chat Engine generates response → Sent back to frontend → Read aloud via text-to-speech.
 - **REST HTTP Endpoints**:
   - `GET /health` - Health check endpoint.
+  - `POST /payments/create-checkout` - Generates a secure checkout payment link using Mayar API based on target plan (Pro or 14-Day Sprint).
+  - `POST /webhook/mayar` - Receives payment status updates from Mayar, validates transaction signatures, updates user tiers, and syncs history.
 - **WebSocket Endpoint**:
   - `WS /ws/voice` - Real-time interview session using WebSocket connection handling events like `session.started`, `user.transcript`, `assistant.text`, and `error`.
 
@@ -94,14 +96,15 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 |---|---|---|---|
 | **Free** | Rp 0 / month | 3 mock interviews/month, basic feedback | First-time users, students |
 | **Pro** | Rp 99.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers |
+| **14-Day Sprint** | Rp 390.000 / package | Masa aktif program 14 hari, umpan balik instan & terstruktur, posisi spesifik & kustom | Job seekers dengan jadwal wawancara ketat |
 | **Team / B2B** *(Link Hidden for MVP)* | Custom | Bulk licenses, HR dashboard, candidate tracking, white-label | Bootcamps, universities, enterprise HR |
 
 ### Payment Flow
-1. User selects a plan (Free → Pro upgrade).
-2. For **Pro**: user is directed to checkout via **Mayar**.
+1. User selects a plan (Free → Pro upgrade or 14-Day Sprint package).
+2. User is directed to checkout via **Mayar** (using sandbox `api.mayar.club` in local dev and production `api.mayar.id` in live deployment).
 3. Payment gateway processes the transaction and returns a webhook confirmation.
-4. Backend activates Pro entitlement on the user account immediately.
-5. Monthly subscription billing managed by Mayar portal.
+4. Backend activates the respective tier and status on the user account, and logs the transactions inside `subscriptions` and `payments` tables immediately.
+5. Monthly subscription billing or package purchase is recorded and managed via Mayar portal.
 
 ### Payment Gateway
 - **Primary Subscription Billing**: Mayar — supports local Indonesian payment methods (QRIS, VA, credit cards, e-wallets) with native subscription management.

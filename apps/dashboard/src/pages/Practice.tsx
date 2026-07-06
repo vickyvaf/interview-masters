@@ -42,6 +42,7 @@ export default function Practice() {
   const [isCameraOff, setIsCameraOff] = useState(() => localStorage.getItem('isCameraOff') === 'true')
   const [history, setHistory] = useState<{ role: 'user' | 'assistant'; text: string }[]>([])
   const [hasGreeted, setHasGreeted] = useState(false)
+  const [greetingActive, setGreetingActive] = useState(false)
   const historyEndRef = useRef<HTMLDivElement>(null)
 
   const isMicMutedRef = useRef(isMicMuted)
@@ -243,6 +244,7 @@ export default function Practice() {
   useEffect(() => {
     if (wsStatus === 'connected' && !hasGreeted) {
       setHasGreeted(true)
+      setGreetingActive(true)
       
       const getGreetingTime = () => {
         const hour = new Date().getHours()
@@ -261,8 +263,14 @@ export default function Practice() {
       const utterance = new SpeechSynthesisUtterance(greetingText)
       utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
       utterance.onstart = () => setIsSpeaking(true)
-      utterance.onend = () => setIsSpeaking(false)
-      utterance.onerror = () => setIsSpeaking(false)
+      utterance.onend = () => {
+        setIsSpeaking(false)
+        setGreetingActive(false)
+      }
+      utterance.onerror = () => {
+        setIsSpeaking(false)
+        setGreetingActive(false)
+      }
       window.speechSynthesis.cancel()
       window.speechSynthesis.speak(utterance)
     }
@@ -292,7 +300,7 @@ export default function Practice() {
   // 4. Speech Recognition (STT) implementation
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition || wsStatus !== 'connected' || isMicMuted || isSpeaking || isThinking) {
+    if (!SpeechRecognition || wsStatus !== 'connected' || isMicMuted || isSpeaking || isThinking || greetingActive) {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop()
@@ -370,7 +378,7 @@ export default function Practice() {
         } catch (e) { }
       }
     }
-  }, [wsStatus, isMicMuted, isSpeaking, isThinking, systemLanguage])
+  }, [wsStatus, isMicMuted, isSpeaking, isThinking, systemLanguage, greetingActive])
 
   return (
     <Flex direction="column" gap="4" style={{

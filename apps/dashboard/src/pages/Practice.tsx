@@ -5,22 +5,6 @@ import { ReloadIcon, ArrowLeftIcon, SpeakerLoudIcon, SpeakerOffIcon, CameraIcon 
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 
-const getRoleLabel = (roleKey?: string) => {
-  switch (roleKey) {
-    case 'software_engineer':
-      return 'Software Engineer'
-    case 'product_manager':
-      return 'Product Manager'
-    case 'data_analyst':
-      return 'Data Analyst'
-    case 'marketing_associate':
-      return 'Marketing Associate'
-    default:
-      return roleKey
-        ? roleKey.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-        : 'Umum'
-  }
-}
 
 export default function Practice() {
   const navigate = useNavigate()
@@ -303,7 +287,7 @@ export default function Practice() {
       return 'malam'
     }
 
-    const roleLabel = getRoleLabel(role)
+    const roleLabel = role || 'Umum'
     const greetingText = `Halo, selamat ${getGreetingTime()}. Saya adalah pewawancara AI Anda hari ini. Selamat datang di simulasi wawancara untuk posisi ${roleLabel}. Mari kita mulai. Silakan perkenalkan diri Anda terlebih dahulu.`
 
     setHistory((prev) => [...prev, { role: 'assistant', text: greetingText }])
@@ -442,7 +426,7 @@ export default function Practice() {
         <Button size="2" variant="soft" color="gray" onClick={() => setShowLeaveDialog(true)} style={{ cursor: 'pointer' }}>
           <ArrowLeftIcon /> Back
         </Button>
-        <Text size="3" weight="bold">Simulasi Wawancara AI - {getRoleLabel(role)}</Text>
+        <Text size="3" weight="bold">Simulasi Wawancara AI - {role || 'Umum'}</Text>
         <div style={{ width: '70px' }} /> {/* Spacer to balance header */}
       </Flex>
 

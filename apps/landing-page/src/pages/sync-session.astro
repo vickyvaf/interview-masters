@@ -1,4 +1,5 @@
 ---
+const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'https://dashboard-interviewmasters.netlify.app';
 ---
 <!DOCTYPE html>
 <html lang="id">
@@ -7,7 +8,7 @@
   <title>Menyinkronkan Sesi...</title>
 </head>
 <body>
-  <div style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; gap: 12px; background: #08080a; color: #ffffff;">
+  <div id="sync-session-container" data-dashboard-url={dashboardUrl} style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; gap: 12px; background: #08080a; color: #ffffff;">
     <div style="border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #ffffff; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;"></div>
     <span style="font-size: 14px; letter-spacing: 0.05em;">MENYINKRONKAN SESI...</span>
   </div>
@@ -41,7 +42,9 @@
     if (returnTo) {
       window.location.href = returnTo;
     } else {
-      window.location.href = window.location.hostname === 'localhost' ? 'http://localhost:5173/dashboard' : 'https://dashboard-interviewmasters.netlify.app/dashboard';
+      const container = document.getElementById('sync-session-container');
+      const dashboardUrl = container ? container.getAttribute('data-dashboard-url') : 'https://dashboard-interviewmasters.netlify.app';
+      window.location.href = window.location.hostname === 'localhost' ? 'http://localhost:5173/dashboard' : `${dashboardUrl}/dashboard`;
     }
   </script>
 </body>

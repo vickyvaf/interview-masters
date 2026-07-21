@@ -34,9 +34,11 @@ function setSessionCookie(session: any) {
 }
 
 function syncSessionToLanding(session: any) {
-  const landingUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:4321'
-    : 'https://interviewmasters.netlify.app';
+  const landingUrl = import.meta.env.VITE_LANDING_URL || (
+    window.location.hostname === 'localhost'
+      ? 'http://localhost:4321'
+      : 'https://interviewmasters.id'
+  );
 
   if (session) {
     const currentSynced = localStorage.getItem('im_session_synced_user');

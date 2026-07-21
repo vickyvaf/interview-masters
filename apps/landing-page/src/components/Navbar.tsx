@@ -2,9 +2,23 @@ import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
+interface SupabaseSession {
+  user: {
+    id: string;
+    email: string;
+    user_metadata: {
+      avatar_url?: string;
+      full_name?: string;
+      name?: string;
+    };
+  };
+}
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
+  const [session, setSession] = React.useState<SupabaseSession | null>(null);
+  const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173';
 
   React.useEffect(() => {
@@ -18,6 +32,34 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  React.useEffect(() => {
+    try {
+      const key = 'sb-dcouzpirkktfxklgqqwv-auth-token';
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw) as SupabaseSession;
+        if (parsed?.user) {
+          setSession(parsed);
+        }
+      }
+    } catch (e) {
+      console.error('Error reading supabase session', e);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!dropdownOpen) return;
+    const close = () => setDropdownOpen(false);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [dropdownOpen]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('sb-dcouzpirkktfxklgqqwv-auth-token');
+    setSession(null);
+    window.location.reload();
+  };
 
   const navLinks = [
     { name: 'Features', href: '#features' },
@@ -39,7 +81,6 @@ export default function Navbar() {
       <div className="max-w-5xl mx-auto px-6 flex items-center justify-between relative">
         {/* Brand/Logo */}
         <a href="#" className="flex items-center group z-10">
-          {/* Old Logo: <img src="/logo.png" alt="Interview Masters Logo" className="w-8 h-8 object-contain" /> */}
           <img src="/logo-new.png" alt="Interview Masters Logo" className="h-8 object-contain" />
         </a>
 
@@ -56,24 +97,78 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* CTA Buttons */}
+        {/* CTA Buttons / Profile dropdown */}
         <div className="hidden md:flex items-center gap-4 z-10">
-          <a href={`${dashboardUrl}/login`} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
-            Sign In
-          </a>
-          <Button
-            asChild
-            size="sm"
-            className="rounded-xl px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <a href={`${dashboardUrl}/register`}>Start Free</a>
-          </Button>
+          {session ? (
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDropdownOpen(!dropdownOpen);
+                }}
+                className="flex items-center gap-2 focus:outline-none cursor-pointer"
+              >
+                <img
+                  src={session.user.user_metadata.avatar_url || '/default-avatar.png'}
+                  alt="User profile"
+                  className="w-8 h-8 rounded-full border border-border/80 object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${session.user.user_metadata.full_name || 'User'}`;
+                  }}
+                />
+              </button>
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-48 bg-card border border-border/60 rounded-xl shadow-lg py-1 z-50 overflow-hidden"
+                  >
+                    <div className="px-4 py-2 border-b border-border/30">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {session.user.user_metadata.full_name || 'User'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {session.user.email}
+                      </p>
+                    </div>
+                    <a
+                      href={dashboardUrl}
+                      className="block px-4 py-2 text-xs text-foreground hover:bg-secondary/60 transition-colors"
+                    >
+                      Dashboard
+                    </a>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left block px-4 py-2 text-xs text-destructive hover:bg-secondary/60 transition-colors cursor-pointer"
+                    >
+                      Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <>
+              <a href={`${dashboardUrl}/login`} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
+                Sign In
+              </a>
+              <Button
+                asChild
+                size="sm"
+                className="rounded-xl px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <a href={`${dashboardUrl}/register`}>Start Free</a>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden p-2 text-foreground hover:text-muted-foreground focus:outline-none"
+          className="md:hidden p-2 text-foreground hover:text-muted-foreground focus:outline-none z-10"
           aria-label="Toggle Menu"
         >
           <svg
@@ -123,21 +218,60 @@ export default function Navbar() {
                 </a>
               ))}
               <hr className="border-border/40" />
-              <div className="flex flex-col gap-3 pb-2">
-                <a
-                  href={`${dashboardUrl}/login`}
-                  onClick={() => setIsOpen(false)}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
-                >
-                  Sign In
-                </a>
-                <Button
-                  asChild
-                  className="w-full rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground text-center"
-                >
-                  <a href={`${dashboardUrl}/register`} onClick={() => setIsOpen(false)}>Start Free</a>
-                </Button>
-              </div>
+              {session ? (
+                <div className="flex flex-col gap-3 pb-2">
+                  <div className="flex items-center gap-3 py-1">
+                    <img
+                      src={session.user.user_metadata.avatar_url || '/default-avatar.png'}
+                      alt="Profile"
+                      className="w-9 h-9 rounded-full border border-border/80 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${session.user.user_metadata.full_name || 'User'}`;
+                      }}
+                    />
+                    <div className="flex flex-col overflow-hidden">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {session.user.user_metadata.full_name || 'User'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {session.user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href={dashboardUrl}
+                    onClick={() => setIsOpen(false)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
+                  >
+                    Dashboard
+                  </a>
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      handleLogout();
+                    }}
+                    className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors py-1 text-left cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 pb-2">
+                  <a
+                    href={`${dashboardUrl}/login`}
+                    onClick={() => setIsOpen(false)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1 text-center"
+                  >
+                    Sign In
+                  </a>
+                  <Button
+                    asChild
+                    className="w-full rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground text-center"
+                  >
+                    <a href={`${dashboardUrl}/register`} onClick={() => setIsOpen(false)}>Start Free</a>
+                  </Button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

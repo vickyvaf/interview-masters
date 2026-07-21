@@ -81,7 +81,13 @@ export default function Billing() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user logged in')
 
-      const response = await fetch('http://localhost:5005/payments/create-checkout', {
+      const apiBaseUrl = import.meta.env.VITE_API_URL || (
+        window.location.hostname === 'localhost'
+          ? 'http://localhost:5005'
+          : 'https://backend-interviewmasters.netlify.app'
+      );
+
+      const response = await fetch(`${apiBaseUrl}/payments/create-checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

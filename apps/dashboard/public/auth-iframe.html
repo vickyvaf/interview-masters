@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Auth Sync</title>
+</head>
+<body>
+  <script>
+    // Listen for requests from parent landing page
+    window.addEventListener('message', (event) => {
+      // Security: verify origin is localhost or netlify.app
+      const origin = event.origin;
+      const isAllowed = 
+        origin.startsWith('http://localhost:') || 
+        origin.endsWith('netlify.app') || 
+        origin.includes('interviewmasters.id');
+
+      if (!isAllowed) return;
+
+      if (event.data === 'get_session') {
+        const key = 'sb-dcouzpirkktfxklgqqwv-auth-token';
+        const raw = localStorage.getItem(key);
+        event.source.postMessage({ type: 'session_data', raw }, origin);
+      }
+    });
+  </script>
+</body>
+</html>

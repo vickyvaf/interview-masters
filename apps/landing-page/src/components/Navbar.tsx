@@ -79,6 +79,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Features', href: '#features' },
+    { name: 'Why Us', href: '#why-us' },
     { name: 'Pricing', href: '#pricing' },
     { name: 'FAQ', href: '#faq' },
   ];

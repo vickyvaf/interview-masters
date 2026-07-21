@@ -1,8 +1,8 @@
 ---
-
+const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173';
 ---
 
-<section id="pricing" class="w-full py-20 bg-background border-t border-border/30">
+<section id="pricing" data-dashboard-url={dashboardUrl} class="w-full py-20 bg-background border-t border-border/30">
   <div class="max-w-5xl mx-auto px-6">
     <!-- Header -->
     <div
@@ -62,7 +62,7 @@
         </ul>
 
         <a
-          href="http://localhost:5173/register"
+          href={`${dashboardUrl}/register`}
           class="w-full text-center py-3 text-sm font-semibold rounded-xl border border-border hover:bg-secondary text-foreground transition-all"
         >
           Mulai Gratis
@@ -162,7 +162,7 @@
         </ul>
 
         <a
-          href="http://localhost:5173/billing"
+          href={`${dashboardUrl}/billing`}
           class="checkout-link w-full text-center py-3 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all"
         >
           Langganan Pro
@@ -259,7 +259,7 @@
         </ul>
 
         <a
-          href="http://localhost:5173/billing"
+          href={`${dashboardUrl}/billing`}
           class="checkout-link w-full text-center py-3 text-sm font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all"
         >
           Beli Paket Sprint
@@ -316,10 +316,12 @@
     const hasSession = cookies.some(c => c.trim().startsWith('im_session='));
     
     if (!hasSession) {
+      const pricingSection = document.getElementById('pricing');
+      const dashboardUrl = pricingSection ? pricingSection.getAttribute('data-dashboard-url') : 'http://localhost:5173';
       const checkoutLinks = document.querySelectorAll('.checkout-link');
       checkoutLinks.forEach(link => {
         // Redirect them to login page first
-        link.setAttribute('href', 'http://localhost:5173/login?redirectTo=/billing');
+        link.setAttribute('href', `${dashboardUrl}/login?redirectTo=/billing`);
       });
     }
   } catch (e) {

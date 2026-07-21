@@ -37,7 +37,7 @@ function syncSessionToLanding(session: any) {
   const landingUrl = import.meta.env.VITE_LANDING_URL || (
     window.location.hostname === 'localhost'
       ? 'http://localhost:4321'
-      : 'https://interviewmasters.id'
+      : 'https://interviewmasters.netlify.app'
   );
 
   if (session) {
@@ -90,12 +90,12 @@ function App() {
 
   if (loading) {
     return (
-      <Flex 
-        height="100vh" 
-        align="center" 
-        justify="center" 
-        direction="column" 
-        gap="3" 
+      <Flex
+        height="100vh"
+        align="center"
+        justify="center"
+        direction="column"
+        gap="3"
         style={{ backgroundColor: 'var(--color-background)' }}
       >
         <Spinner size="3" />

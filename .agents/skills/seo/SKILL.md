@@ -64,7 +64,50 @@ For the main landing page, include a `SoftwareApplication` and `FAQPage` schema:
 </script>
 ```
 
-### 3. AI-Scraper Optimization (`robots.txt`)
+### 3. Google Sitelinks Optimization Checklist
+Sitelinks (seperti tampilan menu navigasi tambahan di hasil pencarian Google) dihasilkan secara otomatis oleh algoritma Google. Untuk memaksimalkan peluang mendapatkannya:
+* **Struktur Navigasi Jelas**: Pastikan header menu menggunakan tag HTML semantik `<nav>` dengan link (`<a>`) yang memiliki teks deskriptif (misal: "Fitur Utama", "Paket Harga", "Pertanyaan Umum", "Masuk Akun"). Hindari teks link yang terlalu pendek atau ambigu.
+* **Terapkan Sitemap XML**: Selalu daftarkan `sitemap.xml` di Google Search Console yang mendata seluruh rute penting (misal: `/`, `/sync-session`).
+* **Sitelinks Search Box Schema**: Gunakan skema `WebSite` dengan properti `potentialAction` untuk mengizinkan search box langsung di hasil Google.
+* **SiteNavigationElement Schema**: Definisikan item menu utama menggunakan skema `SiteNavigationElement` agar Google mudah mengurai link-link penting.
+
+```html
+<!-- Sitelinks & Search Box Schema (JSON-LD) -->
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Interview Masters",
+    "url": "https://interviewmasters.id",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://interviewmasters.id/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SiteNavigationElement",
+    "@id": "#header-navigation",
+    "name": [
+      "Fitur Utama",
+      "Paket & Harga",
+      "Mulai Gratis",
+      "Masuk Akun"
+    ],
+    "url": [
+      "https://interviewmasters.id/#features",
+      "https://interviewmasters.id/#pricing",
+      "https://dashboard-interviewmasters.netlify.app/register",
+      "https://dashboard-interviewmasters.netlify.app/login"
+    ]
+  }
+]
+</script>
+```
+
+### 4. AI-Scraper Optimization (`robots.txt`)
 Ensure AI crawlers are explicitly allowed to index the public landing pages:
 ```txt
 User-agent: Google-Extended

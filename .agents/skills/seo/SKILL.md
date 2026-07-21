@@ -79,10 +79,10 @@ Sitelinks (seperti tampilan menu navigasi tambahan di hasil pencarian Google) di
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Interview Masters",
-    "url": "https://interviewmasters.id",
+    "url": "https://interviewmasters.netlify.app",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://interviewmasters.id/?q={search_term_string}",
+      "target": "https://interviewmasters.netlify.app/?q={search_term_string}",
       "query-input": "required name=search_term_string"
     }
   },
@@ -97,8 +97,8 @@ Sitelinks (seperti tampilan menu navigasi tambahan di hasil pencarian Google) di
       "Masuk Akun"
     ],
     "url": [
-      "https://interviewmasters.id/#features",
-      "https://interviewmasters.id/#pricing",
+      "https://interviewmasters.netlify.app/#features",
+      "https://interviewmasters.netlify.app/#pricing",
       "https://dashboard-interviewmasters.netlify.app/register",
       "https://dashboard-interviewmasters.netlify.app/login"
     ]

@@ -35,6 +35,19 @@ export default function Navbar() {
 
   React.useEffect(() => {
     try {
+      // 1. Try reading the shared cookie first (works on localhost cross-port and production subdomains)
+      const cookies = document.cookie.split(';');
+      const sessionCookie = cookies.find(c => c.trim().startsWith('im_session='));
+      if (sessionCookie) {
+        const rawValue = decodeURIComponent(sessionCookie.split('=')[1]);
+        const parsed = JSON.parse(rawValue) as SupabaseSession;
+        if (parsed?.user) {
+          setSession(parsed);
+          return;
+        }
+      }
+
+      // 2. Fallback to localStorage if cookie is not present
       const key = 'sb-dcouzpirkktfxklgqqwv-auth-token';
       const raw = localStorage.getItem(key);
       if (raw) {
@@ -56,6 +69,9 @@ export default function Navbar() {
   }, [dropdownOpen]);
 
   const handleLogout = () => {
+    // Clear cookie
+    document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+    // Clear localStorage
     localStorage.removeItem('sb-dcouzpirkktfxklgqqwv-auth-token');
     setSession(null);
     window.location.reload();

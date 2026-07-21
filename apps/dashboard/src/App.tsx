@@ -14,6 +14,25 @@ import Register from './pages/Register'
 
 import { Flex, Spinner, Text } from '@radix-ui/themes'
 
+function setSessionCookie(session: any) {
+  if (session) {
+    const data = {
+      user: {
+        id: session.user.id,
+        email: session.user.email,
+        user_metadata: {
+          avatar_url: session.user.user_metadata?.avatar_url,
+          full_name: session.user.user_metadata?.full_name,
+        }
+      }
+    };
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+    document.cookie = `im_session=${encodeURIComponent(JSON.stringify(data))}; path=/; expires=${expires}; SameSite=Lax`;
+  } else {
+    document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+  }
+}
+
 function App() {
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -21,11 +40,13 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      setSessionCookie(session)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      setSessionCookie(session)
       setLoading(false)
     })
 

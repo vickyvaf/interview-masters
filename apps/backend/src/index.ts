@@ -196,6 +196,23 @@ app.post('/webhook/doku', async (c) => {
             console.error(`[Webhook] Failed to update user tier: ${await updateRes.text()}`)
           }
 
+          // 2.5. Deactivate any previous active subscriptions for this user
+          const deactivateRes = await fetch(`${supabaseUrl}/rest/v1/subscriptions?user_id=eq.${user.id}&status=eq.active`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': supabaseKey || '',
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              status: 'canceled',
+              updated_at: new Date().toISOString()
+            })
+          })
+          if (!deactivateRes.ok) {
+            console.warn(`[Webhook] Failed to deactivate old subscriptions: ${await deactivateRes.text()}`)
+          }
+
           // 3. Insert or update subscriptions table
           const periodEnd = determinedTier === 'sprint'
             ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()

@@ -364,17 +364,153 @@ async function generateGeminiResponse(message: string, history: GeminiMessage[] 
   return `[Gemini Error: ${lastError?.message || lastError}] Terima kasih atas jawaban Anda. Bisakah Anda menjelaskan lebih detail menggunakan metode STAR?`
 }
 
-wss.on('connection', (ws, req) => {
+const supabaseUrl = process.env.SUPABASE_URL || ''
+const supabaseKey = process.env.SUPABASE_SECRET_KEY || ''
+
+async function supabaseRequest(path: string, method: 'GET' | 'POST' | 'PATCH', body?: any) {
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('[Supabase] Missing credentials for request:', path)
+    return null
+  }
+  try {
+    const headers: any = {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json'
+    }
+    if (method === 'POST') {
+      headers['Prefer'] = 'return=representation'
+    }
+    const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
+    })
+    if (!response.ok) {
+      console.error(`Supabase error on ${method} ${path}:`, await response.text())
+      return null
+    }
+    return await response.json()
+  } catch (err) {
+    console.error(`Supabase request exception on ${method} ${path}:`, err)
+    return null
+  }
+}
+
+async function generateEvaluation(questionText: string, answerText: string): Promise<any> {
+  if (!GEMINI_API_KEY) {
+    return {
+      overall_score: 80,
+      structure_score: 80,
+      relevance_score: 80,
+      brevity_score: 80,
+      feedback_text: 'Bagus, pertahankan.',
+      highlights_rambling: null,
+      what_you_could_have_said: 'Saya memiliki pengalaman...'
+    }
+  }
+
+  const prompt = `Anda adalah penilai simulasi wawancara kerja yang profesional. Evaluasi jawaban kandidat terhadap pertanyaan berikut.
+
+Pertanyaan: "${questionText}"
+Jawaban: "${answerText}"
+
+Berikan penilaian dalam format JSON dengan kunci berikut (pastikan hanya mengembalikan JSON valid tanpa format markdown atau penjelasan lain):
+{
+  "overall_score": (angka antara 0 dan 100),
+  "structure_score": (angka antara 0 dan 100),
+  "relevance_score": (angka antara 0 dan 100),
+  "brevity_score": (angka antara 0 dan 100),
+  "feedback_text": "(penjelasan evaluasi terperinci dalam Bahasa Indonesia)",
+  "highlights_rambling": "(kutipan bagian jawaban yang bertele-tele atau null jika tidak ada)",
+  "what_you_could_have_said": "(saran jawaban alternatif yang lebih baik)"
+}`
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json'
+        }
+      })
+    })
+
+    if (response.ok) {
+      const resData: any = await response.json()
+      const text = resData.candidates?.[0]?.content?.parts?.[0]?.text
+      if (text) {
+        return JSON.parse(text)
+      }
+    }
+  } catch (err) {
+    console.error('Error generating evaluation:', err)
+  }
+
+  return {
+    overall_score: 70,
+    structure_score: 70,
+    relevance_score: 70,
+    brevity_score: 70,
+    feedback_text: 'Evaluasi tidak dapat dihasilkan secara otomatis.',
+    highlights_rambling: null,
+    what_you_could_have_said: 'Coba berikan jawaban yang lebih terstruktur menggunakan metode STAR.'
+  }
+}
+
+wss.on('connection', async (ws, req) => {
   const url = new URL(req.url || '', 'http://localhost')
   if (url.pathname !== '/ws/voice') {
     ws.close(1008, 'Unsupported path')
     return
   }
 
-  console.log(`\n[WS] Client connected. SYSTEM_LANGUAGE is '${SYSTEM_LANGUAGE}'`)
+  const userId = url.searchParams.get('userId')
+  const role = url.searchParams.get('role') || 'General'
+  const jobDescription = url.searchParams.get('jobDescription') || ''
+  const preConfidence = parseInt(url.searchParams.get('preConfidence') || '3')
 
-  // Local connection state to maintain conversation context
+  console.log(`\n[WS] Client connected. SYSTEM_LANGUAGE is '${SYSTEM_LANGUAGE}', userId: '${userId}'`)
+
+  // Local connection state to maintain conversation context & database keys
   const connectionHistory: GeminiMessage[] = []
+  const connectionScores: number[] = []
+  
+  let mockInterviewId: string | null = null
+  let questionSequence = 1
+  let lastQuestionId: string | null = null
+  let lastQuestionText = ''
+
+  // 1. Initialize Mock Interview Session in Supabase
+  if (userId) {
+    const interviewRes = await supabaseRequest('mock_interviews', 'POST', {
+      user_id: userId,
+      target_role: role,
+      job_description: jobDescription,
+      pre_confidence_score: preConfidence,
+      status: 'started'
+    })
+    if (interviewRes && interviewRes.length > 0) {
+      mockInterviewId = interviewRes[0].id
+      console.log(`[WS] Created mock interview session in Supabase: ${mockInterviewId}`)
+
+      // Create the first interview question row for the greeting/intro question
+      const greetingText = `Halo. Saya adalah pewawancara AI Anda hari ini. Selamat datang di simulasi wawancara untuk posisi ${role}. Mari kita mulai. Silakan perkenalkan diri Anda terlebih dahulu.`
+      lastQuestionText = greetingText
+      const questionRes = await supabaseRequest('interview_questions', 'POST', {
+        mock_interview_id: mockInterviewId,
+        question_text: greetingText,
+        sequence_number: questionSequence++
+      })
+      if (questionRes && questionRes.length > 0) {
+        lastQuestionId = questionRes[0].id
+        console.log(`[WS] Created initial question row: ${lastQuestionId}`)
+      }
+    }
+  }
 
   // Send session.started event
   ws.send(JSON.stringify({
@@ -394,19 +530,73 @@ wss.on('connection', (ws, req) => {
       if (eventType === 'user.transcript') {
         const userText = eventData.text || ''
         console.log(`\n[WS] Received user.transcript: '${userText}'`)
+
+        // Save candidate's answer and trigger evaluation in the background
+        const currentQuestionId = lastQuestionId
+        const currentQuestionText = lastQuestionText
+
+        if (currentQuestionId) {
+          supabaseRequest('interview_answers', 'POST', {
+            interview_question_id: currentQuestionId,
+            answer_text: userText,
+            response_mode: 'voice'
+          }).then(async (answerRes) => {
+            if (answerRes && answerRes.length > 0) {
+              const answerId = answerRes[0].id
+              console.log(`[WS] Saved answer in Supabase: ${answerId}`)
+
+              // Generate AI evaluation and save to ai_feedbacks
+              const evaluation = await generateEvaluation(currentQuestionText, userText)
+              if (evaluation) {
+                connectionScores.push(evaluation.overall_score || 70)
+                await supabaseRequest('ai_feedbacks', 'POST', {
+                  interview_answer_id: answerId,
+                  structure_score: evaluation.structure_score || 70,
+                  relevance_score: evaluation.relevance_score || 70,
+                  brevity_score: evaluation.brevity_score || 70,
+                  overall_score: evaluation.overall_score || 70,
+                  feedback_text: evaluation.feedback_text || 'Bagus.',
+                  highlights_rambling: evaluation.highlights_rambling,
+                  what_you_could_have_said: evaluation.what_you_could_have_said || ''
+                })
+                console.log(`[WS] Saved AI evaluation in Supabase for answer: ${answerId}`)
+              }
+            }
+          }).catch(err => {
+            console.error('[WS] Error processing answer/evaluation save:', err)
+          })
+        }
+
         console.log(`[LLM] Processing response using model: ${LLM_MODEL}...`)
 
-        // 1. Generate Chat Response
+        // Generate Chat Response
         const assistantText = await generateGeminiResponse(userText, connectionHistory)
         console.log(`[LLM] Generated response: '${assistantText}'`)
 
-        // 2. Update session history
+        // Update session history
         connectionHistory.push(
           { role: 'user', parts: [{ text: userText }] },
           { role: 'model', parts: [{ text: assistantText }] }
         )
 
-        // 3. Send back to client
+        // Save the next question to database
+        if (mockInterviewId) {
+          lastQuestionText = assistantText
+          supabaseRequest('interview_questions', 'POST', {
+            mock_interview_id: mockInterviewId,
+            question_text: assistantText,
+            sequence_number: questionSequence++
+          }).then(questionRes => {
+            if (questionRes && questionRes.length > 0) {
+              lastQuestionId = questionRes[0].id
+              console.log(`[WS] Saved next question: ${lastQuestionId}`)
+            }
+          }).catch(err => {
+            console.error('[WS] Error saving next question:', err)
+          })
+        }
+
+        // Send back to client
         ws.send(JSON.stringify({
           event: 'assistant.text',
           data: { text: assistantText }
@@ -428,7 +618,20 @@ wss.on('connection', (ws, req) => {
     }
   })
 
-  ws.on('close', () => {
+  ws.on('close', async () => {
     console.log('[WS] Client disconnected')
+    if (mockInterviewId) {
+      const status = connectionScores.length > 0 ? 'completed' : 'abandoned'
+      const avgScore = connectionScores.length > 0 
+        ? Math.round(connectionScores.reduce((a, b) => a + b, 0) / connectionScores.length)
+        : null
+
+      console.log(`[WS] Finalizing interview session ${mockInterviewId}. Status: ${status}, Avg Score: ${avgScore}`)
+      await supabaseRequest(`mock_interviews?id=eq.${mockInterviewId}`, 'PATCH', {
+        status,
+        overall_score: avgScore,
+        completed_at: new Date().toISOString()
+      })
+    }
   })
 })

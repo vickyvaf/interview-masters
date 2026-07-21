@@ -180,69 +180,89 @@ export default function Practice() {
 
   // 2. Setup WebSocket Connection to Backend
   useEffect(() => {
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:5005/ws/voice'
-    const socket = new WebSocket(wsUrl)
-    wsRef.current = socket
+    let socket: WebSocket | null = null;
+    let isCancelled = false;
 
-    socket.onopen = () => {
-      setWsStatus('connected')
-    }
+    async function initSocket() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || isCancelled) return
 
-    socket.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data)
-        const eventType = payload.event
-        const eventData = payload.data || {}
+      const preConfidence = location.state?.preConfidence || 3
+      const roleParam = encodeURIComponent(role || 'General')
+      const jdParam = encodeURIComponent(location.state?.jobDescription || '')
+      
+      const baseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:5005/ws/voice'
+      const wsUrl = `${baseUrl}?userId=${user.id}&role=${roleParam}&jobDescription=${jdParam}&preConfidence=${preConfidence}`
+      
+      socket = new WebSocket(wsUrl)
+      wsRef.current = socket
 
-        if (eventType === 'session.started') {
-          const sysLang = eventData.system_language || 'id'
-          setSystemLanguage(sysLang)
-          systemLanguageRef.current = sysLang
-        } else if (eventType === 'user.transcript') {
-          const text = eventData.text || ''
-          if (text) {
-            setHistory((prev) => [...prev, { role: 'user', text }])
+      socket.onopen = () => {
+        setWsStatus('connected')
+      }
+
+      socket.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data)
+          const eventType = payload.event
+          const eventData = payload.data || {}
+
+          if (eventType === 'session.started') {
+            const sysLang = eventData.system_language || 'id'
+            setSystemLanguage(sysLang)
+            systemLanguageRef.current = sysLang
+          } else if (eventType === 'user.transcript') {
+            const text = eventData.text || ''
+            if (text) {
+              setHistory((prev) => [...prev, { role: 'user', text }])
+            }
+          } else if (eventType === 'assistant.text') {
+            const text = eventData.text || ''
+            setIsThinking(false)
+            if (text) {
+              setHistory((prev) => [...prev, { role: 'assistant', text }])
+              const cleanedText = text.replace(/\*/g, '')
+              const utterance = new SpeechSynthesisUtterance(cleanedText)
+              utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
+              utterance.onstart = () => setIsSpeaking(true)
+              utterance.onend = () => setIsSpeaking(false)
+              utterance.onerror = () => setIsSpeaking(false)
+              window.speechSynthesis.cancel()
+              window.speechSynthesis.speak(utterance)
+            }
+          } else if (eventType === 'error') {
+            console.error('Backend WS Error:', eventData.message)
+            setIsThinking(false)
           }
-        } else if (eventType === 'assistant.text') {
-          const text = eventData.text || ''
-          setIsThinking(false)
-          if (text) {
-            setHistory((prev) => [...prev, { role: 'assistant', text }])
-            const cleanedText = text.replace(/\*/g, '')
-            const utterance = new SpeechSynthesisUtterance(cleanedText)
-            utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
-            utterance.onstart = () => setIsSpeaking(true)
-            utterance.onend = () => setIsSpeaking(false)
-            utterance.onerror = () => setIsSpeaking(false)
-            window.speechSynthesis.cancel()
-            window.speechSynthesis.speak(utterance)
-          }
-        } else if (eventType === 'error') {
-          console.error('Backend WS Error:', eventData.message)
-          setIsThinking(false)
+        } catch (err) {
+          console.error('Error processing WS message:', err)
         }
-      } catch (err) {
-        console.error('Error processing WS message:', err)
+      }
+
+      socket.onerror = (err) => {
+        console.error('WebSocket Error:', err)
+        setWsStatus('error')
+      }
+
+      socket.onclose = () => {
+        setWsStatus('disconnected')
       }
     }
 
-    socket.onerror = (err) => {
-      console.error('WebSocket Error:', err)
-      setWsStatus('error')
-    }
-
-    socket.onclose = () => {
-      setWsStatus('disconnected')
-    }
+    initSocket()
 
     return () => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.close()
-      } else if (socket.readyState === WebSocket.CONNECTING) {
-        socket.onopen = () => {
-          try {
-            socket.close()
-          } catch (e) { }
+      isCancelled = true;
+      const activeSocket = socket
+      if (activeSocket) {
+        if (activeSocket.readyState === WebSocket.OPEN) {
+          activeSocket.close()
+        } else if (activeSocket.readyState === WebSocket.CONNECTING) {
+          activeSocket.onopen = () => {
+            try {
+              activeSocket.close()
+            } catch (e) { }
+          }
         }
       }
     }

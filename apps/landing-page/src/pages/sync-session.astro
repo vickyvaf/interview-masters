@@ -1,0 +1,48 @@
+---
+---
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Menyinkronkan Sesi...</title>
+</head>
+<body>
+  <div style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; gap: 12px; background: #08080a; color: #ffffff;">
+    <div style="border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #ffffff; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;"></div>
+    <span style="font-size: 14px; letter-spacing: 0.05em;">MENYINKRONKAN SESI...</span>
+  </div>
+
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const logout = urlParams.get('logout');
+    const data = urlParams.get('data');
+    const returnTo = urlParams.get('returnTo');
+
+    if (logout === 'true') {
+      // Clear cookie
+      document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+    } else if (data) {
+      try {
+        const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+        document.cookie = `im_session=${encodeURIComponent(data)}; path=/; expires=${expires}; SameSite=Lax`;
+      } catch (e) {
+        console.error('Error saving synced session:', e);
+      }
+    }
+    
+    // Redirect back to dashboard/returnTo
+    if (returnTo) {
+      window.location.href = returnTo;
+    } else {
+      window.location.href = window.location.hostname === 'localhost' ? 'http://localhost:5173/dashboard' : 'https://dashboard-interviewmasters.netlify.app/dashboard';
+    }
+  </script>
+</body>
+</html>

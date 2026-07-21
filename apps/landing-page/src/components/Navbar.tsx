@@ -51,52 +51,7 @@ export default function Navbar() {
     }
   }, []);
 
-  // 2. Set up message listener for the cross-origin auth-sync iframe
-  React.useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Security: verify origin is dashboard
-      if (event.origin !== dashboardUrl) return;
 
-      if (event.data && event.data.type === 'session_data') {
-        const raw = event.data.raw;
-        if (raw) {
-          try {
-            const parsed = JSON.parse(raw);
-            if (parsed?.user) {
-              setSession(parsed);
-              // Store locally in cookie for faster load next time
-              const data = {
-                user: {
-                  id: parsed.user.id,
-                  email: parsed.user.email,
-                  user_metadata: {
-                    avatar_url: parsed.user.user_metadata?.avatar_url,
-                    full_name: parsed.user.user_metadata?.full_name,
-                  }
-                }
-              };
-              const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
-              document.cookie = `im_session=${encodeURIComponent(JSON.stringify(data))}; path=/; expires=${expires}; SameSite=Lax`;
-            }
-          } catch (e) {
-            console.error('Error parsing cross-origin session', e);
-          }
-        } else {
-          // If dashboard has no session, make sure we clear local cookie
-          document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
-          setSession(null);
-        }
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [dashboardUrl]);
-
-  const handleIframeLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
-    const iframe = e.currentTarget;
-    iframe.contentWindow?.postMessage('get_session', dashboardUrl);
-  };
 
   React.useEffect(() => {
     if (!dropdownOpen) return;
@@ -329,12 +284,6 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Hidden iframe for cross-origin auth sync (crucial for Netlify subdomains) */}
-      <iframe
-        src={`${dashboardUrl}/auth-iframe.html`}
-        style={{ display: 'none' }}
-        onLoad={handleIframeLoad}
-      />
     </motion.header>
   );
 }

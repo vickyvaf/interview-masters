@@ -33,6 +33,37 @@ function setSessionCookie(session: any) {
   }
 }
 
+function syncSessionToLanding(session: any) {
+  const landingUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:4321'
+    : 'https://interviewmasters.netlify.app';
+
+  if (session) {
+    const currentSynced = localStorage.getItem('im_session_synced_user');
+    if (currentSynced === session.user.id) {
+      return; // Already synced this user
+    }
+    const data = {
+      user: {
+        id: session.user.id,
+        email: session.user.email,
+        user_metadata: {
+          avatar_url: session.user.user_metadata?.avatar_url,
+          full_name: session.user.user_metadata?.full_name,
+        }
+      }
+    };
+    localStorage.setItem('im_session_synced_user', session.user.id);
+    window.location.href = `${landingUrl}/sync-session?data=${encodeURIComponent(JSON.stringify(data))}&returnTo=${encodeURIComponent(window.location.href)}`;
+  } else {
+    const currentSynced = localStorage.getItem('im_session_synced_user');
+    if (currentSynced) {
+      localStorage.removeItem('im_session_synced_user');
+      window.location.href = `${landingUrl}/sync-session?logout=true&returnTo=${encodeURIComponent(window.location.href)}`;
+    }
+  }
+}
+
 function App() {
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -41,12 +72,14 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setSessionCookie(session)
+      syncSessionToLanding(session)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setSessionCookie(session)
+      syncSessionToLanding(session)
       setLoading(false)
     })
 

@@ -163,7 +163,7 @@
 
         <a
           href="http://localhost:5173/billing"
-          class="w-full text-center py-3 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all"
+          class="checkout-link w-full text-center py-3 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all"
         >
           Langganan Pro
         </a>
@@ -260,7 +260,7 @@
 
         <a
           href="http://localhost:5173/billing"
-          class="w-full text-center py-3 text-sm font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all"
+          class="checkout-link w-full text-center py-3 text-sm font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all"
         >
           Beli Paket Sprint
         </a>
@@ -309,4 +309,20 @@
   document.querySelectorAll(".pricing-element").forEach((el) => {
     observer.observe(el);
   });
+
+  // Client-side authentication routing check for pricing checkout links
+  try {
+    const cookies = document.cookie.split(';');
+    const hasSession = cookies.some(c => c.trim().startsWith('im_session='));
+    
+    if (!hasSession) {
+      const checkoutLinks = document.querySelectorAll('.checkout-link');
+      checkoutLinks.forEach(link => {
+        // Redirect them to login page first
+        link.setAttribute('href', 'http://localhost:5173/login?redirectTo=/billing');
+      });
+    }
+  } catch (e) {
+    console.error('Error checking user session in PricingSection', e);
+  }
 </script>

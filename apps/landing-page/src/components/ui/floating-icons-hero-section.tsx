@@ -82,27 +82,42 @@ const FloatingIconsHero = React.forwardRef<
       'w-20 h-20 md:w-22 md:h-22 rounded-[28px]',
     ];
 
-    // Define 12 well-spaced, staggered anchor points to guarantee no overlapping
+    // Define 22 staggered anchor points to provide a randomized layout on every mount
     const anchorPoints = [
-      { top: 12, left: 8 },   // Top Left
-      { top: 28, left: 16 },  // Middle-Top Left
-      { top: 44, left: 8 },   // Middle-Bottom Left
-      { top: 60, left: 16 },  // Bottom-Middle Left
-      { top: 76, left: 8 },   // Bottom Left
-      { top: 12, left: 90 },  // Top Right
-      { top: 28, left: 80 },  // Middle-Top Right
-      { top: 44, left: 90 },  // Middle-Bottom Right
-      { top: 60, left: 80 },  // Bottom-Middle Right
-      { top: 76, left: 90 },  // Bottom Right
-      { top: 10, left: 48 },  // Top Center
-      { top: 82, left: 48 },  // Bottom Center
+      // Left Column Area
+      { top: 10, left: 6 },
+      { top: 22, left: 14 },
+      { top: 34, left: 8 },
+      { top: 46, left: 18 },
+      { top: 58, left: 10 },
+      { top: 70, left: 20 },
+      { top: 80, left: 8 },
+      { top: 88, left: 16 },
+
+      // Right Column Area
+      { top: 12, left: 92 },
+      { top: 24, left: 82 },
+      { top: 36, left: 88 },
+      { top: 48, left: 78 },
+      { top: 60, left: 90 },
+      { top: 72, left: 80 },
+      { top: 82, left: 92 },
+      { top: 90, left: 84 },
+
+      // Top & Bottom Center Areas
+      { top: 7, left: 32 },
+      { top: 9, left: 68 },
+      { top: 84, left: 30 },
+      { top: 91, left: 64 },
     ];
 
-    // Shuffle anchor points to randomize which logo goes to which coordinate
-    const shuffledPoints = anchorPoints.sort(() => 0.5 - Math.random());
+    // Shuffle and pick 12 random coordinates from the pool
+    const selectedPoints = [...anchorPoints]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 12);
 
     const instances = selected.map((icon, idx) => {
-      const anchor = shuffledPoints[idx] || { top: 50, left: 50 };
+      const anchor = selectedPoints[idx] || { top: 50, left: 50 };
       
       // Add a small jitter (+/- 2%) to keep a random feel without overlapping
       const jitterTop = (Math.random() - 0.5) * 4; // range [-2, 2]

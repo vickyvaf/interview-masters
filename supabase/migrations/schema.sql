@@ -77,7 +77,7 @@ CREATE TABLE payments (
     subscription_id uuid REFERENCES subscriptions(id) ON DELETE SET NULL,
     user_id uuid REFERENCES users(id) ON DELETE SET NULL,
     invoice_id text,
-    payment_gateway text, -- e.g., midtrans, stripe
+    payment_gateway text, -- e.g., doku
     transaction_id text UNIQUE,
     amount decimal(10,2) NOT NULL,
     status text NOT NULL, -- e.g., pending, settlement, capture, expire, refund

@@ -191,6 +191,7 @@ export default function Billing() {
 
   const getTierBadge = () => {
     if (tier === 'pro') return <Badge color="green" variant="solid">Pro Plan</Badge>
+    if (tier === 'sprint') return <Badge color="orange" variant="solid">14-Day Sprint</Badge>
     if (tier === 'b2b') return <Badge color="purple" variant="solid">B2B Enterprise</Badge>
     return <Badge color="blue" variant="solid">Free Trial</Badge>
   }
@@ -218,6 +219,7 @@ export default function Billing() {
               </Flex>
               <Heading size="2">
                 {tier === 'pro' && 'Pro Tier (Langganan)'}
+                {tier === 'sprint' && '14-Day Sprint (Program)'}
                 {tier === 'b2b' && 'B2B Enterprise (Organisasi)'}
                 {tier === 'free' && 'Free Tier (Gratis)'}
               </Heading>
@@ -277,20 +279,11 @@ export default function Billing() {
                     <Text size="2">Umpan balik dasar (basic feedback)</Text>
                   </Flex>
                 </Flex>
-
-                <Button
-                  size="2"
-                  variant="outline"
-                  disabled={tier === 'free'}
-                  style={{ marginTop: 'auto' }}
-                >
-                  {tier === 'free' ? 'Paket Aktif' : 'Free Tier'}
-                </Button>
               </Flex>
             </Card>
 
             {/* Pro Plan */}
-            <Card size="3" style={{ border: tier === 'pro' ? '2px solid var(--green-9)' : '2px solid var(--accent-9)' }}>
+            <Card size="3" style={{ border: tier === 'pro' ? '2px solid var(--green-9)' : '1px solid var(--gray-5)' }}>
               <Flex direction="column" gap="4" style={{ height: '100%' }}>
                 <Flex justify="between" align="start">
                   <Flex direction="column" gap="1">
@@ -344,7 +337,7 @@ export default function Billing() {
             </Card>
 
             {/* 14-day Interview Sprint Plan */}
-            <Card size="3">
+            <Card size="3" style={{ border: tier === 'sprint' ? '2px solid var(--orange-9)' : '1px solid var(--gray-5)' }}>
               <Flex direction="column" gap="4" style={{ height: '100%' }}>
                 <Flex direction="column" gap="1">
                   <Flex align="center" gap="2">
@@ -382,14 +375,14 @@ export default function Billing() {
 
                 <Button 
                   size="2" 
-                  variant="solid" 
+                  variant={tier === 'sprint' ? 'outline' : 'solid'} 
                   color="orange" 
                   onClick={() => handleUpgrade('sprint')}
                   loading={upgradeMutation.isPending && activePlan === 'sprint'}
-                  disabled={tier === 'pro'}
-                  style={{ marginTop: 'auto', cursor: 'pointer' }}
+                  disabled={tier === 'sprint'}
+                  style={{ marginTop: 'auto' }}
                 >
-                  Beli Paket Sprint
+                  {tier === 'sprint' ? 'Paket Aktif' : 'Beli Paket Sprint'}
                 </Button>
               </Flex>
             </Card>

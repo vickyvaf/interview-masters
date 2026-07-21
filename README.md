@@ -95,8 +95,8 @@ A **24-year-old recent college graduate** applying for their first serious full-
 - **Core AI Voice Flow**: User voice input transcribed to text at frontend → Sent over WebSocket to backend → LLM/Chat Engine generates response → Sent back to frontend → Read aloud via text-to-speech.
 - REST HTTP Endpoints:
   - `GET /health` - Health check endpoint.
-  - `POST /payments/create-checkout` - Generates a secure checkout payment link using Mayar API based on target plan (Pro or 14-Day Sprint).
-  - `POST /webhook/mayar` - Receives payment status updates from Mayar, validates transaction signatures, updates user tiers, and syncs history.
+  - `POST /payments/create-checkout` - Generates a secure checkout payment link using DOKU API based on target plan (Pro or 14-Day Sprint).
+  - `POST /webhook/doku` - Receives payment status updates from DOKU, validates transaction signatures, updates user tiers, and syncs history.
 - **WebSocket Endpoint**:
   - `WS /ws/voice` - Real-time interview session using WebSocket connection handling events like `session.started`, `user.transcript`, `assistant.text`, and `error`.
 
@@ -197,7 +197,7 @@ erDiagram
         uuid subscription_id FK
         uuid user_id FK
         string invoice_id
-        string payment_gateway "e.g., midtrans, stripe"
+        string payment_gateway "e.g., doku"
         string transaction_id
         decimal amount
         string status "e.g., pending, settlement, capture, expire, refund"
@@ -341,17 +341,12 @@ flowchart TD
     P2 -- Pro --> P4[Checkout Page\nRp 99.000/month]
     P2 -- B2B --> P5[Contact Sales\nCustom Quote & Invoice]
 
-    P4 --> P6{Payment Method}
-    P6 -- QRIS / VA / Cards / E-Wallet --> P7[Mayar Gateway]
-    P6 -- Credit Card --> P8{Region}
-    P8 -- Indonesia --> P7
-    P8 -- International --> P9[Stripe Gateway]
+    P4 --> P7[DOKU Gateway]
 
     P7 --> P10{Payment Status}
-    P9 --> P10
     P10 -- Success --> P11[Webhook: Payment Confirmed]
     P10 -- Failed --> P12[Retry / Change Method]
-    P12 --> P6
+    P12 --> P4
 
     P11 --> P13[Backend: Activate Pro Entitlement]
     P13 --> P14[User Dashboard\nPro Features Unlocked]
@@ -379,8 +374,7 @@ stateDiagram-v2
 ```
 
 ### Payment Gateways
-- 🇮🇩 **Primary Subscription Billing**: Mayar — supports local Indonesian payment methods (QRIS, VA, credit cards, e-wallets) with native subscription management.
-- 🌍 **International (future)**: Stripe — credit/debit card and regional payment methods.
+- 🇮🇩 **Primary Subscription Billing**: DOKU — supports local Indonesian payment methods (QRIS, VA, credit cards, e-wallets) with native integration.
 
 ### Refund & Cancellation Policy
 - Pro users can cancel anytime; access remains until end of the billing cycle.

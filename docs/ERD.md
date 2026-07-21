@@ -56,7 +56,7 @@ erDiagram
         uuid subscription_id FK
         uuid user_id FK
         string invoice_id
-        string payment_gateway "e.g., mayar, stripe"
+        string payment_gateway "e.g., doku"
         string transaction_id
         decimal amount
         string status "e.g., pending, settlement, capture, expire, refund"
@@ -129,7 +129,7 @@ erDiagram
 
 ### 2. Billing & Payments
 - **`subscriptions`**: Tracks the subscription status (active, canceled, past_due) and the renewal dates for both users (Pro) and organizations (B2B).
-- **`payments`**: Records transactional logs coming from Mayar or Stripe webhooks. Essential for refund processing and tracking monetization.
+- **`payments`**: Records transactional logs coming from DOKU webhooks. Essential for refund processing and tracking monetization.
 
 ### 3. Interview Sessions & Analytics
 - **`mock_interviews`**: Represents a single mock interview practice session. Contains user feedback like pre- and post-confidence scores to track self-reported progression.

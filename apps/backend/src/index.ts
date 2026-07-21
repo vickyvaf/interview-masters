@@ -15,7 +15,7 @@ app.use('*', cors())
 
 app.get('/health', (c) => c.json({ status: 'healthy' }))
 
-// Create Mayar Payment Link Checkout Session
+// Create DOKU Payment Link Checkout Session
 app.post('/payments/create-checkout', async (c) => {
   try {
     const { email, name, plan } = await c.req.json()
@@ -23,54 +23,85 @@ app.post('/payments/create-checkout', async (c) => {
       return c.json({ error: 'Email is required' }, 400)
     }
 
-    const MAYAR_API_KEY = process.env.MAYAR_API_KEY
-    if (!MAYAR_API_KEY) {
-      return c.json({ error: 'Mayar API Key is not configured on server' }, 500)
+    const DOKU_CLIENT_ID = process.env.DOKU_CLIENT_ID
+    const DOKU_SECRET_KEY = process.env.DOKU_SECRET_KEY
+    if (!DOKU_CLIENT_ID || !DOKU_SECRET_KEY) {
+      return c.json({ error: 'DOKU credentials are not configured on server' }, 500)
     }
 
-    const isProduction = process.env.NODE_ENV === 'production'
-    const mayarDomain = isProduction ? 'api.mayar.id' : 'api.mayar.club'
+    const isProduction = process.env.DOKU_IS_PRODUCTION === 'true'
+    const dokuDomain = isProduction ? 'https://api.doku.com' : 'https://api-sandbox.doku.com'
 
     const isSprint = plan === 'sprint'
     const amount = isSprint ? 390000 : 99000
     const description = isSprint ? '14-Day Sprint - Interview Masters' : 'Pro Subscription - Interview Masters'
-    const itemDesc = isSprint ? 'Persiapan intensif simulasi wawancara AI (14 Hari)' : 'Pro Subscription - 1 Bulan'
 
-    const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    const response = await fetch(`https://${mayarDomain}/hl/v1/invoice/create`, {
+    const invoiceNumber = `INV-${Date.now()}`
+    const callbackUrl = `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success`
+
+    const body = {
+      order: {
+        amount,
+        invoice_number: invoiceNumber,
+        currency: 'IDR',
+        callback_url: callbackUrl,
+        line_items: [
+          {
+            name: description,
+            price: amount,
+            quantity: 1
+          }
+        ]
+      },
+      payment: {
+        payment_due_date: 60
+      },
+      customer: {
+        name: name || 'Candidate',
+        email: email
+      }
+    }
+
+    const { createHash, createHmac } = await import('crypto')
+    const rawBody = JSON.stringify(body)
+    const digest = createHash('sha256').update(rawBody).digest('base64')
+
+    const requestId = `REQ-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    const formattedTimestamp = new Date().toISOString().replace(/\.\d{3}/, '')
+    const targetPath = '/checkout/v1/payment'
+
+    const stringToSign = 
+      `Client-Id:${DOKU_CLIENT_ID}\n` +
+      `Request-Id:${requestId}\n` +
+      `Request-Timestamp:${formattedTimestamp}\n` +
+      `Request-Target:${targetPath}\n` +
+      `Digest:${digest}`
+
+    const calculatedHmac = createHmac('sha256', DOKU_SECRET_KEY)
+      .update(stringToSign)
+      .digest('base64')
+
+    const signature = `HMACSHA256=${calculatedHmac}`
+
+    const response = await fetch(`${dokuDomain}${targetPath}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${MAYAR_API_KEY}`,
+        'Client-Id': DOKU_CLIENT_ID,
+        'Request-Id': requestId,
+        'Request-Timestamp': formattedTimestamp,
+        'Signature': signature,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        name: name || 'Candidate',
-        email: email,
-        amount,
-        mobile: '08123456789',
-        redirectUrl: `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success`,
-        description,
-        expiredAt,
-        items: [
-          {
-            quantity: 1,
-            rate: amount,
-            description: itemDesc
-          }
-        ],
-        extraData: {
-          productType: 'subscription',
-          plan: plan || 'pro'
-        }
-      })
+      body: rawBody
     })
 
     const data: any = await response.json()
-    if (data.data?.link) {
-      return c.json({ checkoutUrl: data.data.link })
+    const url = data.response?.payment?.url || data.payment?.url
+    if (url) {
+      return c.json({ checkoutUrl: url })
     } else {
-      console.error('Mayar Error response:', data)
-      const errorMsg = data.message || (data.errors ? JSON.stringify(data.errors) : JSON.stringify(data))
+      console.error('DOKU Error response:', data)
+      const errorMsg = Array.isArray(data.message) ? data.message.join(', ') : (data.message || JSON.stringify(data))
       return c.json({ error: errorMsg }, 500)
     }
   } catch (err: any) {
@@ -79,32 +110,56 @@ app.post('/payments/create-checkout', async (c) => {
   }
 })
 
-// Mayar Webhook Signature Validation & Database Update
-app.post('/webhook/mayar', async (c) => {
+// DOKU Webhook Signature Validation & Database Update
+app.post('/webhook/doku', async (c) => {
   try {
-    const signature = c.req.header('x-mayar-signature')
+    const signatureHeader = c.req.header('signature')
+    const clientIdHeader = c.req.header('client-id')
+    const requestIdHeader = c.req.header('request-id')
+    const timestampHeader = c.req.header('request-timestamp')
     const rawBody = await c.req.text()
-    
-    // Validate signature
-    const secret = process.env.MAYAR_WEBHOOK_SECRET || ''
-    const { createHmac } = await import('crypto')
-    const computedSignature = createHmac('sha256', secret)
-      .update(rawBody)
-      .digest('hex')
 
-    if (signature !== computedSignature) {
-      console.error('[Webhook] Invalid webhook signature. Received:', signature, 'Computed:', computedSignature)
+    if (!signatureHeader || !clientIdHeader || !requestIdHeader || !timestampHeader) {
+      console.error('[Webhook] Missing required DOKU headers')
+      return c.json({ error: 'Missing headers' }, 400)
+    }
+
+    const DOKU_SECRET_KEY = process.env.DOKU_SECRET_KEY
+    if (!DOKU_SECRET_KEY) {
+      console.error('[Webhook] DOKU_SECRET_KEY is not configured on server')
+      return c.json({ error: 'Server configuration error' }, 500)
+    }
+
+    const { createHash, createHmac } = await import('crypto')
+    const digest = createHash('sha256').update(rawBody).digest('base64')
+    const targetPath = '/webhook/doku'
+
+    const stringToSign = 
+      `Client-Id:${clientIdHeader}\n` +
+      `Request-Id:${requestIdHeader}\n` +
+      `Request-Timestamp:${timestampHeader}\n` +
+      `Request-Target:${targetPath}\n` +
+      `Digest:${digest}`
+
+    const computedSignature = `HMACSHA256=${createHmac('sha256', DOKU_SECRET_KEY)
+      .update(stringToSign)
+      .digest('base64')}`
+
+    if (signatureHeader !== computedSignature) {
+      console.error('[Webhook] Invalid webhook signature. Received:', signatureHeader, 'Computed:', computedSignature)
       return c.json({ error: 'Invalid signature' }, 401)
     }
 
     const body = JSON.parse(rawBody)
-    console.log('[Webhook] Received validated Mayar event:', body.event)
+    console.log('[Webhook] Received validated DOKU notification:', body)
 
-    const allowedEvents = ['payment.received', 'payment.success', 'subscription.created']
-    if (allowedEvents.includes(body.event) || body.event?.startsWith('payment')) {
-      const customerEmail = body.data?.customerEmail
+    const transactionStatus = body.payment?.transaction_status
+    if (transactionStatus === 'SUCCESS' || transactionStatus === 'SETTLEMENT') {
+      const customerEmail = body.customer?.email
       if (customerEmail) {
-        console.log(`[Webhook] Upgrading user with email: ${customerEmail} to PRO tier.`)
+        const paymentAmount = Number(body.order?.amount) || 99000
+        const determinedTier = paymentAmount === 390000 ? 'sprint' : 'pro'
+        console.log(`[Webhook] Upgrading user with email: ${customerEmail} to ${determinedTier.toUpperCase()} tier.`)
         
         const supabaseUrl = process.env.SUPABASE_URL
         const supabaseKey = process.env.SUPABASE_SECRET_KEY
@@ -123,7 +178,7 @@ app.post('/webhook/mayar', async (c) => {
         const user = users?.[0]
         
         if (user) {
-          // 2. Update user tier to PRO
+          // 2. Update user tier
           const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
             method: 'PATCH',
             headers: {
@@ -132,7 +187,7 @@ app.post('/webhook/mayar', async (c) => {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              tier: 'pro',
+              tier: determinedTier,
               subscription_status: 'active',
               updated_at: new Date().toISOString()
             })
@@ -142,6 +197,10 @@ app.post('/webhook/mayar', async (c) => {
           }
 
           // 3. Insert or update subscriptions table
+          const periodEnd = determinedTier === 'sprint'
+            ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+            : new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString()
+
           const subRes = await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
             method: 'POST',
             headers: {
@@ -152,12 +211,12 @@ app.post('/webhook/mayar', async (c) => {
             },
             body: JSON.stringify({
               user_id: user.id,
-              tier: 'pro',
+              tier: determinedTier,
               status: 'active',
-              price: body.data?.amount || 99000,
-              billing_cycle: 'monthly',
+              price: paymentAmount,
+              billing_cycle: determinedTier === 'sprint' ? 'one-time' : 'monthly',
               current_period_start: new Date().toISOString(),
-              current_period_end: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+              current_period_end: periodEnd,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
@@ -182,12 +241,12 @@ app.post('/webhook/mayar', async (c) => {
             body: JSON.stringify({
               user_id: user.id,
               subscription_id: subscriptionId,
-              invoice_id: body.data?.id || 'INV-' + Date.now(),
-              payment_gateway: 'mayar',
-              transaction_id: body.data?.id || 'TX-' + Date.now(),
-              amount: body.data?.amount || 99000,
+              invoice_id: body.order?.invoice_number || 'INV-' + Date.now(),
+              payment_gateway: 'doku',
+              transaction_id: body.payment?.transaction_id || body.order?.invoice_number || 'TX-' + Date.now(),
+              amount: body.order?.amount || 99000,
               status: 'settlement',
-              payment_method: body.data?.paymentMethod || 'va',
+              payment_method: body.payment?.payment_channel || 'va',
               paid_at: new Date().toISOString(),
               created_at: new Date().toISOString()
             })

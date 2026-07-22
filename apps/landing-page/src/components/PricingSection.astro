@@ -57,6 +57,21 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
                 stroke-linejoin="round"
                 d="M5 13l4 4L19 7"></path>
             </svg>
+            <span>1 sesi wawancara per bulan</span>
+          </li>
+          <li class="flex items-start gap-3 text-foreground">
+            <svg
+              class="w-5 h-5 text-emerald-500 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M5 13l4 4L19 7"></path>
+            </svg>
             <span>Umpan balik dasar (basic feedback)</span>
           </li>
         </ul>
@@ -69,7 +84,7 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
         </a>
       </div>
 
-      <!-- Pro Plan -->
+      <!-- Pro Plan (Paling Populer) -->
       <div
         class="rounded-3xl border-2 border-primary bg-card p-8 flex flex-col gap-6 h-full relative transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
       >
@@ -81,7 +96,7 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
               d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
             ></path>
           </svg>
-          Populer
+          Paling Populer
         </div>
 
         <div class="flex flex-col gap-1">
@@ -91,7 +106,7 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
 
         <div class="flex items-baseline gap-1.5 flex-nowrap whitespace-nowrap">
           <span class="text-3xl font-extrabold text-foreground tracking-tight"
-            >Rp 99.000</span
+            >Rp 49.000</span
           >
           <span class="text-sm text-muted-foreground">/ bulan</span>
         </div>
@@ -169,26 +184,26 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
         </a>
       </div>
 
-      <!-- 14-Day Sprint Plan -->
+      <!-- Starter Pass Plan -->
       <div
         class="rounded-3xl border border-border/50 bg-card p-8 flex flex-col gap-6 h-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
       >
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <h3 class="text-xl font-bold text-foreground">14-Day Sprint</h3>
+            <h3 class="text-xl font-bold text-foreground">Starter Pass</h3>
             <span
               class="px-2 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full"
-              >Spesial</span
+              >Sekali Bayar</span
             >
           </div>
           <p class="text-xs text-muted-foreground">
-            Persiapan intensif waktu singkat
+            Coba cepat tanpa berlangganan
           </p>
         </div>
 
         <div class="flex items-baseline gap-1.5 flex-nowrap whitespace-nowrap">
           <span class="text-3xl font-extrabold text-foreground tracking-tight"
-            >Rp 390.000</span
+            >Rp 19.000</span
           >
           <span class="text-sm text-muted-foreground">/ paket</span>
         </div>
@@ -209,7 +224,22 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
                 stroke-linejoin="round"
                 d="M5 13l4 4L19 7"></path>
             </svg>
-            <span>Masa aktif program 14 hari</span>
+            <span>3x simulasi wawancara lengkap</span>
+          </li>
+          <li class="flex items-start gap-3 text-foreground">
+            <svg
+              class="w-5 h-5 text-emerald-500 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Masa aktif program 7 hari</span>
           </li>
           <li class="flex items-start gap-3 text-foreground">
             <svg
@@ -226,43 +256,13 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
             </svg>
             <span>Umpan balik instan & terstruktur</span>
           </li>
-          <li class="flex items-start gap-3 text-foreground">
-            <svg
-              class="w-5 h-5 text-emerald-500 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M5 13l4 4L19 7"></path>
-            </svg>
-            <span>Pertanyaan posisi spesifik & custom</span>
-          </li>
-          <li class="flex items-start gap-3 text-foreground">
-            <svg
-              class="w-5 h-5 text-emerald-500 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M5 13l4 4L19 7"></path>
-            </svg>
-            <span>Dirancang khusus untuk wawancara &lt; 30 hari</span>
-          </li>
         </ul>
 
         <a
           href={`${dashboardUrl}/billing`}
           class="checkout-link w-full text-center py-3 text-sm font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all"
         >
-          Beli Paket Sprint
+          Beli Starter Pass
         </a>
       </div>
     </div>

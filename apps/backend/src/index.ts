@@ -32,9 +32,15 @@ app.post('/payments/create-checkout', async (c) => {
     const isProduction = process.env.DOKU_IS_PRODUCTION === 'true'
     const dokuDomain = isProduction ? 'https://api.doku.com' : 'https://api-sandbox.doku.com'
 
-    const isSprint = plan === 'sprint'
-    const amount = isSprint ? 390000 : 99000
-    const description = isSprint ? '14-Day Sprint - Interview Masters' : 'Pro Subscription - Interview Masters'
+    let amount = 49000
+    let description = 'Pro Subscription - Interview Masters'
+    if (plan === 'starter') {
+      amount = 19000
+      description = 'Starter Pass - Interview Masters'
+    } else if (plan === 'sprint') {
+      amount = 99000
+      description = '14-Day Sprint - Interview Masters'
+    }
 
     const invoiceNumber = `INV-${Date.now()}`
     const callbackUrl = `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success`
@@ -157,8 +163,8 @@ app.post('/webhook/doku', async (c) => {
     if (transactionStatus === 'SUCCESS' || transactionStatus === 'SETTLEMENT') {
       const customerEmail = body.customer?.email
       if (customerEmail) {
-        const paymentAmount = Number(body.order?.amount) || 99000
-        const determinedTier = paymentAmount === 390000 ? 'sprint' : 'pro'
+        const paymentAmount = Number(body.order?.amount) || 49000
+        const determinedTier = paymentAmount === 19000 ? 'starter' : paymentAmount === 99000 ? 'sprint' : 'pro'
         console.log(`[Webhook] Upgrading user with email: ${customerEmail} to ${determinedTier.toUpperCase()} tier.`)
         
         const supabaseUrl = process.env.SUPABASE_URL

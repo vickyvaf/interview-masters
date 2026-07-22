@@ -72,7 +72,7 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 - **Core AI Voice Flow**: User voice input transcribed to text at frontend → Sent over WebSocket to backend → LLM/Chat Engine generates response → Sent back to frontend → Read aloud via text-to-speech.
 - **REST HTTP Endpoints**:
   - `GET /health` - Health check endpoint.
-  - `POST /payments/create-checkout` - Generates a secure checkout payment link using DOKU API based on target plan (Pro or 14-Day Sprint).
+  - `POST /payments/create-checkout` - Generates a secure checkout payment link using DOKU API based on target plan (Pro or Starter Pass).
   - `POST /webhook/doku` - Receives payment status updates from DOKU, validates transaction signatures, updates user tiers, and syncs history.
 - **WebSocket Endpoint**:
   - `WS /ws/voice` - Real-time interview session using WebSocket connection handling events like `session.started`, `user.transcript`, `assistant.text`, and `error`.
@@ -94,9 +94,9 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 
 | Tier | Price | Quota | Target User |
 |---|---|---|---|
-| **Free** | Rp 0 / month | 3 mock interviews/month, basic feedback | First-time users, students |
-| **Pro** | Rp 99.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers |
-| **14-Day Sprint** | Rp 390.000 / package | Masa aktif program 14 hari, umpan balik instan & terstruktur, posisi spesifik & kustom | Job seekers dengan jadwal wawancara ketat |
+| **Free** | Rp 0 / month | 1 mock interview, basic feedback | First-time users, perkenalan awal |
+| **Starter Pass** *(Pay-per-use)* | Rp 19.000 / package | 3 mock interviews (masa aktif 7 hari), umpan balik instan & terstruktur | Candidate kepepet interview & anti-berlangganan (sekali bayar) |
+| **Pro** *(Most Popular)* | Rp 49.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers (latihan rutin sepuasnya) |
 | **Team / B2B** *(Link Hidden for MVP)* | Custom | Bulk licenses, HR dashboard, candidate tracking, white-label | Bootcamps, universities, enterprise HR |
 
 ### Payment Flow

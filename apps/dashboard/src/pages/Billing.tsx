@@ -35,7 +35,7 @@ export default function Billing() {
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
-  const [activePlan, setActivePlan] = useState<'pro' | 'sprint' | null>(null)
+  const [activePlan, setActivePlan] = useState<'pro' | 'starter' | 'sprint' | null>(null)
 
   // Query 1: Fetch user billing profile details
   const { data: profile, isLoading: loadingProfile } = useQuery({
@@ -77,7 +77,7 @@ export default function Billing() {
 
   // Mutation: Request checkout link from backend
   const upgradeMutation = useMutation({
-    mutationFn: async (plan: 'pro' | 'sprint') => {
+    mutationFn: async (plan: 'pro' | 'starter' | 'sprint') => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user logged in')
 
@@ -125,7 +125,7 @@ export default function Billing() {
     }
   })
 
-  const handleUpgrade = (plan: 'pro' | 'sprint') => {
+  const handleUpgrade = (plan: 'pro' | 'starter' | 'sprint') => {
     setActivePlan(plan)
     upgradeMutation.mutate(plan)
   }
@@ -138,130 +138,80 @@ export default function Billing() {
         <Flex direction="column" gap="5">
           {/* Header Skeleton */}
           <Box>
-            <Skeleton height="32px" width="220px" style={{ marginBottom: '8px' }} />
-            <Skeleton height="16px" width="450px" />
+            <Skeleton width="180px" height="32px" style={{ marginBottom: '8px' }} />
+            <Skeleton width="300px" height="18px" />
           </Box>
-
-          {/* Active Package Banner Skeleton */}
-          <Card size="3" style={{ background: 'var(--accent-2)' }}>
-            <Flex justify="between" align="center" wrap="wrap" gap="4">
-              <Flex direction="column" gap="2">
-                <Flex align="center" gap="2">
-                  <Skeleton height="16px" width="100px" />
-                  <Skeleton height="20px" width="80px" />
-                </Flex>
-                <Skeleton height="24px" width="150px" />
-                <Skeleton height="16px" width="260px" />
-              </Flex>
-              <Skeleton height="36px" width="120px" />
-            </Flex>
-          </Card>
-
-          <Separator size="4" />
-
-          {/* Price Grid Skeleton */}
-          <Box>
-            <Skeleton height="24px" width="180px" style={{ marginBottom: '16px' }} />
-            <Grid columns={{ initial: '1', md: '3' }} gap="4">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} size="3">
-                  <Flex direction="column" gap="4" style={{ height: '100%' }}>
-                    <Box>
-                      <Skeleton height="24px" width="80px" style={{ marginBottom: '6px' }} />
-                      <Skeleton height="14px" width="120px" />
-                    </Box>
-                    <Skeleton height="36px" width="100px" />
-                    <Separator size="4" />
-                    <Flex direction="column" gap="2">
-                      <Skeleton height="16px" width="100%" />
-                      <Skeleton height="16px" width="80%" />
-                      <Skeleton height="16px" width="90%" />
-                    </Flex>
-                  </Flex>
-                </Card>
-              ))}
-            </Grid>
-          </Box>
+          <Grid columns={{ initial: '1', md: '3' }} gap="4">
+            <Skeleton height="340px" style={{ borderRadius: '12px' }} />
+            <Skeleton height="340px" style={{ borderRadius: '12px' }} />
+            <Skeleton height="340px" style={{ borderRadius: '12px' }} />
+          </Grid>
         </Flex>
       </Container>
     )
   }
 
-  // Active status details
   const tier = profile?.tier || 'free'
-
-  // Calculate remaining quota for Free tier
-  const totalLimit = 3
-  const currentCount = monthCount || 0
-  const remainingQuota = Math.max(0, totalLimit - currentCount)
-
-  const getTierBadge = () => {
-    if (tier === 'pro') return <Badge color="green" variant="solid">Pro Plan</Badge>
-    if (tier === 'sprint') return <Badge color="orange" variant="solid">14-Day Sprint</Badge>
-    if (tier === 'b2b') return <Badge color="purple" variant="solid">B2B Enterprise</Badge>
-    return <Badge color="blue" variant="solid">Free Trial</Badge>
-  }
+  const isSubscribed = profile?.subscription_status === 'active'
 
   return (
-    <Container size="3" style={{ padding: '40px 24px' }}>
-      <Flex direction="column" gap="5">
-        {/* Header Section */}
+    <Container size="3" style={{ padding: '45px 24px 60px 24px' }}>
+      <Flex direction="column" gap="6">
+        {/* Page Title Header */}
         <Box>
-          <Heading size="6" mb="1">Billing & Langganan</Heading>
+          <Heading size="6" weight="bold" style={{ marginBottom: '4px' }}>
+            Billing & Langganan
+          </Heading>
           <Text size="2" color="gray">
-            Pilih paket yang sesuai untuk mengoptimalkan persiapan wawancara kerja Anda.
+            Kelola paket langganan Anda dan lihat histori kuota wawancara.
           </Text>
         </Box>
 
-        {/* Current Subscription Status */}
-        <Card size="3" style={{ background: 'var(--accent-2)' }}>
+        {/* Current Active Plan Banner */}
+        <Card size="3" style={{ background: 'var(--gray-2)', border: '1px solid var(--gray-4)' }}>
           <Flex justify="between" align="center" wrap="wrap" gap="4">
             <Flex direction="column" gap="1">
               <Flex align="center" gap="2">
-                <Text size="2" weight="bold" color="gray">
-                  Paket Aktif Anda
-                </Text>
-                {getTierBadge()}
+                <Text size="2" color="gray">Paket Saat Ini:</Text>
+                {tier === 'free' && <Badge color="gray" variant="soft">Free</Badge>}
+                {tier === 'pro' && <Badge color="green" variant="solid">Pro (Unlimited)</Badge>}
+                {tier === 'starter' && <Badge color="amber" variant="solid">Starter Pass</Badge>}
+                {tier === 'sprint' && <Badge color="orange" variant="solid">14-Day Sprint</Badge>}
               </Flex>
-              <Heading size="2">
-                {tier === 'pro' && 'Pro Tier (Langganan)'}
+              <Text size="4" weight="bold">
+                {tier === 'free' && 'Akun Gratis'}
+                {tier === 'pro' && 'Pro Subscription (Unlimited)'}
+                {tier === 'starter' && 'Starter Pass (Sekali Bayar)'}
                 {tier === 'sprint' && '14-Day Sprint (Program)'}
-                {tier === 'b2b' && 'B2B Enterprise (Organisasi)'}
-                {tier === 'free' && 'Free Tier (Gratis)'}
-              </Heading>
+              </Text>
               <Text size="2" color="gray">
-                {tier === 'free' ? (
-                  <>
-                    Sisa kuota: <strong>{remainingQuota} mock interviews</strong> dari {totalLimit} limit bulan ini.
-                  </>
-                ) : (
-                  <>
-                    Kuota Anda: <strong>Sesi latihan tanpa batas (unlimited)</strong>.
-                  </>
-                )}
+                {tier === 'pro' && isSubscribed
+                  ? 'Langganan aktif. Bebas simulasi wawancara sepuasnya.'
+                  : tier === 'starter'
+                  ? 'Paket Starter Pass aktif (3 sesi wawancara / 7 hari).'
+                  : tier === 'sprint'
+                  ? 'Program Sprint 14 hari aktif.'
+                  : `Anda telah menggunakan ${monthCount} dari 1 sesi gratis bulan ini.`}
               </Text>
             </Flex>
-            {tier === 'free' && (
-              <Button
-                variant="soft"
-                color="blue"
-                onClick={() => handleUpgrade('pro')}
-                loading={upgradeMutation.isPending && activePlan === 'pro'}
-              >
-                Upgrade ke Pro
+
+            {tier === 'pro' && (
+              <Button variant="outline" color="red" size="2">
+                Batalkan Langganan
               </Button>
             )}
           </Flex>
         </Card>
 
-        <Separator size="4" />
-
-        {/* Pricing Grid */}
+        {/* Pricing Cards Selection */}
         <Box>
-          <Heading size="4" mb="4">Paket & Layanan Tersedia</Heading>
-          <Grid columns={{ initial: '1', md: '3' }} gap="4">
+          <Heading size="4" weight="bold" style={{ marginBottom: '16px' }}>
+            Pilih Paket Layanan
+          </Heading>
+          
+          <Grid columns={{ initial: '1', md: '3' }} gap="4" align="stretch">
             {/* Free Plan */}
-            <Card size="3">
+            <Card size="3" style={{ border: tier === 'free' ? '2px solid var(--gray-8)' : '1px solid var(--gray-5)' }}>
               <Flex direction="column" gap="4" style={{ height: '100%' }}>
                 <Flex direction="column" gap="1">
                   <Heading size="3">Free</Heading>
@@ -278,13 +228,17 @@ export default function Billing() {
                 <Flex direction="column" gap="2" style={{ flexGrow: 1 }}>
                   <Flex align="center" gap="2">
                     <CheckIcon color="var(--green-9)" />
-                    <Text size="2">3 mock interviews / bulan</Text>
+                    <Text size="2">1 mock interview / bulan</Text>
                   </Flex>
                   <Flex align="center" gap="2">
                     <CheckIcon color="var(--green-9)" />
                     <Text size="2">Umpan balik dasar (basic feedback)</Text>
                   </Flex>
                 </Flex>
+
+                <Button size="2" variant="outline" disabled style={{ marginTop: 'auto' }}>
+                  {tier === 'free' ? 'Paket Aktif' : 'Gratis'}
+                </Button>
               </Flex>
             </Card>
 
@@ -298,13 +252,13 @@ export default function Billing() {
                   </Flex>
                   <Badge size="2" variant="solid">
                     <Flex align="center" gap="1">
-                      <StarIcon /> Populer
+                      <StarIcon /> Paling Populer
                     </Flex>
                   </Badge>
                 </Flex>
 
                 <Flex align="baseline" gap="1">
-                  <Text size="6" weight="bold">Rp 99.000</Text>
+                  <Text size="6" weight="bold">Rp 49.000</Text>
                   <Text size="2" color="gray">/ bulan</Text>
                 </Flex>
 
@@ -342,19 +296,19 @@ export default function Billing() {
               </Flex>
             </Card>
 
-            {/* 14-day Interview Sprint Plan */}
-            <Card size="3" style={{ border: tier === 'sprint' ? '2px solid var(--orange-9)' : '1px solid var(--gray-5)' }}>
+            {/* Starter Pass Plan */}
+            <Card size="3" style={{ border: tier === 'starter' ? '2px solid var(--amber-9)' : '1px solid var(--gray-5)' }}>
               <Flex direction="column" gap="4" style={{ height: '100%' }}>
-                <Flex direction="column" gap="1">
-                  <Flex align="center" gap="2">
-                    <Heading size="3">14-Day Sprint</Heading>
-                    <Badge color="orange">Spesial</Badge>
+                <Flex justify="between" align="start">
+                  <Flex direction="column" gap="1">
+                    <Heading size="3">Starter Pass</Heading>
+                    <Text size="1" color="gray">Sekali bayar tanpa berlangganan</Text>
                   </Flex>
-                  <Text size="1" color="gray">Persiapan intensif waktu singkat</Text>
+                  <Badge color="amber">Sekali Bayar</Badge>
                 </Flex>
 
                 <Flex align="baseline" gap="1">
-                  <Text size="6" weight="bold">Rp 390.000</Text>
+                  <Text size="6" weight="bold">Rp 19.000</Text>
                   <Text size="2" color="gray">/ paket</Text>
                 </Flex>
 
@@ -363,32 +317,28 @@ export default function Billing() {
                 <Flex direction="column" gap="2" style={{ flexGrow: 1 }}>
                   <Flex align="center" gap="2">
                     <CheckIcon color="var(--green-9)" />
-                    <Text size="2">Masa aktif program 14 hari</Text>
+                    <Text size="2">3x simulasi wawancara lengkap</Text>
+                  </Flex>
+                  <Flex align="center" gap="2">
+                    <CheckIcon color="var(--green-9)" />
+                    <Text size="2">Masa aktif program 7 hari</Text>
                   </Flex>
                   <Flex align="center" gap="2">
                     <CheckIcon color="var(--green-9)" />
                     <Text size="2">Umpan balik instan & terstruktur</Text>
                   </Flex>
-                  <Flex align="center" gap="2">
-                    <CheckIcon color="var(--green-9)" />
-                    <Text size="2">Pertanyaan posisi spesifik & custom</Text>
-                  </Flex>
-                  <Flex align="center" gap="2">
-                    <CheckIcon color="var(--green-9)" />
-                    <Text size="2">Dirancang khusus untuk wawancara &lt; 30 hari</Text>
-                  </Flex>
                 </Flex>
 
                 <Button 
                   size="2" 
-                  variant={tier === 'sprint' ? 'outline' : 'solid'} 
-                  color="orange" 
-                  onClick={() => handleUpgrade('sprint')}
-                  loading={upgradeMutation.isPending && activePlan === 'sprint'}
-                  disabled={tier === 'sprint'}
+                  variant={tier === 'starter' ? 'outline' : 'solid'} 
+                  color="amber" 
+                  onClick={() => handleUpgrade('starter')}
+                  loading={upgradeMutation.isPending && activePlan === 'starter'}
+                  disabled={tier === 'starter'}
                   style={{ marginTop: 'auto' }}
                 >
-                  {tier === 'sprint' ? 'Paket Aktif' : 'Beli Paket Sprint'}
+                  {tier === 'starter' ? 'Paket Aktif' : 'Beli Starter Pass'}
                 </Button>
               </Flex>
             </Card>

@@ -11,6 +11,7 @@ import Organization from './pages/Organization'
 import Interview from './pages/Interview'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Logout from './pages/Logout'
 
 import { Flex, Spinner, Text } from '@radix-ui/themes'
 
@@ -111,6 +112,7 @@ function App() {
         <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
         <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <Login />} />
         <Route path="/register" element={session ? <Navigate to="/dashboard" replace /> : <Register />} />
+        <Route path="/logout" element={<Logout />} />
         <Route
           path="/dashboard"
           element={

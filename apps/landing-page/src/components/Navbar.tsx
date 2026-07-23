@@ -61,12 +61,17 @@ export default function Navbar() {
   }, [dropdownOpen]);
 
   const handleLogout = () => {
-    // Clear cookie
     document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
-    // Clear localStorage
     localStorage.removeItem('sb-dcouzpirkktfxklgqqwv-auth-token');
+    localStorage.removeItem('im_session_synced_user');
     setSession(null);
-    window.location.reload();
+
+    const targetDashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || (
+      typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        ? 'http://localhost:5173'
+        : 'https://dashboard-interviewmasters.netlify.app'
+    );
+    window.location.href = `${targetDashboardUrl}/logout`;
   };
 
   const navLinks = [

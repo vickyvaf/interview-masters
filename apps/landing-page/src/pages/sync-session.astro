@@ -27,8 +27,9 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'https://dashboard-
     const returnTo = urlParams.get('returnTo');
 
     if (logout === 'true') {
-      // Clear cookie
       document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+      localStorage.removeItem('im_session_synced_user');
+      localStorage.removeItem('sb-dcouzpirkktfxklgqqwv-auth-token');
     } else if (data) {
       try {
         const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();

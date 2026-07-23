@@ -1,4 +1,4 @@
-import app from '../../src/index.js'
+import app from '../../src/index'
 import { handle } from 'hono/netlify'
 
 export const handler = handle(app)

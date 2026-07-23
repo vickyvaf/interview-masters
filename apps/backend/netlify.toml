@@ -1,8 +1,6 @@
 [build]
   command = "pnpm build"
-  functions = "netlify/functions"
 
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/index"
-  status = 200
+[[edge_functions]]
+  path = "/*"
+  function = "index"

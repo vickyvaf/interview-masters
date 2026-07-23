@@ -61,7 +61,8 @@ function syncSessionToLanding(session: any) {
     const currentSynced = localStorage.getItem('im_session_synced_user');
     if (currentSynced) {
       localStorage.removeItem('im_session_synced_user');
-      window.location.href = `${landingUrl}/sync-session?logout=true&returnTo=${encodeURIComponent(window.location.href)}`;
+      const loginUrl = `${window.location.origin}/login`;
+      window.location.href = `${landingUrl}/sync-session?logout=true&returnTo=${encodeURIComponent(loginUrl)}`;
     }
   }
 }
@@ -107,7 +108,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
         <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <Login />} />
         <Route path="/register" element={session ? <Navigate to="/dashboard" replace /> : <Register />} />
         <Route

@@ -12,8 +12,10 @@ import {
   LaptopIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ExitIcon,
 } from "@radix-ui/react-icons";
 import { useDashboardTheme } from "./ThemeProvider";
+import { supabase } from "../lib/supabase";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -304,6 +306,45 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   onClick={handleItemClick}
                 />
               ))}
+              <button
+                onClick={async () => {
+                  localStorage.removeItem('im_session_synced_user');
+                  document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;';
+                  await supabase.auth.signOut();
+                  window.location.href = '/login';
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: isCollapsed ? "center" : "flex-start",
+                  width: "100%",
+                  height: "40px",
+                  cursor: "pointer",
+                  padding: 0,
+                  margin: 0,
+                  border: "none",
+                  outline: "none",
+                  borderRadius: "0",
+                  backgroundColor: "transparent",
+                  color: "var(--red-10)",
+                  transition: "background-color 0.15s, color 0.15s",
+                }}
+              >
+                {isCollapsed ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+                    <ExitIcon width="16" height="16" />
+                  </span>
+                ) : (
+                  <Flex gap="3" align="center" style={{ width: "100%", padding: "0 24px", boxSizing: "border-box" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", color: "inherit", flexShrink: 0 }}>
+                      <ExitIcon width="16" height="16" />
+                    </span>
+                    <span style={{ fontSize: "14px", fontWeight: 400, color: "inherit" }}>
+                      Keluar
+                    </span>
+                  </Flex>
+                )}
+              </button>
             </Flex>
 
             {/* Theme Toggle */}

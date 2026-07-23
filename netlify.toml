@@ -1,9 +1,0 @@
-[build]
-  command = "pnpm --filter apps-backend build"
-  publish = "apps/backend/dist"
-  functions = "apps/backend/netlify/functions"
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/index"
-  status = 200

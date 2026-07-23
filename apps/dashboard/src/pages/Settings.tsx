@@ -122,8 +122,10 @@ export default function Settings() {
   }
 
   const handleLogout = async () => {
+    localStorage.removeItem('im_session_synced_user')
+    document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;'
     await supabase.auth.signOut()
-    window.location.href = '/'
+    window.location.href = '/login'
   }
 
   if (isLoading) {

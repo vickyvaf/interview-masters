@@ -107,7 +107,7 @@ app.post('/payments/create-checkout', async (c) => {
       return c.json({ checkoutUrl: url })
     } else {
       console.error('DOKU Error response:', data)
-      const errorMsg = Array.isArray(data.message) ? data.message.join(', ') : (data.message || JSON.stringify(data))
+      const errorMsg = data.error?.message || (Array.isArray(data.message) ? data.message.join(', ') : (data.message || JSON.stringify(data)))
       return c.json({ error: errorMsg }, 500)
     }
   } catch (err: any) {

@@ -12,12 +12,10 @@
   "dependencies": {
     "@hono/node-server": "^1.13.7",
     "dotenv": "^16.4.5",
-    "hono": "^4.6.15",
-    "ws": "^8.18.0"
+    "hono": "^4.6.15"
   },
   "devDependencies": {
     "@types/node": "^20.17.9",
-    "@types/ws": "^8.5.13",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

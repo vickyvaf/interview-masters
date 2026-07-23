@@ -39,8 +39,12 @@ export default function Practice() {
   const webcamStreamRef = useRef<MediaStream | null>(null)
   const [webcamError, setWebcamError] = useState<string | null>(null)
 
-  // WebSocket state
-  const wsRef = useRef<WebSocket | null>(null)
+  // HTTP Session & State
+  const mockInterviewIdRef = useRef<string | null>(null)
+  const currentQuestionIdRef = useRef<string | null>(null)
+  const currentQuestionTextRef = useRef<string | null>(null)
+  const sequenceNumberRef = useRef<number>(1)
+  const scoresRef = useRef<number[]>([])
   const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected'>('connecting')
   const [isThinking, setIsThinking] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -114,12 +118,7 @@ export default function Practice() {
           recognitionRef.current.stop()
         } catch (e) { }
       }
-      // 4. Close WebSocket connection
-      if (wsRef.current) {
-        try {
-          wsRef.current.close()
-        } catch (e) { }
-      }
+
     }
   }, [])
 
@@ -178,92 +177,68 @@ export default function Practice() {
     }
   }, [isCameraOff])
 
-  // 2. Setup WebSocket Connection to Backend
+  // 2. Setup Interview Session via HTTP REST API
   useEffect(() => {
-    let socket: WebSocket | null = null;
-    let isCancelled = false;
+    let isCancelled = false
 
-    async function initSocket() {
+    async function initSession() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user || isCancelled) return
 
       const preConfidence = location.state?.preConfidence || 3
-      const roleParam = encodeURIComponent(role || 'General')
-      const jdParam = encodeURIComponent(location.state?.jobDescription || '')
-      
-      const baseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:5005/ws/voice'
-      const wsUrl = `${baseUrl}?userId=${user.id}&role=${roleParam}&jobDescription=${jdParam}&preConfidence=${preConfidence}`
-      
-      socket = new WebSocket(wsUrl)
-      wsRef.current = socket
+      const roleParam = role || 'General'
+      const jdParam = location.state?.jobDescription || ''
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
 
-      socket.onopen = () => {
-        setWsStatus('connected')
-      }
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/interview/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            role: roleParam,
+            jobDescription: jdParam,
+            preConfidence
+          })
+        })
 
-      socket.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data)
-          const eventType = payload.event
-          const eventData = payload.data || {}
-
-          if (eventType === 'session.started') {
-            const sysLang = eventData.system_language || 'id'
-            setSystemLanguage(sysLang)
-            systemLanguageRef.current = sysLang
-          } else if (eventType === 'user.transcript') {
-            const text = eventData.text || ''
-            if (text) {
-              setHistory((prev) => [...prev, { role: 'user', text }])
-            }
-          } else if (eventType === 'assistant.text') {
-            const text = eventData.text || ''
-            setIsThinking(false)
-            if (text) {
-              setHistory((prev) => [...prev, { role: 'assistant', text }])
-              const cleanedText = text.replace(/\*/g, '')
-              const utterance = new SpeechSynthesisUtterance(cleanedText)
-              utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
-              utterance.onstart = () => setIsSpeaking(true)
-              utterance.onend = () => setIsSpeaking(false)
-              utterance.onerror = () => setIsSpeaking(false)
-              window.speechSynthesis.cancel()
-              window.speechSynthesis.speak(utterance)
-            }
-          } else if (eventType === 'error') {
-            console.error('Backend WS Error:', eventData.message)
-            setIsThinking(false)
-          }
-        } catch (err) {
-          console.error('Error processing WS message:', err)
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`)
         }
-      }
 
-      socket.onerror = (err) => {
-        console.error('WebSocket Error:', err)
+        const data = await response.json()
+        if (isCancelled) return
+
+        mockInterviewIdRef.current = data.mockInterviewId
+        currentQuestionIdRef.current = data.initialQuestionId
+        currentQuestionTextRef.current = data.initialQuestionText
+        sequenceNumberRef.current = 1
+
+        const sysLang = data.systemLanguage || 'id'
+        setSystemLanguage(sysLang)
+        systemLanguageRef.current = sysLang
+        setWsStatus('connected')
+      } catch (err) {
+        console.error('Error initializing interview session:', err)
         setWsStatus('error')
-      }
-
-      socket.onclose = () => {
-        setWsStatus('disconnected')
       }
     }
 
-    initSocket()
+    initSession()
 
     return () => {
-      isCancelled = true;
-      const activeSocket = socket
-      if (activeSocket) {
-        if (activeSocket.readyState === WebSocket.OPEN) {
-          activeSocket.close()
-        } else if (activeSocket.readyState === WebSocket.CONNECTING) {
-          activeSocket.onopen = () => {
-            try {
-              activeSocket.close()
-            } catch (e) { }
-          }
-        }
+      isCancelled = true
+      if (mockInterviewIdRef.current) {
+        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
+        fetch(`${apiBaseUrl}/api/interview/finish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mockInterviewId: mockInterviewIdRef.current,
+            status: 'completed',
+            scores: scoresRef.current
+          })
+        }).catch(err => console.error('Error finalizing session on unmount:', err))
       }
     }
   }, [])
@@ -398,18 +373,54 @@ export default function Practice() {
       setIsRecording(false)
       if (finalTranscript.trim()) {
         const text = finalTranscript.trim()
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        if (wsStatus === 'connected') {
           setIsThinking(true)
           setHistory((prev) => [...prev, { role: 'user', text }])
-          wsRef.current.send(
-            JSON.stringify({
-              event: 'user.transcript',
-              data: { text }
+
+          const geminiHistory = history.map((item) => ({
+            role: item.role === 'user' ? ('user' as const) : ('model' as const),
+            parts: [{ text: item.text }]
+          }))
+
+          const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
+          fetch(`${apiBaseUrl}/api/interview/answer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              mockInterviewId: mockInterviewIdRef.current,
+              questionId: currentQuestionIdRef.current,
+              questionText: currentQuestionTextRef.current,
+              answerText: text,
+              history: geminiHistory,
+              sequenceNumber: sequenceNumberRef.current + 1
             })
-          )
+          }).then(async (res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const data = await res.json()
+            setIsThinking(false)
+
+            if (data.assistantText) {
+              sequenceNumberRef.current += 1
+              currentQuestionTextRef.current = data.assistantText
+              currentQuestionIdRef.current = data.nextQuestionId
+
+              setHistory((prev) => [...prev, { role: 'assistant', text: data.assistantText }])
+              const cleanedText = data.assistantText.replace(/\*/g, '')
+              const utterance = new SpeechSynthesisUtterance(cleanedText)
+              utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
+              utterance.onstart = () => setIsSpeaking(true)
+              utterance.onend = () => setIsSpeaking(false)
+              utterance.onerror = () => setIsSpeaking(false)
+              window.speechSynthesis.cancel()
+              window.speechSynthesis.speak(utterance)
+            }
+          }).catch((err) => {
+            console.error('Error sending answer:', err)
+            setIsThinking(false)
+          })
         }
       } else {
-        if (!isMicMutedRef.current && !isSpeakingRef.current && !isThinkingRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
+        if (!isMicMutedRef.current && !isSpeakingRef.current && !isThinkingRef.current && wsStatus === 'connected') {
           try {
             recognition.start()
           } catch (e) { }

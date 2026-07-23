@@ -599,13 +599,15 @@ app.post('/api/interview/finish', async (c) => {
 
 export const handler = handle(app)
 
-const port = Number(process.env.PORT) || 5005
-serve({
-  fetch: app.fetch,
-  port
-}, (info) => {
-  console.log(`[Backend] Server running on http://localhost:${info.port}`)
-})
+if (!process.env.NETLIFY && !process.env.LAMBDA_TASK_ROOT && !process.env.AWS_EXECUTION_ENV) {
+  const port = Number(process.env.PORT) || 5005
+  serve({
+    fetch: app.fetch,
+    port
+  }, (info) => {
+    console.log(`[Backend] Server running on http://localhost:${info.port}`)
+  })
+}
 
 export default app
 

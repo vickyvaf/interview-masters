@@ -1,7 +1,6 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { handle } from 'hono/netlify'
 import dotenv from 'dotenv'
 import path from 'path'
 
@@ -597,8 +596,6 @@ app.post('/api/interview/finish', async (c) => {
     return c.json({ error: err.message }, 500)
   }
 })
-
-export const handler = handle(app)
 
 if (!process.env.NETLIFY && !process.env.LAMBDA_TASK_ROOT && !process.env.AWS_EXECUTION_ENV) {
   const port = Number(process.env.PORT) || 5005

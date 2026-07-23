@@ -95,8 +95,8 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 | Tier | Price | Quota | Target User |
 |---|---|---|---|
 | **Free** | Rp 0 / month | 1 mock interview, basic feedback | First-time users, perkenalan awal |
-| **Starter Pass** *(Pay-per-use)* | Rp 19.000 / package | 3 mock interviews (masa aktif 7 hari), umpan balik instan & terstruktur | Candidate kepepet interview & anti-berlangganan (sekali bayar) |
-| **Pro** *(Most Popular)* | Rp 49.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers (latihan rutin sepuasnya) |
+| **Starter Pass** *(Pay-per-use)* | Rp 9.000 / package | 3 mock interviews (masa aktif 1 bulan), umpan balik instan & terstruktur | Candidate kepepet interview & anti-berlangganan (sekali bayar) |
+| **Pro** *(Most Popular)* | Rp 29.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers (latihan rutin sepuasnya) |
 | **Team / B2B** *(Link Hidden for MVP)* | Custom | Bulk licenses, HR dashboard, candidate tracking, white-label | Bootcamps, universities, enterprise HR |
 
 ### Payment Flow

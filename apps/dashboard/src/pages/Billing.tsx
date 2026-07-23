@@ -31,6 +31,7 @@ export default function Billing() {
             .then((res) => res.json())
             .then(() => {
               queryClient.invalidateQueries({ queryKey: ['billingProfile'] })
+              queryClient.refetchQueries({ queryKey: ['billingProfile'] })
             })
             .catch((err) => console.error('[Billing] Failed to sync subscription:', err))
         }
@@ -58,7 +59,7 @@ export default function Billing() {
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error'>('success')
-  const [activePlan, setActivePlan] = useState<'pro' | 'starter' | 'sprint' | null>(null)
+  const [activePlan, setActivePlan] = useState<'pro' | 'starter' | 'sprint' | 'test9k' | null>(null)
 
   // Query 1: Fetch user billing profile details
   const { data: profile, isLoading: loadingProfile } = useQuery({
@@ -100,7 +101,7 @@ export default function Billing() {
 
   // Mutation: Request checkout link from backend
   const upgradeMutation = useMutation({
-    mutationFn: async (plan: 'pro' | 'starter' | 'sprint') => {
+    mutationFn: async (plan: 'pro' | 'starter' | 'sprint' | 'test9k') => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user logged in')
 
@@ -148,7 +149,7 @@ export default function Billing() {
     }
   })
 
-  const handleUpgrade = (plan: 'pro' | 'starter' | 'sprint') => {
+  const handleUpgrade = (plan: 'pro' | 'starter' | 'sprint' | 'test9k') => {
     setActivePlan(plan)
     upgradeMutation.mutate(plan)
   }
@@ -211,7 +212,7 @@ export default function Billing() {
                 {tier === 'pro' && isSubscribed
                   ? 'Langganan aktif. Bebas simulasi wawancara sepuasnya.'
                   : tier === 'starter'
-                  ? 'Paket Starter Pass aktif (3 sesi wawancara / 7 hari).'
+                  ? 'Paket Starter Pass aktif (3 sesi wawancara / 1 bulan).'
                   : tier === 'sprint'
                   ? 'Program Sprint 14 hari aktif.'
                   : `Anda telah menggunakan ${monthCount} dari 1 sesi gratis bulan ini.`}
@@ -273,7 +274,7 @@ export default function Billing() {
                     <Heading size="3">Pro</Heading>
                     <Text size="1" color="gray">Untuk pencari kerja aktif</Text>
                   </Flex>
-                  <Badge size="2" variant="solid">
+                  <Badge size="2" variant="solid" color="green">
                     <Flex align="center" gap="1">
                       <StarIcon /> Paling Populer
                     </Flex>
@@ -281,7 +282,7 @@ export default function Billing() {
                 </Flex>
 
                 <Flex align="baseline" gap="1">
-                  <Text size="6" weight="bold">Rp 49.000</Text>
+                  <Text size="6" weight="bold">Rp 29.000</Text>
                   <Text size="2" color="gray">/ bulan</Text>
                 </Flex>
 
@@ -309,6 +310,7 @@ export default function Billing() {
                 <Button
                   size="2"
                   variant={tier === 'pro' ? 'outline' : 'solid'}
+                  color="green"
                   disabled={tier === 'pro'}
                   onClick={() => handleUpgrade('pro')}
                   loading={upgradeMutation.isPending && activePlan === 'pro'}
@@ -331,7 +333,7 @@ export default function Billing() {
                 </Flex>
 
                 <Flex align="baseline" gap="1">
-                  <Text size="6" weight="bold">Rp 19.000</Text>
+                  <Text size="6" weight="bold">Rp 9.000</Text>
                   <Text size="2" color="gray">/ paket</Text>
                 </Flex>
 
@@ -344,7 +346,7 @@ export default function Billing() {
                   </Flex>
                   <Flex align="center" gap="2">
                     <CheckIcon color="var(--green-9)" />
-                    <Text size="2">Masa aktif program 7 hari</Text>
+                    <Text size="2">Masa aktif paket 1 bulan</Text>
                   </Flex>
                   <Flex align="center" gap="2">
                     <CheckIcon color="var(--green-9)" />

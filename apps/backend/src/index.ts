@@ -31,14 +31,11 @@ app.post('/payments/create-checkout', async (c) => {
     const isProduction = process.env.MAYAR_IS_PRODUCTION === 'true'
     const mayarDomain = isProduction ? 'https://api.mayar.id' : 'https://api.mayar.club'
 
-    let amount = 49000
+    let amount = 29000
     let description = 'Pro Subscription - Interview Masters'
-    if (plan === 'starter') {
-      amount = 19000
+    if (plan === 'starter' || plan === '9k' || plan === 'test9k') {
+      amount = 9000
       description = 'Starter Pass - Interview Masters'
-    } else if (plan === 'sprint') {
-      amount = 99000
-      description = '14-Day Sprint - Interview Masters'
     }
 
     const callbackUrl = `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success&plan=${plan}`
@@ -92,23 +89,20 @@ async function upgradeUserSubscription(
   invoiceId?: string,
   paymentMethod?: string
 ) {
-  let determinedTier: 'starter' | 'pro' | 'sprint' = 'pro'
-  let paymentAmount = 49000
+  let determinedTier: 'starter' | 'pro' = 'pro'
+  let paymentAmount = 29000
 
   if (typeof planOrAmount === 'number') {
     paymentAmount = planOrAmount
-    determinedTier = paymentAmount === 19000 ? 'starter' : paymentAmount === 99000 ? 'sprint' : 'pro'
+    determinedTier = (paymentAmount === 9000 || paymentAmount === 19000) ? 'starter' : 'pro'
   } else if (typeof planOrAmount === 'string') {
-    const p = planOrAmount.toLowerCase()
-    if (p.includes('starter') || p === '19000') {
+    const p = planOrAmount.toLowerCase().replace(/\s+/g, '')
+    if (p.includes('starter') || p.includes('9000') || p.includes('9k') || p.includes('19000')) {
       determinedTier = 'starter'
-      paymentAmount = 19000
-    } else if (p.includes('sprint') || p === '99000') {
-      determinedTier = 'sprint'
-      paymentAmount = 99000
+      paymentAmount = 9000
     } else {
       determinedTier = 'pro'
-      paymentAmount = 49000
+      paymentAmount = 29000
     }
   }
 
@@ -172,9 +166,7 @@ async function upgradeUserSubscription(
   })
 
   // 3. Insert or update subscriptions table
-  const periodEnd = determinedTier === 'sprint'
-    ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-    : new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString()
+  const periodEnd = new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString()
 
   const subRes = await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
     method: 'POST',
@@ -189,7 +181,7 @@ async function upgradeUserSubscription(
       tier: determinedTier,
       status: 'active',
       price: paymentAmount,
-      billing_cycle: determinedTier === 'sprint' ? 'one-time' : 'monthly',
+      billing_cycle: determinedTier === 'starter' ? 'one-time' : 'monthly',
       current_period_start: new Date().toISOString(),
       current_period_end: periodEnd,
       created_at: new Date().toISOString(),

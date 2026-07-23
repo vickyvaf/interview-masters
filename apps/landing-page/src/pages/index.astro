@@ -18,22 +18,48 @@ import Footer from "../components/Footer.astro";
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="robots" content="index, follow" />
-		<meta name="description" content="Persiapkan diri Anda menghadapi wawancara kerja dengan simulasi berbasis AI interaktif. Dapatkan feedback instan mengenai struktur jawaban (metode STAR), tingkat relevansi, rambling detector, dan revisi jawaban dari AI evaluator." />
-		<meta name="keywords" content="simulasi wawancara kerja, latihan wawancara, persiapan wawancara, wawancara kerja ai, mock interview ai, feedback wawancara kerja" />
-		<title>Interview Masters - Simulasi Wawancara Kerja AI Interaktif</title>
+		<meta
+			name="description"
+			content="Persiapkan diri Anda menghadapi wawancara kerja dengan simulasi berbasis AI interaktif. Dapatkan feedback instan mengenai struktur jawaban (metode STAR), tingkat relevansi, rambling detector, dan revisi jawaban dari AI evaluator."
+		/>
+		<meta
+			name="keywords"
+			content="simulasi wawancara kerja, latihan wawancara, persiapan wawancara, wawancara kerja ai, mock interview ai, feedback wawancara kerja"
+		/>
+		<title>
+			Interview Masters - Simulasi Wawancara Kerja AI Interaktif
+		</title>
 
 		<!-- Open Graph / Facebook -->
 		<meta property="og:type" content="website" />
-		<meta property="og:url" content="https://interviewmasters.netlify.app/" />
-		<meta property="og:title" content="Interview Masters - Simulasi Wawancara Kerja AI" />
-		<meta property="og:description" content="Latihan simulasi wawancara kerja interaktif dengan AI. Dapatkan analisis detail dan perbaikan jawaban instan menggunakan metode STAR." />
+		<meta
+			property="og:url"
+			content="https://interviewmasters.netlify.app/"
+		/>
+		<meta
+			property="og:title"
+			content="Interview Masters - Simulasi Wawancara Kerja AI"
+		/>
+		<meta
+			property="og:description"
+			content="Latihan simulasi wawancara kerja interaktif dengan AI. Dapatkan analisis detail dan perbaikan jawaban instan menggunakan metode STAR."
+		/>
 		<meta property="og:image" content="/logo-new.png" />
 
 		<!-- Twitter -->
 		<meta property="twitter:card" content="summary_large_image" />
-		<meta property="twitter:url" content="https://interviewmasters.netlify.app/" />
-		<meta property="twitter:title" content="Interview Masters - Simulasi Wawancara Kerja AI" />
-		<meta property="twitter:description" content="Latihan simulasi wawancara kerja interaktif dengan AI. Dapatkan analisis detail dan perbaikan jawaban instan menggunakan metode STAR." />
+		<meta
+			property="twitter:url"
+			content="https://interviewmasters.netlify.app/"
+		/>
+		<meta
+			property="twitter:title"
+			content="Interview Masters - Simulasi Wawancara Kerja AI"
+		/>
+		<meta
+			property="twitter:description"
+			content="Latihan simulasi wawancara kerja interaktif dengan AI. Dapatkan analisis detail dan perbaikan jawaban instan menggunakan metode STAR."
+		/>
 		<meta property="twitter:image" content="/logo-new.png" />
 
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -45,104 +71,109 @@ import Footer from "../components/Footer.astro";
 
 		<!-- Structured Data (JSON-LD) for SEO / Google Sitelinks -->
 		<script type="application/ld+json">
-		[
-			{
-				"@context": "https://schema.org",
-				"@type": "WebSite",
-				"name": "Interview Masters",
-				"url": "https://interviewmasters.netlify.app",
-				"potentialAction": {
-					"@type": "SearchAction",
-					"target": "https://interviewmasters.netlify.app/?q={search_term_string}",
-					"query-input": "required name=search_term_string"
-				}
-			},
-			{
-				"@context": "https://schema.org",
-				"@type": "SiteNavigationElement",
-				"@id": "#header-navigation",
-				"name": [
-					"Fitur Utama",
-					"Paket & Harga",
-					"Mulai Gratis",
-					"Masuk Akun"
-				],
-				"url": [
-					"https://interviewmasters.netlify.app/#features",
-					"https://interviewmasters.netlify.app/#pricing",
-					"https://dashboard-interviewmasters.netlify.app/register",
-					"https://dashboard-interviewmasters.netlify.app/login"
-				]
-			},
-			{
-				"@context": "https://schema.org",
-				"@type": "SoftwareApplication",
-				"name": "Interview Masters",
-				"operatingSystem": "All",
-				"applicationCategory": "EducationalApplication",
-				"offers": {
-					"@type": "Offer",
-					"price": "99000",
-					"priceCurrency": "IDR"
-				}
-			},
-			{
-				"@context": "https://schema.org",
-				"@type": "FAQPage",
-				"mainEntity": [
-					{
-						"@type": "Question",
-						"name": "Bagaimana simulasi wawancara kerja AI ini bekerja?",
-						"acceptedAnswer": {
-							"@type": "Answer",
-							"text": "AI kami akan mengajukan pertanyaan satu per satu secara interaktif berdasarkan posisi pekerjaan yang Anda pilih serta deskripsi pekerjaan yang diunggah. Anda cukup menjawab secara lisan menggunakan mikrofon, dan mesin transkripsi kami akan mencatat tanggapan Anda secara real-time untuk dianalisis oleh AI evaluator."
-						}
-					},
-					{
-						"@type": "Question",
-						"name": "Apakah saya langsung mendapatkan umpan balik setelah latihan selesai?",
-						"acceptedAnswer": {
-							"@type": "Answer",
-							"text": "Ya! Segera setelah simulasi selesai, Anda akan disuguhkan dasbor analisis terperinci. Feedback kami mencakup penilaian struktur kalimat (menggunakan metode STAR: Situation, Task, Action, Result), tingkat relevansi, kepadatan penjelasan, pendeteksi rambling (bicara berputar-putar), serta rekomendasi revisi jawaban ('What you could have said')."
-						}
-					},
-					{
-						"@type": "Question",
-						"name": "Metode pembayaran apa saja yang didukung?",
-						"acceptedAnswer": {
-							"@type": "Answer",
-							"text": "Kami menerima berbagai metode pembayaran lokal Indonesia yang aman, termasuk pembayaran instan menggunakan QRIS, Virtual Account (BCA, Mandiri, BRI, BNI, dll), e-wallet, dan kartu debit/kredit lokal."
-						}
-					},
-					{
-						"@type": "Question",
-						"name": "Apa perbedaan paket Pro bulanan dengan 14-Day Sprint?",
-						"acceptedAnswer": {
-							"@type": "Answer",
-							"text": "Paket Pro merupakan sistem langganan bulanan berulang (recurring) yang memberikan akses latihan tanpa batas setiap bulan. Sementara 14-Day Sprint adalah paket program intensif sekali bayar (one-time) dengan masa aktif 14 hari, dirancang khusus bagi Anda yang memiliki jadwal wawancara ketat dalam waktu dekat."
-						}
-					},
-					{
-						"@type": "Question",
-						"name": "Apakah saya bisa membatalkan langganan Pro kapan saja?",
-						"acceptedAnswer": {
-							"@type": "Answer",
-							"text": "Tentu saja. Anda bisa membatalkan langganan paket Pro Anda kapan saja langsung melalui menu Billing di dasbor akun Anda. Setelah dibatalkan, akses fitur Pro akan tetap aktif hingga periode langganan bulan berjalan berakhir."
-						}
+			[
+				{
+					"@context": "https://schema.org",
+					"@type": "WebSite",
+					"name": "Interview Masters",
+					"url": "https://interviewmasters.netlify.app",
+					"potentialAction": {
+						"@type": "SearchAction",
+						"target": "https://interviewmasters.netlify.app/?q={search_term_string}",
+						"query-input": "required name=search_term_string"
 					}
-				]
-			}
-		]
+				},
+				{
+					"@context": "https://schema.org",
+					"@type": "SiteNavigationElement",
+					"@id": "#header-navigation",
+					"name": [
+						"Fitur Utama",
+						"Paket & Harga",
+						"Mulai Gratis",
+						"Masuk Akun"
+					],
+					"url": [
+						"https://interviewmasters.netlify.app/#features",
+						"https://interviewmasters.netlify.app/#pricing",
+						"https://dashboard-interviewmasters.netlify.app/register",
+						"https://dashboard-interviewmasters.netlify.app/login"
+					]
+				},
+				{
+					"@context": "https://schema.org",
+					"@type": "SoftwareApplication",
+					"name": "Interview Masters",
+					"operatingSystem": "All",
+					"applicationCategory": "EducationalApplication",
+					"offers": {
+						"@type": "Offer",
+						"price": "9000",
+						"priceCurrency": "IDR"
+					}
+				},
+				{
+					"@context": "https://schema.org",
+					"@type": "FAQPage",
+					"mainEntity": [
+						{
+							"@type": "Question",
+							"name": "Bagaimana simulasi wawancara kerja AI ini bekerja?",
+							"acceptedAnswer": {
+								"@type": "Answer",
+								"text": "AI kami akan mengajukan pertanyaan satu per satu secara interaktif berdasarkan posisi pekerjaan yang Anda pilih serta deskripsi pekerjaan yang diunggah. Anda cukup menjawab secara lisan menggunakan mikrofon, dan mesin transkripsi kami akan mencatat tanggapan Anda secara real-time untuk dianalisis oleh AI evaluator."
+							}
+						},
+						{
+							"@type": "Question",
+							"name": "Apakah saya langsung mendapatkan umpan balik setelah latihan selesai?",
+							"acceptedAnswer": {
+								"@type": "Answer",
+								"text": "Ya! Segera setelah simulasi selesai, Anda akan disuguhkan dasbor analisis terperinci. Feedback kami mencakup penilaian struktur kalimat (menggunakan metode STAR: Situation, Task, Action, Result), tingkat relevansi, kepadatan penjelasan, pendeteksi rambling (bicara berputar-putar), serta rekomendasi revisi jawaban ('What you could have said')."
+							}
+						},
+						{
+							"@type": "Question",
+							"name": "Metode pembayaran apa saja yang didukung?",
+							"acceptedAnswer": {
+								"@type": "Answer",
+								"text": "Kami menerima berbagai metode pembayaran lokal Indonesia yang aman, termasuk pembayaran instan menggunakan QRIS, Virtual Account (BCA, Mandiri, BRI, BNI, dll), e-wallet, dan kartu debit/kredit lokal."
+							}
+						},
+						{
+							"@type": "Question",
+							"name": "Apa perbedaan paket Pro bulanan dengan Starter Pass?",
+							"acceptedAnswer": {
+								"@type": "Answer",
+								"text": "Paket Pro (Rp 29.000/bulan) memberikan akses latihan tanpa batas (unlimited) dan analitik lengkap setiap bulan. Sementara Starter Pass (Rp 9.000/paket) adalah paket sekali bayar tanpa langganan yang memberikan kuota 3x simulasi wawancara dengan masa aktif 1 bulan, dirancang bagi Anda yang ingin latihan cepat tanpa ikatan berlangganan."
+							}
+						},
+						{
+							"@type": "Question",
+							"name": "Apakah saya bisa membatalkan langganan Pro kapan saja?",
+							"acceptedAnswer": {
+								"@type": "Answer",
+								"text": "Tentu saja. Anda bisa membatalkan langganan paket Pro Anda kapan saja langsung melalui menu Billing di dasbor akun Anda. Setelah dibatalkan, akses fitur Pro akan tetap aktif hingga periode langganan bulan berjalan berakhir."
+							}
+						}
+					]
+				}
+			]
 		</script>
 
 		<!-- Google tag (gtag.js) -->
-		<script async src="https://www.googletagmanager.com/gtag/js?id=G-RMK63K97FM" is:inline></script>
+		<script
+			async
+			src="https://www.googletagmanager.com/gtag/js?id=G-RMK63K97FM"
+			is:inline></script>
 		<script is:inline>
 			window.dataLayer = window.dataLayer || [];
-			function gtag(){dataLayer.push(arguments);}
-			gtag('js', new Date());
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+			gtag("js", new Date());
 
-			gtag('config', 'G-RMK63K97FM');
+			gtag("config", "G-RMK63K97FM");
 		</script>
 	</head>
 	<body style="margin:0;padding:0;font-family:'Inter',sans-serif;">

@@ -1,6 +1,6 @@
 [build]
-  command = "pnpm build"
-  publish = "dist"
+  command = "pnpm --filter apps-dashboard build"
+  publish = "apps/dashboard/dist"
 
 [[redirects]]
   from = "/*"

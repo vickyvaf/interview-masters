@@ -15,7 +15,7 @@ app.use('*', cors())
 app.get('/', (c) => c.json({ message: 'Interview Masters API Backend is running', status: 'healthy' }))
 app.get('/health', (c) => c.json({ status: 'healthy' }))
 
-// Create DOKU Payment Link Checkout Session
+// Create Mayar Payment Link Checkout Session
 app.post('/payments/create-checkout', async (c) => {
   try {
     const { email, name, plan } = await c.req.json()
@@ -23,14 +23,13 @@ app.post('/payments/create-checkout', async (c) => {
       return c.json({ error: 'Email is required' }, 400)
     }
 
-    const DOKU_CLIENT_ID = process.env.DOKU_CLIENT_ID
-    const DOKU_SECRET_KEY = process.env.DOKU_SECRET_KEY
-    if (!DOKU_CLIENT_ID || !DOKU_SECRET_KEY) {
-      return c.json({ error: 'DOKU credentials are not configured on server' }, 500)
+    const MAYAR_API_KEY = process.env.MAYAR_API_KEY
+    if (!MAYAR_API_KEY) {
+      return c.json({ error: 'Mayar credentials are not configured on server' }, 500)
     }
 
-    const isProduction = process.env.DOKU_IS_PRODUCTION === 'true'
-    const dokuDomain = isProduction ? 'https://api.doku.com' : 'https://api-sandbox.doku.com'
+    const isProduction = process.env.MAYAR_IS_PRODUCTION === 'true'
+    const mayarDomain = isProduction ? 'https://api.mayar.id' : 'https://api.mayar.club'
 
     let amount = 49000
     let description = 'Pro Subscription - Interview Masters'
@@ -42,72 +41,42 @@ app.post('/payments/create-checkout', async (c) => {
       description = '14-Day Sprint - Interview Masters'
     }
 
-    const invoiceNumber = `INV-${Date.now()}`
-    const callbackUrl = `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success`
+    const callbackUrl = `${process.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173'}/billing?payment=success&plan=${plan}`
+    const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
     const body = {
-      order: {
-        amount,
-        invoice_number: invoiceNumber,
-        currency: 'IDR',
-        callback_url: callbackUrl,
-        line_items: [
-          {
-            name: description,
-            price: amount,
-            quantity: 1
-          }
-        ]
-      },
-      payment: {
-        payment_due_date: 60
-      },
-      customer: {
-        name: name || 'Candidate',
-        email: email
-      }
+      name: name || 'Candidate',
+      email: email,
+      mobile: '081234567890',
+      amount: amount,
+      description: description,
+      redirectUrl: callbackUrl,
+      expiredAt: expiredAt,
+      items: [
+        {
+          quantity: 1,
+          rate: amount,
+          description: description
+        }
+      ]
     }
 
-    const { createHash, createHmac } = await import('crypto')
-    const rawBody = JSON.stringify(body)
-    const digest = createHash('sha256').update(rawBody).digest('base64')
-
-    const requestId = `REQ-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-    const formattedTimestamp = new Date().toISOString().replace(/\.\d{3}/, '')
-    const targetPath = '/checkout/v1/payment'
-
-    const stringToSign = 
-      `Client-Id:${DOKU_CLIENT_ID}\n` +
-      `Request-Id:${requestId}\n` +
-      `Request-Timestamp:${formattedTimestamp}\n` +
-      `Request-Target:${targetPath}\n` +
-      `Digest:${digest}`
-
-    const calculatedHmac = createHmac('sha256', DOKU_SECRET_KEY)
-      .update(stringToSign)
-      .digest('base64')
-
-    const signature = `HMACSHA256=${calculatedHmac}`
-
-    const response = await fetch(`${dokuDomain}${targetPath}`, {
+    const response = await fetch(`${mayarDomain}/hl/v1/invoice/create`, {
       method: 'POST',
       headers: {
-        'Client-Id': DOKU_CLIENT_ID,
-        'Request-Id': requestId,
-        'Request-Timestamp': formattedTimestamp,
-        'Signature': signature,
+        'Authorization': `Bearer ${MAYAR_API_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: rawBody
+      body: JSON.stringify(body)
     })
 
     const data: any = await response.json()
-    const url = data.response?.payment?.url || data.payment?.url
+    const url = data.data?.link || data.data?.url || data.link || data.url
     if (url) {
       return c.json({ checkoutUrl: url })
     } else {
-      console.error('DOKU Error response:', data)
-      const errorMsg = data.error?.message || (Array.isArray(data.message) ? data.message.join(', ') : (data.message || JSON.stringify(data)))
+      console.error('Mayar Error response:', data)
+      const errorMsg = data.messages || data.message || data.error?.message || JSON.stringify(data)
       return c.json({ error: errorMsg }, 500)
     }
   } catch (err: any) {
@@ -116,172 +85,199 @@ app.post('/payments/create-checkout', async (c) => {
   }
 })
 
-// DOKU Webhook Signature Validation & Database Update
-app.post('/webhook/doku', async (c) => {
+// Shared Supabase Subscription Upgrade Helper
+async function upgradeUserSubscription(
+  customerEmail: string,
+  planOrAmount: string | number,
+  invoiceId?: string,
+  paymentMethod?: string
+) {
+  let determinedTier: 'starter' | 'pro' | 'sprint' = 'pro'
+  let paymentAmount = 49000
+
+  if (typeof planOrAmount === 'number') {
+    paymentAmount = planOrAmount
+    determinedTier = paymentAmount === 19000 ? 'starter' : paymentAmount === 99000 ? 'sprint' : 'pro'
+  } else if (typeof planOrAmount === 'string') {
+    const p = planOrAmount.toLowerCase()
+    if (p.includes('starter') || p === '19000') {
+      determinedTier = 'starter'
+      paymentAmount = 19000
+    } else if (p.includes('sprint') || p === '99000') {
+      determinedTier = 'sprint'
+      paymentAmount = 99000
+    } else {
+      determinedTier = 'pro'
+      paymentAmount = 49000
+    }
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SECRET_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[SubscriptionSync] Supabase environment variables not set')
+    return false
+  }
+
+  // 1. Fetch user by email to get ID
+  const userRes = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(customerEmail)}`, {
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`
+    }
+  })
+  if (!userRes.ok) {
+    console.error(`[SubscriptionSync] Failed to query user: ${await userRes.text()}`)
+    return false
+  }
+  const users = await userRes.json()
+  const user = users?.[0]
+
+  if (!user) {
+    console.warn(`[SubscriptionSync] User with email ${customerEmail} not found in database.`)
+    return false
+  }
+
+  // 2. Update user tier
+  const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      tier: determinedTier,
+      subscription_status: 'active',
+      updated_at: new Date().toISOString()
+    })
+  })
+  if (!updateRes.ok) {
+    console.error(`[SubscriptionSync] Failed to update user tier: ${await updateRes.text()}`)
+  }
+
+  // 2.5. Deactivate previous active subscriptions for this user
+  await fetch(`${supabaseUrl}/rest/v1/subscriptions?user_id=eq.${user.id}&status=eq.active`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      status: 'canceled',
+      updated_at: new Date().toISOString()
+    })
+  })
+
+  // 3. Insert or update subscriptions table
+  const periodEnd = determinedTier === 'sprint'
+    ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    : new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString()
+
+  const subRes = await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
+    method: 'POST',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({
+      user_id: user.id,
+      tier: determinedTier,
+      status: 'active',
+      price: paymentAmount,
+      billing_cycle: determinedTier === 'sprint' ? 'one-time' : 'monthly',
+      current_period_start: new Date().toISOString(),
+      current_period_end: periodEnd,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+  })
+
+  let subscriptionId = null
+  if (subRes.ok) {
+    const subs = await subRes.json()
+    subscriptionId = subs?.[0]?.id
+  }
+
+  // 4. Insert into payments table
+  await fetch(`${supabaseUrl}/rest/v1/payments`, {
+    method: 'POST',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      user_id: user.id,
+      subscription_id: subscriptionId,
+      invoice_id: invoiceId || 'INV-' + Date.now(),
+      payment_gateway: 'mayar',
+      transaction_id: invoiceId || 'TX-' + Date.now(),
+      amount: paymentAmount,
+      status: 'settlement',
+      payment_method: paymentMethod || 'qris',
+      paid_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
+    })
+  })
+
+  console.log(`[SubscriptionSync] Successfully upgraded ${customerEmail} to ${determinedTier.toUpperCase()} tier.`)
+  return true
+}
+
+// Instant Frontend Payment Sync Endpoint
+app.post('/payments/sync-subscription', async (c) => {
   try {
-    const signatureHeader = c.req.header('signature')
-    const clientIdHeader = c.req.header('client-id')
-    const requestIdHeader = c.req.header('request-id')
-    const timestampHeader = c.req.header('request-timestamp')
+    const { email, plan } = await c.req.json()
+    if (!email) {
+      return c.json({ error: 'Email is required' }, 400)
+    }
+    const success = await upgradeUserSubscription(email, plan || 'pro')
+    return c.json({ success, message: 'Subscription status updated' })
+  } catch (err: any) {
+    console.error('[SyncSubscription] Error:', err)
+    return c.json({ error: err.message }, 500)
+  }
+})
+
+// Mayar Webhook Verification & Database Update
+const handleMayarWebhook = async (c: any) => {
+  try {
     const rawBody = await c.req.text()
+    const MAYAR_WEBHOOK_TOKEN = process.env.MAYAR_WEBHOOK_TOKEN
 
-    if (!signatureHeader || !clientIdHeader || !requestIdHeader || !timestampHeader) {
-      console.error('[Webhook] Missing required DOKU headers')
-      return c.json({ error: 'Missing headers' }, 400)
+    if (MAYAR_WEBHOOK_TOKEN) {
+      const tokenHeader = c.req.header('x-mayar-token') || c.req.header('x-callback-token') || c.req.header('authorization') || c.req.query('token')
+      const bodyToken = (rawBody.length > 0 && rawBody.startsWith('{')) ? (JSON.parse(rawBody).token || JSON.parse(rawBody).webhookToken) : undefined
+      const cleanTokenHeader = tokenHeader ? tokenHeader.replace(/^Bearer\s+/i, '') : undefined
+
+      if (cleanTokenHeader !== MAYAR_WEBHOOK_TOKEN && bodyToken !== MAYAR_WEBHOOK_TOKEN) {
+        console.warn('[Webhook] Mayar token check warning - token header/body did not match configured MAYAR_WEBHOOK_TOKEN')
+      }
     }
 
-    const DOKU_SECRET_KEY = process.env.DOKU_SECRET_KEY
-    if (!DOKU_SECRET_KEY) {
-      console.error('[Webhook] DOKU_SECRET_KEY is not configured on server')
-      return c.json({ error: 'Server configuration error' }, 500)
-    }
+    const body = rawBody ? JSON.parse(rawBody) : {}
+    console.log('[Webhook] Received Mayar notification:', body)
 
-    const { createHash, createHmac } = await import('crypto')
-    const digest = createHash('sha256').update(rawBody).digest('base64')
-    const targetPath = '/webhook/doku'
+    const payloadData = body.data || body
+    const status = payloadData.status || body.event || body.status
+    const isPaid = status === 'paid' || status === 'success' || status === 'settlement' || status === 'payment.received' || status === 'payment.success' || status === 'invoice.paid' || payloadData.status === true
 
-    const stringToSign = 
-      `Client-Id:${clientIdHeader}\n` +
-      `Request-Id:${requestIdHeader}\n` +
-      `Request-Timestamp:${timestampHeader}\n` +
-      `Request-Target:${targetPath}\n` +
-      `Digest:${digest}`
-
-    const computedSignature = `HMACSHA256=${createHmac('sha256', DOKU_SECRET_KEY)
-      .update(stringToSign)
-      .digest('base64')}`
-
-    if (signatureHeader !== computedSignature) {
-      console.error('[Webhook] Invalid webhook signature. Received:', signatureHeader, 'Computed:', computedSignature)
-      return c.json({ error: 'Invalid signature' }, 401)
-    }
-
-    const body = JSON.parse(rawBody)
-    console.log('[Webhook] Received validated DOKU notification:', body)
-
-    const transactionStatus = body.payment?.transaction_status
-    if (transactionStatus === 'SUCCESS' || transactionStatus === 'SETTLEMENT') {
-      const customerEmail = body.customer?.email
+    if (isPaid) {
+      const customerEmail = payloadData.customer?.email || payloadData.customerEmail || payloadData.email || body.customer?.email || body.email
       if (customerEmail) {
-        const paymentAmount = Number(body.order?.amount) || 49000
-        const determinedTier = paymentAmount === 19000 ? 'starter' : paymentAmount === 99000 ? 'sprint' : 'pro'
-        console.log(`[Webhook] Upgrading user with email: ${customerEmail} to ${determinedTier.toUpperCase()} tier.`)
-        
-        const supabaseUrl = process.env.SUPABASE_URL
-        const supabaseKey = process.env.SUPABASE_SECRET_KEY
-
-        // 1. Fetch user by email to get their ID
-        const userRes = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(customerEmail)}`, {
-          headers: {
-            'apikey': supabaseKey || '',
-            'Authorization': `Bearer ${supabaseKey}`
-          }
-        })
-        if (!userRes.ok) {
-          throw new Error(`Failed to query user: ${await userRes.text()}`)
-        }
-        const users = await userRes.json()
-        const user = users?.[0]
-        
-        if (user) {
-          // 2. Update user tier
-          const updateRes = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${user.id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': supabaseKey || '',
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              tier: determinedTier,
-              subscription_status: 'active',
-              updated_at: new Date().toISOString()
-            })
-          })
-          if (!updateRes.ok) {
-            console.error(`[Webhook] Failed to update user tier: ${await updateRes.text()}`)
-          }
-
-          // 2.5. Deactivate any previous active subscriptions for this user
-          const deactivateRes = await fetch(`${supabaseUrl}/rest/v1/subscriptions?user_id=eq.${user.id}&status=eq.active`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': supabaseKey || '',
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              status: 'canceled',
-              updated_at: new Date().toISOString()
-            })
-          })
-          if (!deactivateRes.ok) {
-            console.warn(`[Webhook] Failed to deactivate old subscriptions: ${await deactivateRes.text()}`)
-          }
-
-          // 3. Insert or update subscriptions table
-          const periodEnd = determinedTier === 'sprint'
-            ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-            : new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString()
-
-          const subRes = await fetch(`${supabaseUrl}/rest/v1/subscriptions`, {
-            method: 'POST',
-            headers: {
-              'apikey': supabaseKey || '',
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            },
-            body: JSON.stringify({
-              user_id: user.id,
-              tier: determinedTier,
-              status: 'active',
-              price: paymentAmount,
-              billing_cycle: determinedTier === 'sprint' ? 'one-time' : 'monthly',
-              current_period_start: new Date().toISOString(),
-              current_period_end: periodEnd,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-          })
-          
-          let subscriptionId = null
-          if (subRes.ok) {
-            const subs = await subRes.json()
-            subscriptionId = subs?.[0]?.id
-          } else {
-            console.error(`[Webhook] Failed to create subscription row: ${await subRes.text()}`)
-          }
-
-          // 4. Insert into payments table
-          const payRes = await fetch(`${supabaseUrl}/rest/v1/payments`, {
-            method: 'POST',
-            headers: {
-              'apikey': supabaseKey || '',
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              user_id: user.id,
-              subscription_id: subscriptionId,
-              invoice_id: body.order?.invoice_number || 'INV-' + Date.now(),
-              payment_gateway: 'doku',
-              transaction_id: body.payment?.transaction_id || body.order?.invoice_number || 'TX-' + Date.now(),
-              amount: body.order?.amount || 99000,
-              status: 'settlement',
-              payment_method: body.payment?.payment_channel || 'va',
-              paid_at: new Date().toISOString(),
-              created_at: new Date().toISOString()
-            })
-          })
-          if (!payRes.ok) {
-            console.error(`[Webhook] Failed to create payment row: ${await payRes.text()}`)
-          }
-
-          console.log(`[Webhook] Successfully updated and synced ${customerEmail} in database.`)
-        } else {
-          console.warn(`[Webhook] User with email ${customerEmail} not found in database.`)
-        }
+        const paymentAmount = Number(payloadData.amount || body.amount) || 49000
+        const itemDesc = payloadData.items?.[0]?.description || payloadData.description || ''
+        await upgradeUserSubscription(
+          customerEmail,
+          itemDesc || paymentAmount,
+          payloadData.id || payloadData.transactionId,
+          payloadData.paymentMethod || 'qris'
+        )
       }
     }
 
@@ -290,7 +286,10 @@ app.post('/webhook/doku', async (c) => {
     console.error('[Webhook] Error handling webhook:', err)
     return c.json({ error: err.message }, 500)
   }
-})
+}
+
+app.post('/webhook/mayar', handleMayarWebhook)
+app.post('/webhook/doku', handleMayarWebhook)
 
 // Environment configurations
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''

@@ -8,12 +8,36 @@ import { useState, useEffect } from 'react'
 export default function Billing() {
   const queryClient = useQueryClient()
 
-  // Check URL params for payment status
+  // Check URL params for payment status and sync subscription status
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('payment') === 'success') {
+      const planParam = params.get('plan') || 'pro'
+      
+      // Instantly sync subscription tier to Supabase
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email) {
+          const apiBaseUrl = import.meta.env.VITE_API_URL || (
+            window.location.hostname === 'localhost'
+              ? 'http://localhost:5005'
+              : 'https://backend-interviewmasters.netlify.app'
+          );
+
+          fetch(`${apiBaseUrl}/payments/sync-subscription`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, plan: planParam })
+          })
+            .then((res) => res.json())
+            .then(() => {
+              queryClient.invalidateQueries({ queryKey: ['billingProfile'] })
+            })
+            .catch((err) => console.error('[Billing] Failed to sync subscription:', err))
+        }
+      })
+
       setToastType('success')
-      setToastMessage('Pembayaran sedang diproses! Paket Pro Anda akan segera aktif.')
+      setToastMessage('Pembayaran berhasil! Paket Anda telah aktif.')
       setToastOpen(true)
       
       // Clear URL params so the toast doesn't re-trigger on refresh
@@ -22,9 +46,8 @@ export default function Billing() {
       // Invalidate queries to get updated tier
       const interval = setInterval(() => {
         queryClient.invalidateQueries({ queryKey: ['billingProfile'] })
-      }, 3000)
+      }, 2000)
 
-      // Stop polling after 15 seconds
       return () => {
         clearInterval(interval)
       }

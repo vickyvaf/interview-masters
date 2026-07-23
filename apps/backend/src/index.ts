@@ -13,6 +13,7 @@ dotenv.config({ path: path.resolve(process.cwd(), isProd ? '../../.env.productio
 const app = new Hono()
 app.use('*', cors())
 
+app.get('/', (c) => c.json({ message: 'Interview Masters API Backend is running', status: 'healthy' }))
 app.get('/health', (c) => c.json({ status: 'healthy' }))
 
 // Create DOKU Payment Link Checkout Session

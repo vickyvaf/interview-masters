@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && (mkdir -p dist && cp public/_redirects dist/_redirects 2>/dev/null || true)",
     "start": "node dist/index.js"
   },
   "dependencies": {

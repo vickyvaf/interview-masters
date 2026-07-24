@@ -1,13 +1,71 @@
+# Allow all standard web crawlers
 User-agent: *
 Allow: /
 
 Sitemap: https://interviewmasters.netlify.app/sitemap.xml
 
-User-agent: Google-Extended
-Allow: /
+# Explicitly Allow AI & LLM Search Crawlers (GEO / Generative Engine Optimization)
 
+# OpenAI / ChatGPT
 User-agent: GPTBot
 Allow: /
 
 User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Google Gemini & Search
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+# DeepSeek
+User-agent: DeepSeekBot
+Allow: /
+
+User-agent: DeepSeek
+Allow: /
+
+# Zhipu AI / GLM
+User-agent: ZhipuAI
+Allow: /
+
+User-agent: GLMBot
+Allow: /
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+
+# Meta AI / Llama
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Apple Intelligence
+User-agent: Applebot-Extended
+Allow: /
+
+# ByteDance / TikTok AI
+User-agent: Bytespider
+Allow: /
+
+# Cohere & Amazon AI
+User-agent: Cohere-ai
+Allow: /
+
+User-agent: Amazonbot
 Allow: /

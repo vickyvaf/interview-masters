@@ -8,6 +8,7 @@
     "dev:landing": "pnpm --filter apps-landing-page dev",
     "dev:dashboard": "pnpm --filter apps-dashboard dev",
     "dev:backend": "pnpm --filter apps-backend dev",
+    "dev:remotion": "pnpm --filter remotion dev",
     "build": "pnpm build:landing && pnpm build:dashboard && pnpm build:backend",
     "build:landing": "pnpm --filter apps-landing-page build",
     "build:dashboard": "pnpm --filter apps-dashboard build",

@@ -55,5 +55,9 @@
 * **Unit Economics**: Target LTV:CAC minimal 2:1 hingga 3:1 dengan masa pengembalian modal (*payback period*) dalam satu siklus wawancara (30–60 hari).
 * **Keberlanjutan**: Mengurangi ketergantungan waktu pendiri lewat kemitraan dengan universitas dan otomatisasi penuh menggunakan infrastruktur AI yang efisien.
 
-### Q9 · Transactions
-*(Belum ada data/bukti transaksi yang dimasukkan)*
+### Q9 · Get your first transactions
+For my first paid transaction for Interview Masters, the channel was Threads (social media), where I posted about the problem and offered a paid “interview practice” session aligned with the 14‑day interview sprint concept in Q8. From roughly 1–5 visitors who saw and engaged with the offer, 1 person converted into a paid customer (early visitor‑to‑paid conversion), which already demonstrates real willingness‑to‑pay for structured interview practice rather than just free tips.
+
+The customer explicitly shared that their reason to buy was wanting to try a focused interview practice session before a real interview, especially to reduce anxiety and test how an AI‑guided coach could help them improve their answers. This matches the target persona and business model described in Q2 and Q8: early‑career candidates, close to upcoming interviews, willing to pay a modest amount for outcome‑oriented preparation. As proof of this paid transaction, I have uploaded a verifiable record (screenshot/export showing transaction date, customer identity, and amount) to the following Google Drive folder:
+
+[Google Drive Proof Folder](https://drive.google.com/drive/folders/1a3NeDlEixLgmrLasV0_pDMPp7GE4Locd?usp=sharing)

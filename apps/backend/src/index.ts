@@ -18,7 +18,7 @@ app.get('/health', (c) => c.json({ status: 'healthy' }))
 // Create Mayar Payment Link Checkout Session
 app.post('/payments/create-checkout', async (c) => {
   try {
-    const { email, name, plan } = await c.req.json()
+    const { email, name, mobile, plan } = await c.req.json()
     if (!email) {
       return c.json({ error: 'Email is required' }, 400)
     }
@@ -44,7 +44,7 @@ app.post('/payments/create-checkout', async (c) => {
     const body = {
       name: name || 'Candidate',
       email: email,
-      mobile: '081234567890',
+      mobile: mobile || '',
       amount: amount,
       description: description,
       redirectUrl: callbackUrl,

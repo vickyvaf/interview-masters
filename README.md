@@ -2,6 +2,10 @@
 
 > **AI-powered mock interview practice** — turning every candidate's real ability into real career opportunities.
 
+## Preview
+
+[![Interview Masters Preview](https://img.youtube.com/vi/DTbh09OeFwY/hqdefault.jpg)](https://youtu.be/DTbh09OeFwY?si=ekmU6_x4i9sxbW2R)
+
 ---
 
 ## Table of Contents

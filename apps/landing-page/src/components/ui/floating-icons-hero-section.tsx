@@ -177,7 +177,7 @@ const FloatingIconsHero = React.forwardRef<
           },
         }}
       >
-        <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-foreground flex flex-col items-center gap-0 leading-none">
+        <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-[100px] font-serif font-normal tracking-tight text-foreground flex flex-col items-center gap-0 leading-[0.95]">
           {title.map((line, idx) => (
             <span key={idx} className="block overflow-hidden h-[1.12em] relative flex items-center justify-center">
               {line.split('').map((char, charIdx) => (

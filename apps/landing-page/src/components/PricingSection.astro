@@ -1,8 +1,13 @@
 ---
-const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5173';
+const dashboardUrl =
+  import.meta.env.PUBLIC_DASHBOARD_URL || "http://localhost:5173";
 ---
 
-<section id="pricing" data-dashboard-url={dashboardUrl} class="w-full py-20 bg-background border-t border-border/30">
+<section
+  id="pricing"
+  data-dashboard-url={dashboardUrl}
+  class="w-full py-20 bg-background border-t border-border/30"
+>
   <div class="max-w-5xl mx-auto px-6">
     <!-- Header -->
     <div
@@ -127,7 +132,7 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
                 stroke-linejoin="round"
                 d="M5 13l4 4L19 7"></path>
             </svg>
-            <span>Sesi latihan tanpa batas (unlimited)</span>
+            <span>Sesi latihan tanpa batas</span>
           </li>
           <li class="flex items-start gap-3 text-foreground">
             <svg
@@ -312,19 +317,21 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'http://localhost:5
 
   // Client-side authentication routing check for pricing checkout links
   try {
-    const cookies = document.cookie.split(';');
-    const hasSession = cookies.some(c => c.trim().startsWith('im_session='));
-    
+    const cookies = document.cookie.split(";");
+    const hasSession = cookies.some((c) => c.trim().startsWith("im_session="));
+
     if (!hasSession) {
-      const pricingSection = document.getElementById('pricing');
-      const dashboardUrl = pricingSection ? pricingSection.getAttribute('data-dashboard-url') : 'http://localhost:5173';
-      const checkoutLinks = document.querySelectorAll('.checkout-link');
-      checkoutLinks.forEach(link => {
+      const pricingSection = document.getElementById("pricing");
+      const dashboardUrl = pricingSection
+        ? pricingSection.getAttribute("data-dashboard-url")
+        : "http://localhost:5173";
+      const checkoutLinks = document.querySelectorAll(".checkout-link");
+      checkoutLinks.forEach((link) => {
         // Redirect them to login page first
-        link.setAttribute('href', `${dashboardUrl}/login?redirectTo=/billing`);
+        link.setAttribute("href", `${dashboardUrl}/login?redirectTo=/billing`);
       });
     }
   } catch (e) {
-    console.error('Error checking user session in PricingSection', e);
+    console.error("Error checking user session in PricingSection", e);
   }
 </script>

@@ -48,6 +48,7 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family: 'Manrope', sans-serif;
   }
 }
 
@@ -69,4 +70,5 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --font-serif: 'Instrument Serif', Georgia, Cambria, 'Times New Roman', Times, serif;
 }

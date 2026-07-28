@@ -94,7 +94,7 @@ export default function Navbar() {
       <div className="max-w-5xl mx-auto px-6 flex items-center justify-between relative">
         {/* Brand/Logo */}
         <a href="#" className="flex items-center group z-10">
-          <img src="/logo-new.png" alt="Interview Masters Logo" className="h-8 object-contain" />
+          <img src="/logo-new.png" alt="Interview Masters Logo" className="h-8 object-contain" width={117} height={32} />
         </a>
 
         {/* Desktop Navigation */}

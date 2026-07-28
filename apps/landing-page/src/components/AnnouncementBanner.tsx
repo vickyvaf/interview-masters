@@ -7,8 +7,8 @@ export default function AnnouncementBanner() {
       initial={{ opacity: 0, y: 40, x: '-50%', scale: 0.95 }}
       animate={{ opacity: 1, y: '50%', x: '-50%', scale: 1 }}
       transition={{
-        delay: 2.2, // Wait for hero title, subtitle, and CTA animations to complete
-        duration: 0.8,
+        delay: 0.2, // Fast entrance to optimize mobile LCP
+        duration: 0.5,
         ease: [0.16, 1, 0.3, 1], // Smooth custom ease curve
       }}
       className="absolute bottom-0 left-1/2 z-20 w-[90%] max-w-3xl bg-card border border-border/80 rounded-3xl p-5 md:p-6 flex items-center justify-between gap-6"

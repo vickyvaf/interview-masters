@@ -184,19 +184,28 @@ import Footer from "../components/Footer.astro";
 			]
 		</script>
 
-		<!-- Google tag (gtag.js) -->
-		<script
-			async
-			src="https://www.googletagmanager.com/gtag/js?id=G-RMK63K97FM"
-			is:inline></script>
+		<!-- Google tag (gtag.js) - Deferred to prioritize critical path -->
 		<script is:inline>
 			window.dataLayer = window.dataLayer || [];
 			function gtag() {
 				dataLayer.push(arguments);
 			}
 			gtag("js", new Date());
-
 			gtag("config", "G-RMK63K97FM");
+
+			function loadGtag() {
+				var s = document.createElement("script");
+				s.src = "https://www.googletagmanager.com/gtag/js?id=G-RMK63K97FM";
+				s.async = true;
+				document.head.appendChild(s);
+			}
+			if (document.readyState === "complete") {
+				setTimeout(loadGtag, 1500);
+			} else {
+				window.addEventListener("load", function() {
+					setTimeout(loadGtag, 1500);
+				});
+			}
 		</script>
 	</head>
 	<body style="margin:0;padding:0;font-family:'Inter',sans-serif;">

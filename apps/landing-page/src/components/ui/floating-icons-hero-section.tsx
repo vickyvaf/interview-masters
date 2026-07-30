@@ -58,7 +58,7 @@ const Icon = ({
           ease: 'easeInOut',
         }}
       >
-        <img src={src} alt="" className="w-full h-full object-cover" width={80} height={80} loading="lazy" />
+        <img src={src} alt="" className="w-full h-full object-cover" width={80} height={80} loading="eager" fetchPriority="high" />
       </motion.div>
     </motion.div>
   );

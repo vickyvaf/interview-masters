@@ -85,15 +85,25 @@ import Footer from "../components/Footer.astro";
 
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+		<link rel="dns-prefetch" href="https://fonts.gstatic.com" />
 		<link
 			rel="preload"
 			as="style"
 			href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap"
 		/>
 		<link
-			href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap"
 			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap"
+			media="print"
+			onload="this.media='all'"
 		/>
+		<noscript>
+			<link
+				rel="stylesheet"
+				href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap"
+			/>
+		</noscript>
 
 		<!-- Structured Data (JSON-LD) for SEO / Google Sitelinks -->
 		<script type="application/ld+json">
@@ -225,10 +235,10 @@ import Footer from "../components/Footer.astro";
 		</script>
 	</head>
 	<body style="margin:0;padding:0;font-family:'Manrope',sans-serif;">
-		<Navbar client:load />
+		<Navbar client:idle />
 		<div class="relative z-10">
-			<HeroSection client:load />
-			<AnnouncementBanner client:load />
+			<HeroSection client:idle />
+			<AnnouncementBanner client:idle />
 		</div>
 		<PopularJobs />
 		<LearnSection />

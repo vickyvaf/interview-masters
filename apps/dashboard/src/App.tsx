@@ -61,9 +61,7 @@ function syncSessionToLanding(session: any) {
   } else {
     const currentSynced = localStorage.getItem('im_session_synced_user');
     if (currentSynced) {
-      localStorage.removeItem('im_session_synced_user');
-      const loginUrl = `${window.location.origin}/login`;
-      window.location.href = `${landingUrl}/sync-session?logout=true&returnTo=${encodeURIComponent(loginUrl)}`;
+      window.location.href = `${landingUrl}/sync-session?logout=true&returnTo=${encodeURIComponent(landingUrl)}`;
     }
   }
 }

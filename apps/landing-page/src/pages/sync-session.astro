@@ -42,6 +42,8 @@ const dashboardUrl = import.meta.env.PUBLIC_DASHBOARD_URL || 'https://dashboard-
     // Redirect back to dashboard/returnTo
     if (returnTo) {
       window.location.href = returnTo;
+    } else if (logout === 'true') {
+      window.location.href = window.location.origin;
     } else {
       const container = document.getElementById('sync-session-container');
       const dashboardUrl = container ? container.getAttribute('data-dashboard-url') : 'https://dashboard-interviewmasters.netlify.app';

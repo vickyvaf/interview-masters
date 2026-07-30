@@ -14,10 +14,14 @@ import Footer from "../components/Footer.astro";
 <html lang="id">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/png" href="/logo.png" />
+		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
+		<link rel="apple-touch-icon" href="/logo.png" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="robots" content="index, follow" />
+		<meta name="application-name" content="Interview Masters" />
 		<meta
 			name="description"
 			content="Persiapkan diri Anda menghadapi wawancara kerja dengan simulasi berbasis AI interaktif. Dapatkan feedback instan mengenai struktur jawaban (metode STAR), tingkat relevansi, rambling detector, dan revisi jawaban dari AI evaluator."
@@ -32,6 +36,7 @@ import Footer from "../components/Footer.astro";
 
 		<!-- Open Graph / Facebook -->
 		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Interview Masters" />
 		<meta
 			property="og:url"
 			content="https://interviewmasters.netlify.app/"
@@ -97,6 +102,7 @@ import Footer from "../components/Footer.astro";
 					"@context": "https://schema.org",
 					"@type": "WebSite",
 					"name": "Interview Masters",
+					"alternateName": ["Interview Masters AI", "InterviewMasters"],
 					"url": "https://interviewmasters.netlify.app",
 					"potentialAction": {
 						"@type": "SearchAction",

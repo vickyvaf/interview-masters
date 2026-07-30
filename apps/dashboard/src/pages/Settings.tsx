@@ -125,7 +125,12 @@ export default function Settings() {
     localStorage.removeItem('im_session_synced_user')
     document.cookie = 'im_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax;'
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    const landingUrl = import.meta.env.VITE_LANDING_URL || (
+      window.location.hostname === 'localhost'
+        ? 'http://localhost:4321'
+        : 'https://interviewmasters.netlify.app'
+    )
+    window.location.href = `${landingUrl}/sync-session?logout=true&returnTo=${encodeURIComponent(landingUrl)}`
   }
 
   if (isLoading) {

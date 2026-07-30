@@ -24,7 +24,10 @@ export default function Logout() {
       )
       
       const searchParams = new URLSearchParams(window.location.search)
-      const returnTo = searchParams.get('returnTo') || `${landingUrl}`
+      const paramReturnTo = searchParams.get('returnTo')
+      const returnTo = (!paramReturnTo || paramReturnTo.includes('5173') || paramReturnTo.includes('/login') || paramReturnTo.includes('/dashboard'))
+        ? landingUrl
+        : paramReturnTo
       
       window.location.href = `${landingUrl}/sync-session?logout=true&returnTo=${encodeURIComponent(returnTo)}`
     }

@@ -827,13 +827,6 @@ export default function Practice() {
             setIsThinking(false)
           })
         }
-      } else {
-        // Restart listening if no text was captured yet and mic is active
-        if (!isMicMutedRef.current && !isSpeakingRef.current && !isSpeaking && wsStatus === 'connected') {
-          try {
-            recognition.start()
-          } catch (e) { }
-        }
       }
     }
 

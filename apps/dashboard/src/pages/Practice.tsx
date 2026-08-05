@@ -589,7 +589,7 @@ export default function Practice() {
         accumulatedTranscript += currentFinal
       }
 
-      // 1.5 second responsive pause detector to auto-submit full answer when candidate finishes speaking
+      // 3 second debounce — lets user naturally pause mid-sentence without premature submit
       if (silenceTimer) clearTimeout(silenceTimer)
       silenceTimer = setTimeout(() => {
         if (accumulatedTranscript.trim() && recognitionRef.current) {
@@ -597,7 +597,7 @@ export default function Practice() {
             recognitionRef.current.stop()
           } catch (e) { }
         }
-      }, 1500)
+      }, 3000)
     }
 
     recognition.onerror = (err: any) => {

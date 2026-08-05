@@ -18,6 +18,8 @@ CREATE INDEX IF NOT EXISTS idx_question_bank_role_category ON question_bank(targ
 
 ALTER TABLE question_bank ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pre_confidence_score integer DEFAULT 3;
+
 DO $$
 BEGIN
     IF NOT EXISTS (

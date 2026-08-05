@@ -25,6 +25,7 @@ CREATE TABLE users (
     target_role text,
     interview_language text DEFAULT 'id',
     job_description text,
+    pre_confidence_score integer DEFAULT 3,
     resume text,
     camera_on boolean DEFAULT true,
     response_mode text DEFAULT 'voice',

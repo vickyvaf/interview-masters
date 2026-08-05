@@ -9,7 +9,10 @@ export default function Interview() {
   const navigate = useNavigate()
   const [role, setRole] = useState('')
   const [jobDescription, setJobDescription] = useState('')
-  const [preConfidence, setPreConfidence] = useState([3]) // Default score 3
+  const [preConfidence, setPreConfidence] = useState<number[]>(() => {
+    const saved = localStorage.getItem('im_pre_confidence')
+    return saved ? [Number(saved)] : [3]
+  })
 
   // Fetch default target role and job description from user settings
   const { data: userProfile, isLoading } = useQuery({
@@ -20,22 +23,25 @@ export default function Interview() {
 
       const { data, error } = await supabase
         .from('users')
-        .select('target_role, job_description')
+        .select('target_role, job_description, pre_confidence_score')
         .eq('id', user.id)
         .single()
 
-      if (error) throw error
+      if (error && error.code !== 'PGRST116') throw error
       return data
     }
   })
 
-  // Debounced auto-sync to Supabase users table whenever role or jobDescription changes
+  // Debounced auto-sync to Supabase users table whenever role, jobDescription, or preConfidence changes
   const isInitialLoad = useRef(true)
 
   useEffect(() => {
     if (userProfile && isInitialLoad.current) {
       setRole(userProfile.target_role || '')
       setJobDescription(userProfile.job_description || '')
+      if (userProfile.pre_confidence_score) {
+        setPreConfidence([userProfile.pre_confidence_score])
+      }
       // Mark initial load finished on next tick
       setTimeout(() => {
         isInitialLoad.current = false
@@ -46,6 +52,8 @@ export default function Interview() {
   useEffect(() => {
     if (isInitialLoad.current) return
 
+    localStorage.setItem('im_pre_confidence', String(preConfidence[0]))
+
     const timer = setTimeout(async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -54,6 +62,7 @@ export default function Interview() {
           .update({
             target_role: role.trim(),
             job_description: jobDescription.trim(),
+            pre_confidence_score: preConfidence[0],
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id)
@@ -61,10 +70,12 @@ export default function Interview() {
     }, 800)
 
     return () => clearTimeout(timer)
-  }, [role, jobDescription])
+  }, [role, jobDescription, preConfidence])
 
   const handleStart = async () => {
     if (!role.trim() || !jobDescription.trim()) return
+
+    localStorage.setItem('im_pre_confidence', String(preConfidence[0]))
 
     // Immediately sync to Supabase before navigating
     try {
@@ -75,6 +86,7 @@ export default function Interview() {
           .update({
             target_role: role.trim(),
             job_description: jobDescription.trim(),
+            pre_confidence_score: preConfidence[0],
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id)

@@ -82,26 +82,7 @@ export default function Practice() {
   const [greetingActive, setGreetingActive] = useState(false)
   const [showReadyModal, setShowReadyModal] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
-  const [engineStatus, setEngineStatus] = useState<'preparing' | 'loading' | 'ready'>('preparing')
-  const [engineMessage, setEngineMessage] = useState('Menyiapkan Ruang Wawancara & Kosakata...')
   const historyEndRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const t1 = setTimeout(() => {
-      setEngineStatus('loading')
-      setEngineMessage('Menghubungkan Sesi & Posisi Pekerjaan...')
-    }, 400)
-
-    const t2 = setTimeout(() => {
-      setEngineStatus('ready')
-      setEngineMessage('Ruang Wawancara Siap')
-    }, 1200)
-
-    return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-    }
-  }, [])
 
   const isMicMutedRef = useRef(isMicMuted)
   useEffect(() => {
@@ -784,11 +765,10 @@ export default function Practice() {
         </Button>
         <Flex align="center" gap="2">
           <Badge
-            color={engineStatus === 'ready' ? 'green' : 'amber'}
+            color="green"
             variant="surface"
             size="2"
             style={{
-              transition: 'all 0.3s ease',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
@@ -800,12 +780,11 @@ export default function Practice() {
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: engineStatus === 'ready' ? 'var(--green-9)' : 'var(--amber-9)',
-              boxShadow: engineStatus === 'ready' ? '0 0 8px var(--green-9)' : 'none',
-              animation: engineStatus !== 'ready' ? 'pulse 1.2s infinite ease-in-out' : 'none'
+              backgroundColor: 'var(--green-9)',
+              boxShadow: '0 0 8px var(--green-9)'
             }} />
             <Text size="2" weight="medium">
-              {engineStatus === 'ready' ? '⚡ Ruang Wawancara Siap' : `✨ ${engineMessage}`}
+              ⚡ Ruang Wawancara Siap
             </Text>
           </Badge>
           <Text size="3" weight="bold">Wawancara: {role || 'Umum'}</Text>
@@ -1097,14 +1076,13 @@ export default function Practice() {
                 width: '10px',
                 height: '10px',
                 borderRadius: '50%',
-                backgroundColor: engineStatus === 'ready' ? 'var(--green-9)' : 'var(--amber-9)',
-                boxShadow: engineStatus === 'ready' ? '0 0 10px var(--green-9)' : 'none',
-                animation: engineStatus !== 'ready' ? 'pulse 1.2s infinite ease-in-out' : 'none'
+                backgroundColor: 'var(--green-9)',
+                boxShadow: '0 0 10px var(--green-9)'
               }} />
               <Flex direction="column">
                 <Text size="2" weight="bold">Ruang Wawancara Digital</Text>
-                <Text size="1" color={engineStatus === 'ready' ? 'green' : 'amber'}>
-                  {engineStatus === 'ready' ? '✅ Sistem Terhubung & Siap' : `⏳ ${engineMessage}`}
+                <Text size="1" color="green">
+                  ✅ Sistem Terhubung & Siap
                 </Text>
               </Flex>
             </Flex>
@@ -1115,8 +1093,8 @@ export default function Practice() {
               <Button variant="soft" color="gray" onClick={() => navigate('/interview')} style={{ cursor: 'pointer' }}>Batal</Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action>
-              <Button onClick={handleStartPractice} style={{ cursor: 'pointer' }} disabled={engineStatus !== 'ready'}>
-                {engineStatus === 'ready' ? 'Mulai Sekarang' : 'Menyiapkan Engine...'}
+              <Button onClick={handleStartPractice} style={{ cursor: 'pointer' }}>
+                Mulai Sekarang
               </Button>
             </AlertDialog.Action>
           </Flex>

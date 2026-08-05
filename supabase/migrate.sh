@@ -42,4 +42,10 @@ echo "Connecting to Supabase Database: ${DB_HOST}..."
 # Execute SQL file
 psql "$CONNECTION_STRING" -f migrations/schema.sql
 
-echo "Migration completed successfully!"
+if [ -f "seed_questions.sql" ]; then
+  echo "Seeding question_bank dataset..."
+  psql "$CONNECTION_STRING" -f seed_questions.sql
+fi
+
+echo "Migration and seeding completed successfully!"
+

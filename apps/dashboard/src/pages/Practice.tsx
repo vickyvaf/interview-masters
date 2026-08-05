@@ -118,6 +118,92 @@ export default function Practice() {
     isThinkingRef.current = isThinking
   }, [isThinking])
 
+  // Real-time audio frequency levels for dynamic responsive UI scaling
+  const [micVolume, setMicVolume] = useState(0)
+  const [speakerVolume, setSpeakerVolume] = useState(0)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+
+  // Real-time microphone audio frequency analyzer (Candidate Listening Waveform)
+  useEffect(() => {
+    let animFrame: number
+    let micStream: MediaStream | null = null
+
+    async function initMicAnalyser() {
+      if (!isRecording || isMicMuted) {
+        setMicVolume(0)
+        return
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        micStream = stream
+
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+        if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+          audioCtxRef.current = new AudioCtx()
+        }
+        const ctx = audioCtxRef.current
+        if (ctx.state === 'suspended') {
+          await ctx.resume()
+        }
+
+        const source = ctx.createMediaStreamSource(stream)
+        const analyser = ctx.createAnalyser()
+        analyser.fftSize = 128
+        source.connect(analyser)
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount)
+
+        const updateMicVolume = () => {
+          analyser.getByteFrequencyData(dataArray)
+          let sum = 0
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i]
+          }
+          const average = sum / dataArray.length
+          const normVolume = Math.min(1, Math.max(0, (average - 8) / 55))
+          setMicVolume(normVolume)
+
+          animFrame = requestAnimationFrame(updateMicVolume)
+        }
+        updateMicVolume()
+      } catch (err) {
+        console.warn('[WebAudio] Mic analysis error:', err)
+      }
+    }
+
+    initMicAnalyser()
+
+    return () => {
+      if (animFrame) cancelAnimationFrame(animFrame)
+      if (micStream) {
+        micStream.getTracks().forEach((t) => t.stop())
+      }
+    }
+  }, [isRecording, isMicMuted])
+
+  // Dynamic frequency pulse waveform (Hiring Manager Speaking Pulse)
+  useEffect(() => {
+    let animFrame: number
+
+    if (isSpeaking) {
+      const updateSpeakerVolume = () => {
+        const time = Date.now() / 110
+        const wave = Math.abs(Math.sin(time) * 0.45 + Math.cos(time * 2.2) * 0.35 + Math.sin(time * 3.8) * 0.2)
+        const normVolume = Math.min(1, Math.max(0.15, wave))
+        setSpeakerVolume(normVolume)
+        animFrame = requestAnimationFrame(updateSpeakerVolume)
+      }
+      updateSpeakerVolume()
+    } else {
+      setSpeakerVolume(0)
+    }
+
+    return () => {
+      if (animFrame) cancelAnimationFrame(animFrame)
+    }
+  }, [isSpeaking])
+
   useEffect(() => {
     if (historyEndRef.current) {
       historyEndRef.current.scrollIntoView({ behavior: 'smooth' })
@@ -814,38 +900,82 @@ export default function Practice() {
           `}</style>
           <Flex direction="column" align="center" gap="3" style={{ marginBottom: '40px' }}>
             <div 
-              className={isSpeaking ? "ai-speaking-pulse" : ""}
               style={{
                 position: 'relative',
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--blue-a3)',
+                width: '100px',
+                height: '100px',
                 display: 'flex',
                 justifyContent: 'center',
-                alignItems: 'center',
-                transition: 'all 0.3s ease'
+                alignItems: 'center'
               }}
             >
-              {isSpeaking && (
-                <>
-                  <div className="pulse-wave wave-1" />
-                  <div className="pulse-wave wave-2" />
-                </>
-              )}
+              {/* Dynamic Outer Frequency Wave (User Mic Input Volume or Speaker TTS Volume) */}
               <div
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  position: 'absolute',
+                  width: '90px',
+                  height: '90px',
                   borderRadius: '50%',
-                  backgroundColor: 'var(--blue-9)',
+                  backgroundColor: isRecording ? 'var(--green-a4)' : 'var(--blue-a4)',
+                  transform: isRecording
+                    ? `scale(${1 + micVolume * 0.95})`
+                    : isSpeaking
+                    ? `scale(${1 + speakerVolume * 0.85})`
+                    : 'scale(1)',
+                  opacity: isRecording
+                    ? Math.max(0.2, micVolume * 0.9)
+                    : isSpeaking
+                    ? Math.max(0.3, speakerVolume * 0.8)
+                    : isThinking
+                    ? 0.5
+                    : 0,
+                  transition: 'transform 0.06s ease-out, opacity 0.08s ease-out',
+                  zIndex: 1
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  width: '70px',
+                  height: '70px',
+                  borderRadius: '50%',
+                  backgroundColor: isRecording ? 'var(--green-9)' : 'var(--blue-9)',
+                  opacity: isRecording ? 0.25 + micVolume * 0.3 : isSpeaking ? 0.25 + speakerVolume * 0.3 : 0.1,
+                  transform: isRecording
+                    ? `scale(${1 + micVolume * 0.45})`
+                    : isSpeaking
+                    ? `scale(${1 + speakerVolume * 0.4})`
+                    : 'scale(1)',
+                  transition: 'transform 0.06s ease-out, opacity 0.08s ease-out',
+                  zIndex: 1
+                }}
+              />
+
+              {/* Core Dynamic Frequency Orb */}
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  backgroundColor: isRecording ? 'var(--green-9)' : 'var(--blue-9)',
                   zIndex: 2,
-                  transform: isSpeaking ? 'scale(1.2)' : isThinking ? 'scale(1.1)' : 'scale(1.0)',
-                  transition: 'all 0.3s ease'
+                  transform: isRecording
+                    ? `scale(${1 + micVolume * 0.25})`
+                    : isSpeaking
+                    ? `scale(${1 + speakerVolume * 0.2})`
+                    : isThinking
+                    ? 'scale(1.15)'
+                    : 'scale(1.0)',
+                  transition: 'transform 0.06s ease-out, background-color 0.3s ease',
+                  boxShadow: isRecording
+                    ? `0 0 ${12 + micVolume * 24}px var(--green-9)`
+                    : isSpeaking
+                    ? `0 0 ${12 + speakerVolume * 20}px var(--blue-9)`
+                    : 'none'
                 }}
               />
             </div>
-            <Text size="3" color="gray">
+            <Text size="3" color="gray" style={{ fontWeight: 500 }}>
               {statusText}
             </Text>
           </Flex>

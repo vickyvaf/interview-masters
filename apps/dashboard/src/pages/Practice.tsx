@@ -442,11 +442,13 @@ export default function Practice() {
 
     const recognition = new SpeechRecognition()
     recognitionRef.current = recognition
-    recognition.continuous = false
-    recognition.interimResults = false
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.maxAlternatives = 1
     recognition.lang = systemLanguage === 'id' ? 'id-ID' : 'en-US'
 
-    let finalTranscript = ''
+    let accumulatedTranscript = ''
+    let silenceTimer: any = null
 
     recognition.onstart = () => {
       setIsRecording(true)
@@ -458,10 +460,28 @@ export default function Practice() {
         console.warn('[STT] Ignored speech recognition result while AI was speaking')
         return
       }
-      const result = event.results[event.resultIndex]
-      if (result.isFinal) {
-        finalTranscript = result[0].transcript
+
+      let currentFinal = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const chunk = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          currentFinal += chunk + ' '
+        }
       }
+
+      if (currentFinal) {
+        accumulatedTranscript += currentFinal
+      }
+
+      // 2.2 second natural pause detector to auto-submit full answer when candidate finishes speaking
+      if (silenceTimer) clearTimeout(silenceTimer)
+      silenceTimer = setTimeout(() => {
+        if (accumulatedTranscript.trim() && recognitionRef.current) {
+          try {
+            recognitionRef.current.stop()
+          } catch (e) { }
+        }
+      }, 2200)
     }
 
     recognition.onerror = (err: any) => {
@@ -478,9 +498,11 @@ export default function Practice() {
     }
 
     recognition.onend = () => {
+      if (silenceTimer) clearTimeout(silenceTimer)
       setIsRecording(false)
-      if (finalTranscript.trim()) {
-        const text = finalTranscript.trim()
+      const text = accumulatedTranscript.trim()
+      if (text) {
+        accumulatedTranscript = ''
         if (wsStatus === 'connected') {
           setIsThinking(true)
           setHistory((prev) => [...prev, { role: 'user', text }])
@@ -523,7 +545,8 @@ export default function Practice() {
           })
         }
       } else {
-        if (!isMicMutedRef.current && !isSpeakingRef.current && !isThinkingRef.current && wsStatus === 'connected') {
+        // Restart listening if no text was captured yet and mic is active
+        if (!isMicMutedRef.current && !isSpeakingRef.current && !isSpeaking && wsStatus === 'connected') {
           try {
             recognition.start()
           } catch (e) { }

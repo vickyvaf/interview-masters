@@ -298,9 +298,55 @@ interface GeminiMessage {
   parts: { text: string }[];
 }
 
-async function generateGeminiResponse(message: string, history: GeminiMessage[] = []): Promise<string> {
+async function fetchQuestionBankContext(role: string): Promise<string> {
+  if (!role) return ''
+  const cleanRole = role.trim()
+  let questions = await supabaseRequest(
+    `question_bank?select=category,difficulty,question_text,expected_points&target_role=ilike.*${encodeURIComponent(cleanRole)}*&is_active=eq.true&limit=8`,
+    'GET'
+  )
+  if (!questions || questions.length === 0) {
+    questions = await supabaseRequest(
+      `question_bank?select=category,difficulty,question_text,expected_points&is_active=eq.true&limit=8`,
+      'GET'
+    )
+  }
+  if (!questions || questions.length === 0) return ''
+
+  return questions
+    .map((q: any) => {
+      const points = Array.isArray(q.expected_points) ? q.expected_points.join(', ') : ''
+      return `- [${q.category}/${q.difficulty}] "${q.question_text}" (Kunci: ${points})`
+    })
+    .join('\n')
+}
+
+async function generateGeminiResponse(
+  message: string,
+  history: GeminiMessage[] = [],
+  context?: { role?: string; jobDescription?: string; questionBankText?: string }
+): Promise<string> {
   if (!GEMINI_API_KEY) {
     return `[No API Key] Terima kasih atas jawaban Anda mengenai '${message}'. Bisakah Anda menjelaskan lebih detail menggunakan metode STAR (Situation, Task, Action, Result)?`
+  }
+
+  let customSystemInstruction = SYSTEM_INSTRUCTION
+
+  if (context?.jobDescription || context?.role || context?.questionBankText) {
+    customSystemInstruction += `\n\n--- KONTEKS PEKERJAAN & DATASET MASTER PERTANYAAN ---`
+    if (context.role) {
+      customSystemInstruction += `\nTarget Posisi: ${context.role}`
+    }
+    if (context.jobDescription) {
+      customSystemInstruction += `\n\nDeskripsi Pekerjaan (Job Description / JD dari Rekrutmen):\n"${context.jobDescription}"`
+    }
+    if (context.questionBankText) {
+      customSystemInstruction += `\n\nPanduan Pertanyaan Master (Dataset Reference / Spreadsheet Bank):\n${context.questionBankText}`
+    }
+    customSystemInstruction += `\n\nPetunjuk Kombinasi Wawancara:
+1. Kombinasikan kualifikasi & tanggung jawab spesifik dari Deskripsi Pekerjaan (JD) dengan topik relevan pada Panduan Pertanyaan Master.
+2. Bertanyalah secara alami, manusiawi, dan mengalir seperti wawancara tatap muka nyata.
+3. Berikan apresiasi/validasi positif singkat terhadap jawaban kandidat sebelum lanjut ke pertanyaan berikutnya.`
   }
 
   const modelsToTry = [LLM_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
@@ -310,7 +356,7 @@ async function generateGeminiResponse(message: string, history: GeminiMessage[] 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`
     const payload = {
       systemInstruction: {
-        parts: [{ text: SYSTEM_INSTRUCTION }]
+        parts: [{ text: customSystemInstruction }]
       },
       contents: [
         ...history,
@@ -519,6 +565,8 @@ app.post('/api/interview/answer', async (c) => {
       questionId,
       questionText,
       answerText,
+      role = '',
+      jobDescription = '',
       history = [],
       sequenceNumber = 2
     } = await c.req.json()
@@ -526,6 +574,19 @@ app.post('/api/interview/answer', async (c) => {
     if (!answerText) {
       return c.json({ error: 'answerText is required' }, 400)
     }
+
+    let targetRole = role
+    let jobDesc = jobDescription
+
+    if ((!targetRole || !jobDesc) && mockInterviewId) {
+      const mockRes = await supabaseRequest(`mock_interviews?id=eq.${mockInterviewId}`, 'GET')
+      if (mockRes && mockRes.length > 0) {
+        targetRole = targetRole || mockRes[0].target_role
+        jobDesc = jobDesc || mockRes[0].job_description
+      }
+    }
+
+    const questionBankText = await fetchQuestionBankContext(targetRole || 'General')
 
     // Save candidate's answer and trigger AI evaluation in background
     if (questionId) {
@@ -553,8 +614,12 @@ app.post('/api/interview/answer', async (c) => {
       }).catch(err => console.error('[API /interview/answer] Error saving evaluation:', err))
     }
 
-    // Generate Next AI Question via Gemini
-    const assistantText = await generateGeminiResponse(answerText, history)
+    // Generate Next AI Question via Gemini using combined JD and Question Bank context
+    const assistantText = await generateGeminiResponse(answerText, history, {
+      role: targetRole,
+      jobDescription: jobDesc,
+      questionBankText
+    })
 
     // Save next question to database
     let nextQuestionId: string | null = null

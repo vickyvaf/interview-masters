@@ -392,6 +392,8 @@ export default function Practice() {
               questionId: currentQuestionIdRef.current,
               questionText: currentQuestionTextRef.current,
               answerText: text,
+              role: roleParam,
+              jobDescription: jdParam,
               history: geminiHistory,
               sequenceNumber: sequenceNumberRef.current + 1
             })

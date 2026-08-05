@@ -648,7 +648,7 @@ export default function Practice() {
               animation-delay: 1s;
             }
             .ai-speaking-pulse {
-              box-shadow: 0 0 20px var(--blue-6);
+              /* clean minimal style */
             }
           `}</style>
           <Flex direction="column" align="center" gap="3" style={{ marginBottom: '40px' }}>
@@ -788,7 +788,7 @@ export default function Practice() {
                 color={isMicMuted ? 'red' : 'blue'}
                 variant={isMicMuted ? 'solid' : 'soft'}
                 title={isMicMuted ? 'Unmute Mic' : 'Mute Mic'}
-                style={{ cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                style={{ cursor: 'pointer' }}
               >
                 {isMicMuted ? (
                   <SpeakerOffIcon width="20" height="20" />
@@ -803,7 +803,7 @@ export default function Practice() {
                 color={isCameraOff ? 'red' : 'blue'}
                 variant={isCameraOff ? 'solid' : 'soft'}
                 title={isCameraOff ? 'Turn Camera On' : 'Turn Camera Off'}
-                style={{ cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+                style={{ cursor: 'pointer' }}
               >
                 {isCameraOff ? (
                   <CameraIcon width="20" height="20" style={{ opacity: 0.6 }} />
@@ -887,7 +887,7 @@ export default function Practice() {
           }}
         >
           <Flex direction="column" align="center" gap="4">
-            <Text size="9" weight="bold" style={{ fontSize: '120px', color: 'var(--accent-9)', textShadow: '0 0 20px var(--accent-5)' }}>
+            <Text size="9" weight="bold" style={{ fontSize: '120px', color: 'var(--accent-9)' }}>
               {countdown}
             </Text>
             <Text size="5" weight="bold" color="gray">Bersiaplah...</Text>

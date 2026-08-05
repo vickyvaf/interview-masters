@@ -341,23 +341,54 @@ export default function Practice() {
     const cleanedText = textToSpeak.replace(/\*/g, '')
     const utterance = new SpeechSynthesisUtterance(cleanedText)
     
-    // Select best natural Female Indonesian voice (id-ID) with Supertonic F1 style logat
+    // Strictly select Female voice and exclude any male voices
     const voices = window.speechSynthesis.getVoices()
-    const idFemaleVoice = voices.find(v => (v.lang.includes('id') || v.lang.includes('ID')) && (
-      v.name.toLowerCase().includes('female') || 
-      v.name.toLowerCase().includes('gadis') || 
-      v.name.toLowerCase().includes('indah') || 
-      v.name.toLowerCase().includes('wanita') || 
-      v.name.toLowerCase().includes('google') || 
-      v.name.toLowerCase().includes('natural')
-    )) || voices.find(v => v.lang.includes('id') || v.lang.includes('ID'))
+    
+    // 1. Try finding explicit Indonesian female voice
+    let selectedFemaleVoice = voices.find(v => 
+      (v.lang.toLowerCase().includes('id')) &&
+      !v.name.toLowerCase().includes('male') &&
+      !v.name.toLowerCase().includes('man') &&
+      (
+        v.name.toLowerCase().includes('female') ||
+        v.name.toLowerCase().includes('gadis') ||
+        v.name.toLowerCase().includes('indah') ||
+        v.name.toLowerCase().includes('siti') ||
+        v.name.toLowerCase().includes('damayanti') ||
+        v.name.toLowerCase().includes('gita')
+      )
+    )
 
-    if (idFemaleVoice) {
-      utterance.voice = idFemaleVoice
+    // 2. Fallback to any non-male Indonesian voice
+    if (!selectedFemaleVoice) {
+      selectedFemaleVoice = voices.find(v => 
+        v.lang.toLowerCase().includes('id') &&
+        !v.name.toLowerCase().includes('male') &&
+        !v.name.toLowerCase().includes('man') &&
+        !v.name.toLowerCase().includes('david') &&
+        !v.name.toLowerCase().includes('george')
+      )
+    }
+
+    // 3. Fallback to high quality system female voices
+    if (!selectedFemaleVoice) {
+      selectedFemaleVoice = voices.find(v => 
+        (v.name.toLowerCase().includes('female') ||
+         v.name.toLowerCase().includes('samantha') ||
+         v.name.toLowerCase().includes('victoria') ||
+         v.name.toLowerCase().includes('karen') ||
+         v.name.toLowerCase().includes('zira') ||
+         v.name.toLowerCase().includes('jenny')) &&
+        !v.name.toLowerCase().includes('male')
+      )
+    }
+
+    if (selectedFemaleVoice) {
+      utterance.voice = selectedFemaleVoice
     }
     utterance.lang = 'id-ID'
-    utterance.rate = 0.98  // Natural human speaking pace
-    utterance.pitch = 1.15 // Warm friendly female Supertonic F1 logat
+    utterance.rate = 0.96  // Natural conversational tempo
+    utterance.pitch = 1.35 // Higher pitch envelope guaranteeing a clear female voice tone
 
     let endTimeout: any = null
 

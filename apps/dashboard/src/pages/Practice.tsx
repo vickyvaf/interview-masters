@@ -33,6 +33,31 @@ export default function Practice() {
 
   const displayName = userProfile?.full_name || 'Candidate'
 
+  // Fetch relevant question bank dataset context to combine with job description
+  const { data: questionBankItems } = useQuery({
+    queryKey: ['questionBankContext', role],
+    queryFn: async () => {
+      if (!role) return []
+      const { data, error } = await supabase
+        .from('question_bank')
+        .select('id, category, difficulty, question_text, expected_points')
+        .ilike('target_role', `%${role}%`)
+        .eq('is_active', true)
+        .limit(5)
+
+      if (error || !data || data.length === 0) {
+        const { data: fallback } = await supabase
+          .from('question_bank')
+          .select('id, category, difficulty, question_text, expected_points')
+          .eq('is_active', true)
+          .limit(5)
+        return fallback || []
+      }
+      return data
+    },
+    enabled: !!role
+  })
+
   // Webcam refs & state
   const videoRef = useRef<HTMLVideoElement>(null)
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null)
@@ -460,7 +485,15 @@ export default function Practice() {
         <Button size="2" variant="soft" color="gray" onClick={() => setShowLeaveDialog(true)} style={{ cursor: 'pointer' }}>
           <ArrowLeftIcon /> Back
         </Button>
-        <Text size="3" weight="bold">Simulasi Wawancara AI - {role || 'Umum'}</Text>
+        <Flex align="center" gap="2">
+          <Text size="3" weight="bold">Wawancara: {role || 'Umum'}</Text>
+          <Badge color="blue" variant="soft" size="1">
+            📄 JD {location.state?.jobDescription ? 'Kustom Terhubung' : 'Default'}
+          </Badge>
+          <Badge color="purple" variant="soft" size="1">
+            📚 {questionBankItems?.length || 0} Topik Master Bank
+          </Badge>
+        </Flex>
         <div style={{ width: '70px' }} /> {/* Spacer to balance header */}
       </Flex>
 

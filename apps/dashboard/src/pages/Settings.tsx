@@ -251,15 +251,10 @@ export default function Settings() {
                 </Flex>
                 <Flex direction="column" gap="1">
                   <Text size="2" weight="bold">Bahasa Wawancara Utama</Text>
-                  <Box>
-                    <Select.Root value={interviewLanguage} onValueChange={setInterviewLanguage}>
-                      <Select.Trigger style={{ width: '100%' }} />
-                      <Select.Content>
-                        <Select.Item value="id">Bahasa Indonesia (ID)</Select.Item>
-                        <Select.Item value="en">English (EN)</Select.Item>
-                      </Select.Content>
-                    </Select.Root>
-                  </Box>
+                  <TextField.Root 
+                    disabled
+                    value="Bahasa Indonesia (ID)"
+                  />
                 </Flex>
               </Grid>
 

@@ -756,9 +756,9 @@ export default function Practice() {
           setIsThinking(true)
           setHistory((prev) => [...prev, { role: 'user', text }])
 
-          const geminiHistory = history.map((item) => ({
-            role: item.role === 'user' ? ('user' as const) : ('model' as const),
-            parts: [{ text: item.text }]
+          const groqHistory = history.map((item) => ({
+            role: item.role === 'user' ? 'user' as const : 'assistant' as const,
+            content: item.text
           }))
 
           const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
@@ -772,7 +772,7 @@ export default function Practice() {
               answerText: text,
               role: role || 'General',
               jobDescription: location.state?.jobDescription || '',
-              history: geminiHistory,
+              history: groqHistory,
               sequenceNumber: sequenceNumberRef.current + 1
             })
           }).then(async (res) => {

@@ -473,7 +473,7 @@ export default function Practice() {
         accumulatedTranscript += currentFinal
       }
 
-      // 2.2 second natural pause detector to auto-submit full answer when candidate finishes speaking
+      // 1.5 second responsive pause detector to auto-submit full answer when candidate finishes speaking
       if (silenceTimer) clearTimeout(silenceTimer)
       silenceTimer = setTimeout(() => {
         if (accumulatedTranscript.trim() && recognitionRef.current) {
@@ -481,7 +481,7 @@ export default function Practice() {
             recognitionRef.current.stop()
           } catch (e) { }
         }
-      }, 2200)
+      }, 1500)
     }
 
     recognition.onerror = (err: any) => {

@@ -411,7 +411,7 @@ async function supabaseRequest(path: string, method: 'GET' | 'POST' | 'PATCH', b
       'Authorization': `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json'
     }
-    if (method === 'POST') {
+    if (method === 'POST' || method === 'PATCH') {
       headers['Prefer'] = 'return=representation'
     }
     const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
@@ -423,7 +423,14 @@ async function supabaseRequest(path: string, method: 'GET' | 'POST' | 'PATCH', b
       console.error(`Supabase error on ${method} ${path}:`, await response.text())
       return null
     }
-    return await response.json()
+    if (response.status === 204) {
+      return []
+    }
+    const text = await response.text()
+    if (!text || !text.trim()) {
+      return []
+    }
+    return JSON.parse(text)
   } catch (err) {
     console.error(`Supabase request exception on ${method} ${path}:`, err)
     return null

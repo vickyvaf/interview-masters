@@ -426,25 +426,36 @@ export default function Practice() {
   }, [countdown])
 
   const speakText = (textToSpeak: string, onComplete?: () => void) => {
-    // 1. Immediately abort active microphone recording
+    // Stop active mic recording
     if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort()
-      } catch (e) { }
+      try { recognitionRef.current.abort() } catch (e) { }
     }
     setIsRecording(false)
-
-    // 2. Synchronously lock speaking state
     setIsSpeaking(true)
     isSpeakingRef.current = true
 
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel()
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      setIsSpeaking(false)
+      isSpeakingRef.current = false
+      if (onComplete) onComplete()
+      return
     }
 
+    window.speechSynthesis.cancel()
+
     const cleanedText = textToSpeak.replace(/\*/g, '')
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
-    const audioUrl = `${apiBaseUrl}/api/tts?text=${encodeURIComponent(cleanedText)}&lang=id`
+    const utterance = new SpeechSynthesisUtterance(cleanedText)
+
+    const applyVoice = () => {
+      const voices = window.speechSynthesis.getVoices()
+      const idVoice = voices.find(v => v.lang.toLowerCase().startsWith('id'))
+      if (idVoice) utterance.voice = idVoice
+      utterance.lang = 'id-ID'
+      utterance.rate = 1.1
+      utterance.pitch = 1.0
+    }
+
+    applyVoice()
 
     const handleFinish = () => {
       setIsSpeaking(false)
@@ -452,39 +463,17 @@ export default function Practice() {
       if (onComplete) onComplete()
     }
 
-    const fallbackWebSpeech = () => {
-      const utterance = new SpeechSynthesisUtterance(cleanedText)
-      const voices = window.speechSynthesis.getVoices()
-      const femaleVoice = voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
-      if (femaleVoice) utterance.voice = femaleVoice
-      utterance.lang = 'id-ID'
-      utterance.rate = 1.15
-      utterance.pitch = 1.02
-      utterance.onstart = () => {
-        setIsSpeaking(true)
-        isSpeakingRef.current = true
-      }
-      utterance.onend = handleFinish
-      utterance.onerror = handleFinish
-      window.speechSynthesis.speak(utterance)
-    }
+    utterance.onend = handleFinish
+    utterance.onerror = handleFinish
 
-    try {
-      const audio = new Audio(audioUrl)
-      audio.playbackRate = 1.15
-      audio.onplay = () => {
-        setIsSpeaking(true)
-        isSpeakingRef.current = true
+    // Chrome bug: voices may not be ready on first call — retry once if needed
+    if (window.speechSynthesis.getVoices().length === 0) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        applyVoice()
+        window.speechSynthesis.speak(utterance)
       }
-      audio.onended = handleFinish
-      audio.onerror = () => {
-        fallbackWebSpeech()
-      }
-      audio.play().catch(() => {
-        fallbackWebSpeech()
-      })
-    } catch (e) {
-      fallbackWebSpeech()
+    } else {
+      window.speechSynthesis.speak(utterance)
     }
   }
 

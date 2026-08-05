@@ -865,12 +865,14 @@ export default function Practice() {
             boxSizing: 'border-box'
           }}>
             {history.map((msg, idx) => (
-              <Flex key={idx} gap="2" style={{ fontSize: '14px', lineHeight: '1.5' }}>
-                <Text size="2" weight="bold" color={msg.role === 'user' ? 'green' : 'blue'} style={{ minWidth: '95px' }}>
+              <Box key={idx} style={{ fontSize: '14px', lineHeight: '1.5' }}>
+                <Text size="2" weight="bold" color={msg.role === 'user' ? 'green' : 'blue'} style={{ marginRight: '6px', whiteSpace: 'nowrap' }}>
                   {msg.role === 'user' ? (displayName ? `${displayName}:` : 'Kandidat:') : 'Pewawancara:'}
                 </Text>
-                <Text size="2" color="gray" style={{ flexGrow: 1 }}>{msg.text.replace(/\*/g, '')}</Text>
-              </Flex>
+                <Text size="2" color="gray">
+                  {msg.text.replace(/\*/g, '')}
+                </Text>
+              </Box>
             ))}
             <div ref={historyEndRef} />
           </Box>

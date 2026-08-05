@@ -107,6 +107,8 @@ export default function Practice() {
   const [systemLanguage, setSystemLanguage] = useState<string>('id')
   const systemLanguageRef = useRef<string>('id')
   const recognitionRef = useRef<any>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const pendingTranscriptRef = useRef<string>('')
 
   const isSpeakingRef = useRef(false)
   useEffect(() => {
@@ -589,6 +591,20 @@ export default function Practice() {
         accumulatedTranscript += currentFinal
       }
 
+      // If system is still thinking and user starts speaking again:
+      // cancel in-flight request, restore transcript, and switch back to listening
+      if (isThinkingRef.current && abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+        // Prepend whatever was pending so the combined text is complete
+        if (pendingTranscriptRef.current) {
+          accumulatedTranscript = pendingTranscriptRef.current + ' ' + accumulatedTranscript
+          pendingTranscriptRef.current = ''
+        }
+        setIsThinking(false)
+        setIsRecording(true)
+      }
+
       // 3 second debounce — lets user naturally pause mid-sentence without premature submit
       if (silenceTimer) clearTimeout(silenceTimer)
       silenceTimer = setTimeout(() => {
@@ -754,6 +770,7 @@ export default function Practice() {
         const text = refineSTTTranscriptClient(rawText)
         if (wsStatus === 'connected') {
           setIsThinking(true)
+          pendingTranscriptRef.current = text
           setHistory((prev) => [...prev, { role: 'user', text }])
 
           const groqHistory = history.map((item) => ({
@@ -761,10 +778,14 @@ export default function Practice() {
             content: item.text
           }))
 
+          const ctrl = new AbortController()
+          abortControllerRef.current = ctrl
+
           const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
           fetch(`${apiBaseUrl}/api/interview/answer`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: ctrl.signal,
             body: JSON.stringify({
               mockInterviewId: mockInterviewIdRef.current,
               questionId: currentQuestionIdRef.current,
@@ -778,6 +799,8 @@ export default function Practice() {
           }).then(async (res) => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             const data = await res.json()
+            pendingTranscriptRef.current = ''
+            abortControllerRef.current = null
             setIsThinking(false)
 
             if (data.assistantText) {
@@ -789,7 +812,10 @@ export default function Practice() {
               speakText(data.assistantText)
             }
           }).catch((err) => {
+            if (err.name === 'AbortError') return // user started speaking again — expected
             console.error('Error sending answer:', err)
+            pendingTranscriptRef.current = ''
+            abortControllerRef.current = null
             setIsThinking(false)
           })
         }

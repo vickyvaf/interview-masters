@@ -501,13 +501,13 @@ export default function Practice() {
   }
 
   // 3. Status text dynamic state binding (100% event driven, zero hardcoded timeouts)
-  let statusText = 'Ready to listen'
+  let statusText = 'Siap mendengarkan'
   if (isSpeaking) {
-    statusText = 'Speaking...'
+    statusText = 'Sedang berbicara...'
   } else if (isThinking) {
-    statusText = 'Thinking...'
+    statusText = 'Sedang memproses...'
   } else if (isRecording) {
-    statusText = 'Listening...'
+    statusText = 'Mendengarkan...'
   }
 
   // 4. Speech Recognition (STT) implementation
@@ -916,7 +916,7 @@ export default function Practice() {
                   width: '90px',
                   height: '90px',
                   borderRadius: '50%',
-                  backgroundColor: isRecording ? 'var(--green-a4)' : 'var(--blue-a4)',
+                  backgroundColor: 'var(--blue-a4)',
                   transform: isRecording
                     ? `scale(${1 + micVolume * 0.95})`
                     : isSpeaking
@@ -939,7 +939,7 @@ export default function Practice() {
                   width: '70px',
                   height: '70px',
                   borderRadius: '50%',
-                  backgroundColor: isRecording ? 'var(--green-9)' : 'var(--blue-9)',
+                  backgroundColor: 'var(--blue-9)',
                   opacity: isRecording ? 0.25 + micVolume * 0.3 : isSpeaking ? 0.25 + speakerVolume * 0.3 : 0.1,
                   transform: isRecording
                     ? `scale(${1 + micVolume * 0.45})`
@@ -957,7 +957,7 @@ export default function Practice() {
                   width: '42px',
                   height: '42px',
                   borderRadius: '50%',
-                  backgroundColor: isRecording ? 'var(--green-9)' : 'var(--blue-9)',
+                  backgroundColor: 'var(--blue-9)',
                   zIndex: 2,
                   transform: isRecording
                     ? `scale(${1 + micVolume * 0.25})`
@@ -967,10 +967,8 @@ export default function Practice() {
                     ? 'scale(1.15)'
                     : 'scale(1.0)',
                   transition: 'transform 0.06s ease-out, background-color 0.3s ease',
-                  boxShadow: isRecording
-                    ? `0 0 ${12 + micVolume * 24}px var(--green-9)`
-                    : isSpeaking
-                    ? `0 0 ${12 + speakerVolume * 20}px var(--blue-9)`
+                  boxShadow: (isRecording || isSpeaking)
+                    ? `0 0 ${12 + Math.max(micVolume, speakerVolume) * 22}px var(--blue-9)`
                     : 'none'
                 }}
               />

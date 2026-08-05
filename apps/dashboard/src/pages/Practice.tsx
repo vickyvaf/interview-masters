@@ -867,7 +867,7 @@ export default function Practice() {
             {history.map((msg, idx) => (
               <Box key={idx} style={{ fontSize: '14px', lineHeight: '1.5' }}>
                 <Text size="2" weight="bold" color={msg.role === 'user' ? 'green' : 'blue'} style={{ marginRight: '6px', whiteSpace: 'nowrap' }}>
-                  {msg.role === 'user' ? (displayName ? `${displayName}:` : 'Kandidat:') : 'Pewawancara:'}
+                  {msg.role === 'user' ? (displayName ? `${displayName}:` : 'Kandidat:') : 'Hiring Manager:'}
                 </Text>
                 <Text size="2" color="gray">
                   {msg.text.replace(/\*/g, '')}

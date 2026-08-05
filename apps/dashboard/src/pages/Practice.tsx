@@ -531,6 +531,19 @@ export default function Practice() {
             const data = await res.json()
             setIsThinking(false)
 
+            if (data.correctedText && data.correctedText !== text) {
+              setHistory((prev) => {
+                const nextHistory = [...prev]
+                for (let i = nextHistory.length - 1; i >= 0; i--) {
+                  if (nextHistory[i].role === 'user') {
+                    nextHistory[i] = { ...nextHistory[i], text: data.correctedText }
+                    break
+                  }
+                }
+                return nextHistory
+              })
+            }
+
             if (data.assistantText) {
               sequenceNumberRef.current += 1
               currentQuestionTextRef.current = data.assistantText

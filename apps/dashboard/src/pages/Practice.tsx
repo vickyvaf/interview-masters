@@ -124,9 +124,7 @@ export default function Practice() {
     }
   }, [history])
 
-  // Smooth status text transitions
-  const [statusText, setStatusText] = useState('Ready to listen')
-  const [statusOpacity, setStatusOpacity] = useState(1)
+
 
   // Comprehensive Media & Audio Listener Cleanup
   const stopAllMediaAndListeners = () => {
@@ -360,14 +358,10 @@ export default function Practice() {
     const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
     const audioUrl = `${apiBaseUrl}/api/tts?text=${encodeURIComponent(cleanedText)}&lang=id`
 
-    let finishTimer: any = null
     const handleFinish = () => {
-      if (finishTimer) clearTimeout(finishTimer)
-      finishTimer = setTimeout(() => {
-        setIsSpeaking(false)
-        isSpeakingRef.current = false
-        if (onComplete) onComplete()
-      }, 600)
+      setIsSpeaking(false)
+      isSpeakingRef.current = false
+      if (onComplete) onComplete()
     }
 
     const fallbackWebSpeech = () => {
@@ -376,7 +370,7 @@ export default function Practice() {
       const femaleVoice = voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
       if (femaleVoice) utterance.voice = femaleVoice
       utterance.lang = 'id-ID'
-      utterance.rate = 1.15 // <--- Kecepatan bicara fallback WebSpeech
+      utterance.rate = 1.15
       utterance.pitch = 1.02
       utterance.onstart = () => {
         setIsSpeaking(true)
@@ -389,7 +383,7 @@ export default function Practice() {
 
     try {
       const audio = new Audio(audioUrl)
-      audio.playbackRate = 1.15 // <--- Kecepatan bicara Audio Stream Neural (1.15x)
+      audio.playbackRate = 1.15
       audio.onplay = () => {
         setIsSpeaking(true)
         isSpeakingRef.current = true
@@ -420,26 +414,15 @@ export default function Practice() {
     })
   }
 
-  // 3. Status text transitions
-  let targetText = 'Ready to listen'
+  // 3. Status text dynamic state binding (100% event driven, zero hardcoded timeouts)
+  let statusText = 'Ready to listen'
   if (isSpeaking) {
-    targetText = 'Speaking...'
+    statusText = 'Speaking...'
   } else if (isThinking) {
-    targetText = 'Thinking...'
+    statusText = 'Thinking...'
   } else if (isRecording) {
-    targetText = 'Listening...'
+    statusText = 'Listening...'
   }
-
-  useEffect(() => {
-    if (statusText !== targetText) {
-      setStatusOpacity(0)
-      const timeout = setTimeout(() => {
-        setStatusText(targetText)
-        setStatusOpacity(1)
-      }, 150)
-      return () => clearTimeout(timeout)
-    }
-  }, [targetText, statusText])
 
   // 4. Speech Recognition (STT) implementation
   useEffect(() => {
@@ -891,7 +874,7 @@ export default function Practice() {
                 }}
               />
             </div>
-            <Text size="3" color="gray" style={{ transition: 'opacity 0.15s ease-in-out', opacity: statusOpacity }}>
+            <Text size="3" color="gray">
               {statusText}
             </Text>
           </Flex>

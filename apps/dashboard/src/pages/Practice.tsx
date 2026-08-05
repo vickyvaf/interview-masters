@@ -456,21 +456,7 @@ export default function Practice() {
     const applyVoice = () => {
       const voices = window.speechSynthesis.getVoices()
       if (voices.length > 0 && !selectedVoiceRef.current) {
-        // Blacklist any voice containing 'google' or male names to strictly isolate Lily / native voices
-        const filteredVoices = voices.filter(v => {
-          const name = v.name.toLowerCase()
-          return !name.includes('google') && !name.includes('male') && !name.includes('david') && !name.includes('adam') && !name.includes('mark') && !name.includes('george')
-        })
-
-        const preferred = voices.find(v => v.name.toLowerCase().includes('lily'))
-          || filteredVoices.find(v => v.name.toLowerCase().includes('lily'))
-          || filteredVoices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id'))
-          || filteredVoices.find(v => v.name.toLowerCase().includes('female'))
-          || filteredVoices[0]
-          || voices.find(v => v.name.toLowerCase().includes('lily'))
-          || voices[0]
-
-        if (preferred) selectedVoiceRef.current = preferred
+        selectedVoiceRef.current = voices.find(v => v.name.includes('Lily') || (v.lang.startsWith('id') && !v.name.toLowerCase().includes('male'))) || voices[0]
       }
 
       if (selectedVoiceRef.current) {

@@ -299,22 +299,13 @@ export default function Practice() {
   const triggerGreeting = () => {
     setHasGreeted(true)
     setGreetingActive(true)
-    
-    const getGreetingTime = () => {
-      const hour = new Date().getHours()
-      if (hour < 11) return 'pagi'
-      if (hour < 15) return 'siang'
-      if (hour < 18) return 'sore'
-      return 'malam'
-    }
 
-    const roleLabel = role || 'Umum'
-    const greetingText = `Halo, selamat ${getGreetingTime()}. Saya adalah pewawancara AI Anda hari ini. Selamat datang di simulasi wawancara untuk posisi ${roleLabel}. Mari kita mulai. Silakan perkenalkan diri Anda terlebih dahulu.`
+    const greetingText = currentQuestionTextRef.current || `Hai ${displayName.split(' ')[0]}, apa kabar? Terima kasih ya sudah melamar sebagai ${role || 'Umum'} di tim kami. Boleh perkenalkan diri kamu dulu?`
 
     setHistory((prev) => [...prev, { role: 'assistant', text: greetingText }])
 
     setIsThinking(false)
-    const utterance = new SpeechSynthesisUtterance(greetingText)
+    const utterance = new SpeechSynthesisUtterance(greetingText.replace(/\*/g, ''))
     utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
     utterance.onstart = () => setIsSpeaking(true)
     utterance.onend = () => {

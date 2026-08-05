@@ -456,12 +456,17 @@ export default function Practice() {
     const applyVoice = () => {
       const voices = window.speechSynthesis.getVoices()
       if (voices.length > 0 && !selectedVoiceRef.current) {
-        // Explicitly prioritize "Lily", "Natural", "Google", "Online" or female neural voices
-        const preferred = voices.find(v => v.name.toLowerCase().includes('lily'))
-          || voices.find(v => v.name.toLowerCase().includes('natural') && !v.name.toLowerCase().includes('male'))
-          || voices.find(v => v.name.toLowerCase().includes('online') && !v.name.toLowerCase().includes('male'))
-          || voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id') && !v.name.toLowerCase().includes('male'))
-          || voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id'))
+        // Strictly enforce female voice filters: reject any male/boy/man/david/adam/mark voices
+        const isFemale = (v: SpeechSynthesisVoice) => {
+          const name = v.name.toLowerCase()
+          return !name.includes('male') && !name.includes('man') && !name.includes('david') && !name.includes('adam') && !name.includes('mark') && !name.includes('guy') && !name.includes('george')
+        }
+
+        const preferred = voices.find(v => v.name.toLowerCase().includes('lily') && isFemale(v))
+          || voices.find(v => v.name.toLowerCase().includes('female') && isFemale(v))
+          || voices.find(v => v.name.toLowerCase().includes('natural') && isFemale(v))
+          || voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id') && isFemale(v))
+          || voices.find(v => isFemale(v))
           || voices[0]
         if (preferred) {
           selectedVoiceRef.current = preferred

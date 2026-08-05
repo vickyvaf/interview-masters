@@ -109,6 +109,7 @@ export default function Practice() {
   const recognitionRef = useRef<any>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const pendingTranscriptRef = useRef<string>('')
+  const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null)
 
   const isSpeakingRef = useRef(false)
   useEffect(() => {
@@ -448,9 +449,19 @@ export default function Practice() {
 
     const applyVoice = () => {
       const voices = window.speechSynthesis.getVoices()
-      const idVoice = voices.find(v => v.lang.toLowerCase().startsWith('id'))
-      if (idVoice) utterance.voice = idVoice
-      utterance.lang = 'id-ID'
+      if (!selectedVoiceRef.current) {
+        // Prioritize natural female/natural voices or Indonesian voice if available
+        const preferred = voices.find(v => (v.name.includes('Lily') || v.name.includes('Natural') || v.lang.toLowerCase().startsWith('id')) && !v.name.toLowerCase().includes('male'))
+          || voices.find(v => v.lang.toLowerCase().startsWith('id'))
+          || voices[0]
+        if (preferred) {
+          selectedVoiceRef.current = preferred
+        }
+      }
+      if (selectedVoiceRef.current) {
+        utterance.voice = selectedVoiceRef.current
+      }
+      utterance.lang = selectedVoiceRef.current?.lang || 'id-ID'
       utterance.rate = 1.1
       utterance.pitch = 1.0
     }

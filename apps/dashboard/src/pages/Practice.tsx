@@ -748,12 +748,6 @@ export default function Practice() {
         </Button>
         <Flex align="center" gap="2">
           <Text size="3" weight="bold">Wawancara: {role || 'Umum'}</Text>
-          <Badge color="blue" variant="soft" size="1">
-            📄 JD {location.state?.jobDescription ? 'Kustom' : 'Default'}
-          </Badge>
-          <Badge color="purple" variant="soft" size="1">
-            📚 {questionBankItems?.length || 0} Topik
-          </Badge>
         </Flex>
         <div style={{ width: '70px' }} /> {/* Spacer to balance header */}
       </Flex>

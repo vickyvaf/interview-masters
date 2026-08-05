@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Container, Heading, Text, Flex, Grid, Card, Button, Separator, Box, TextArea, Slider, Badge, Skeleton, TextField } from '@radix-ui/themes'
 import { useNavigate } from 'react-router-dom'
 import { PlayIcon, InfoCircledIcon } from '@radix-ui/react-icons'
@@ -29,22 +29,68 @@ export default function Interview() {
     }
   })
 
-  // Sync state once profile is loaded
+  // Debounced auto-sync to Supabase users table whenever role or jobDescription changes
+  const isInitialLoad = useRef(true)
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'saved'>('idle')
+
   useEffect(() => {
-    if (userProfile) {
+    if (userProfile && isInitialLoad.current) {
       setRole(userProfile.target_role || '')
       setJobDescription(userProfile.job_description || '')
+      // Mark initial load finished on next tick
+      setTimeout(() => {
+        isInitialLoad.current = false
+      }, 100)
     }
   }, [userProfile])
 
-  const handleStart = () => {
+  useEffect(() => {
+    if (isInitialLoad.current) return
+
+    setSyncStatus('syncing')
+    const timer = setTimeout(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase
+          .from('users')
+          .update({
+            target_role: role.trim(),
+            job_description: jobDescription.trim(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id)
+        setSyncStatus('saved')
+      }
+    }, 800)
+
+    return () => clearTimeout(timer)
+  }, [role, jobDescription])
+
+  const handleStart = async () => {
     if (!role.trim() || !jobDescription.trim()) return
+
+    // Immediately sync to Supabase before navigating
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase
+          .from('users')
+          .update({
+            target_role: role.trim(),
+            job_description: jobDescription.trim(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id)
+      }
+    } catch (e) {
+      console.error('Error syncing before start:', e)
+    }
 
     // Navigate to practice page, passing the setup parameters as state
     navigate('/practice', {
       state: {
         role: role.trim(),
-        jobDescription,
+        jobDescription: jobDescription.trim(),
         responseMode: 'voice',
         preConfidence: preConfidence[0]
       }
@@ -85,12 +131,19 @@ export default function Interview() {
     <Container size="3" style={{ padding: '40px 24px' }}>
       <Flex direction="column" gap="5">
         {/* Header */}
-        <Box>
-          <Heading size="6" mb="1">Mulai Interview Baru</Heading>
-          <Text size="2" color="gray">
-            Konfigurasikan detail pekerjaan Anda untuk memulai simulasi wawancara kerja adaptif berbasis AI.
-          </Text>
-        </Box>
+        <Flex justify="between" align="center">
+          <Box>
+            <Heading size="6" mb="1">Mulai Interview Baru</Heading>
+            <Text size="2" color="gray">
+              Konfigurasikan detail pekerjaan Anda untuk memulai simulasi wawancara kerja adaptif berbasis AI.
+            </Text>
+          </Box>
+          {syncStatus !== 'idle' && (
+            <Badge color={syncStatus === 'syncing' ? 'amber' : 'green'} variant="soft" size="2">
+              {syncStatus === 'syncing' ? '🔄 Menyimpan ke Supabase...' : '✓ Tersimpan di Supabase'}
+            </Badge>
+          )}
+        </Flex>
 
         <Separator size="4" />
 

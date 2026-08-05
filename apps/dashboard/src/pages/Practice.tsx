@@ -341,21 +341,22 @@ export default function Practice() {
     const cleanedText = textToSpeak.replace(/\*/g, '')
     const utterance = new SpeechSynthesisUtterance(cleanedText)
     
-    // Strictly select Female voice and exclude any male voices
+    // Prioritize natural neural Indonesian female voices
     const voices = window.speechSynthesis.getVoices()
     
-    // 1. Try finding explicit Indonesian female voice
+    // 1. Prefer high-quality Neural/Natural Indonesian female voices
     let selectedFemaleVoice = voices.find(v => 
-      (v.lang.toLowerCase().includes('id')) &&
+      v.lang.toLowerCase().includes('id') &&
       !v.name.toLowerCase().includes('male') &&
       !v.name.toLowerCase().includes('man') &&
       (
-        v.name.toLowerCase().includes('female') ||
+        v.name.toLowerCase().includes('natural') ||
+        v.name.toLowerCase().includes('neural') ||
+        v.name.toLowerCase().includes('google') ||
+        v.name.toLowerCase().includes('online') ||
         v.name.toLowerCase().includes('gadis') ||
         v.name.toLowerCase().includes('indah') ||
-        v.name.toLowerCase().includes('siti') ||
-        v.name.toLowerCase().includes('damayanti') ||
-        v.name.toLowerCase().includes('gita')
+        v.name.toLowerCase().includes('damayanti')
       )
     )
 
@@ -387,8 +388,8 @@ export default function Practice() {
       utterance.voice = selectedFemaleVoice
     }
     utterance.lang = 'id-ID'
-    utterance.rate = 0.96  // Natural conversational tempo
-    utterance.pitch = 1.35 // Higher pitch envelope guaranteeing a clear female voice tone
+    utterance.rate = 1.0  // 100% natural human speaking pace
+    utterance.pitch = 1.02 // Natural warm pitch without digital pitch-shifting distortion
 
     let endTimeout: any = null
 

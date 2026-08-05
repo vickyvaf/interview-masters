@@ -842,7 +842,7 @@ export default function Practice() {
         } catch (e) { }
       }
     }
-  }, [wsStatus, isMicMuted, isSpeaking, isThinking, systemLanguage, greetingActive])
+  }, [wsStatus, isMicMuted, isSpeaking, systemLanguage, greetingActive])
 
   return (
     <Flex direction="column" gap="4" style={{

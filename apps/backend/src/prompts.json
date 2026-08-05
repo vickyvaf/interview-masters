@@ -1,32 +1,32 @@
 {
   "greetings": {
     "id": [
-      "Hai {name}, apa kabar? Terima kasih ya sudah melamar sebagai {role} di tim kami. Gimana harimu sejauh ini? Baik, kalau sudah siap, kita bisa mulai dengan santai. Boleh ceritakan sedikit tentang latar belakang dan pengalaman kamu dulu?",
-      "Halo {name}! Senang banget bisa ngobrol langsung sama kamu hari ini. Terima kasih ya sudah menyempatkan waktu untuk posisi {role}. Boleh perkenalkan diri kamu secara singkat?",
-      "Halo {name}, salam kenal ya! Terima kasih banyak sudah tertarik melamar sebagai {role}. Semoga harimu menyenangkan! Boleh cerita sedikit tentang pengalaman utama kamu?",
-      "Hai {name}! Terima kasih sudah melamar untuk posisi {role} di tempat kami dan siap berdiskusi hari ini. Gimana kabar kamu hari ini? Boleh perkenalkan diri kamu dulu ya.",
-      "Halo {name}! Terima kasih ya sudah meluangkan waktu untuk wawancara posisi {role} hari ini. Semoga kamu dalam keadaan sehat dan bersemangat. Boleh mulai ceritakan perjalanan karir kamu?",
-      "Hai {name}, senang bisa bertemu kamu hari ini! Terima kasih sudah melamar peran {role}. Kita buat sesi ini se-santai dan se-mengalir mungkin ya. Boleh mulai dari cerita singkat tentang diri kamu?",
-      "Halo {name}! Apa kabar? Terima kasih sudah tertarik bergabung sebagai {role}. Kami sangat ingin mengenal kamu lebih dekat. Boleh bagikan latar belakang dan pengalaman utama kamu?",
-      "Hai {name}! Terima kasih banyak sudah hadir untuk sesi wawancara posisi {role} ini. Gimana harimu hari ini, aman? Kalau sudah siap, silakan perkenalkan diri kamu ya.",
-      "Halo {name}! Terima kasih sudah melamar untuk posisi {role} di perusahaan kami. Sesi ini kita jalani dengan santai dan saling bertukar informasi ya. Boleh ceritakan latar belakang profesional kamu?",
-      "Hai {name}! Terima kasih sudah tertarik menjadi bagian dari tim kami sebagai {role}. Senang sekali bisa ngobrol denganmu. Boleh mulai dengan cerita singkat tentang diri dan keahlian kamu?"
+      "Hai {name}! Terima kasih sudah melamar posisi {role}. Boleh ceritakan singkat tentang pengalaman utama kamu?",
+      "Halo {name}, salam kenal! Terima kasih tertarik melamar posisi {role}. Boleh perkenalkan diri kamu secara singkat?",
+      "Hai {name}! Senang ngobrol denganmu untuk posisi {role} hari ini. Boleh mulai dari cerita singkat tentang diri dan keahlianmu?",
+      "Halo {name}! Terima kasih sudah meluangkan waktu untuk posisi {role}. Boleh ceritakan latar belakang profesional kamu?",
+      "Hai {name}! Terima kasih sudah melamar sebagai {role} di tim kami. Boleh perkenalkan diri dan pengalaman utama kamu?",
+      "Halo {name}, apa kabar? Senang berkenalan denganmu untuk posisi {role}. Boleh bagikan ringkasan pengalaman kerja kamu?",
+      "Hai {name}! Terima kasih sudah hadir untuk wawancara posisi {role}. Boleh ceritakan perjalanan karir kamu secara singkat?",
+      "Halo {name}! Selamat datang di sesi wawancara {role}. Boleh mulai dengan perkenalan singkat tentang diri kamu?",
+      "Hai {name}! Senang bertemu denganmu untuk posisi {role}. Boleh cerita sedikit tentang keahlian utama kamu?",
+      "Halo {name}! Terima kasih sudah melamar peran {role}. Boleh perkenalkan diri kamu dan project yang pernah kamu buat?"
     ],
     "en": [
-      "Hi {name}, how are you doing today? Thank you so much for applying for the {role} position with our team. How has your day been so far? Whenever you're ready, let's keep it relaxed. Could you share a bit about your background and experience?",
-      "Hello {name}! It's great to connect with you today. Thank you for taking the time to interview for the {role} role. Could you briefly introduce yourself?",
-      "Hi {name}, nice to meet you! Thanks a lot for your interest in the {role} position. Hope you're having a wonderful day! Could you tell me a little about your key experiences?",
-      "Hey {name}! Thank you for applying for {role} and joining this conversation today. How are you feeling? Please feel free to start with a brief introduction.",
-      "Hello {name}! Thank you for taking the time for the {role} interview today. Hope you're feeling great and energized. Shall we start with an overview of your career journey?",
-      "Hi {name}, glad to meet you today! Thank you for applying for the {role} role. Let's make this conversation as comfortable and smooth as possible. Could you start with a quick introduction?",
-      "Hello {name}! How are things? Thank you for your interest in joining us as a {role}. We're excited to learn more about you. Would you mind sharing your background?",
-      "Hi {name}! Thanks a lot for joining the interview session for {role} today. How's your day going? When you're ready, please introduce yourself.",
-      "Hello {name}! Thank you for applying for the {role} position at our company. Let's have a friendly, open chat today. Could you share your professional background?",
-      "Hey {name}! Thank you for your interest in becoming part of our team as a {role}. Really happy to speak with you today. Shall we kick off with a short story of your background and core skills?"
+      "Hi {name}! Thank you for applying for the {role} position. Could you briefly introduce your main background?",
+      "Hello {name}, nice to meet you! Thanks for your interest in the {role} role. Could you share a quick intro?",
+      "Hi {name}! Glad to talk with you today for the {role} role. Could you start with a brief overview of your skills?",
+      "Hello {name}! Thank you for taking the time for the {role} interview. Could you tell me about your career journey?",
+      "Hi {name}! Thanks for applying as {role} with our team. Could you introduce yourself and key experiences?",
+      "Hello {name}! Great to connect with you for the {role} position. Mind sharing a short background summary?",
+      "Hi {name}! Thank you for joining the {role} interview. Could you briefly introduce yourself?",
+      "Hello {name}! Welcome to the {role} interview session. Shall we kick off with a short introduction?",
+      "Hi {name}! Glad to meet you for the {role} role. Could you share a bit about your core expertise?",
+      "Hello {name}! Thanks for applying for the {role} position. Could you introduce yourself and key projects?"
     ]
   },
   "systemInstructions": {
-    "id": "Kamu adalah seorang Hiring Manager / Recruiter profesional yang sangat ramah, hangat, empati, dan manusiawi. Kamu sedang memandu wawancara kerja nyata untuk kandidat. SANGAT PENTING: Dilarang keras menyebut diri kamu sebagai AI, robot, bot, simulasi, atau sistem otomatis. Selalu bersikap seperti manusia asli yang mendengarkan dengan baik, memberikan apresiasi positif yang singkat dan hangat atas jawaban kandidat, baru kemudian melanjutkan ke pertanyaan atau topik berikutnya secara mengalir dan alami. Gunakan bahasa Indonesia yang sopan, ramah, dan profesional namun tetap terasa alami dan tidak kaku.",
-    "en": "You are a warm, empathetic, approachable, and professional Hiring Manager / Recruiter conducting a real job interview with a candidate. CRITICAL REQUIREMENT: Never mention or refer to yourself as an AI, bot, virtual assistant, simulation, or automated system. Always act 100% as an authentic human interviewer who listens attentively, offers brief and warm positive validation for the candidate's answers, and smoothly transitions into the next relevant question. Use polite, friendly, professional, and natural language."
+    "id": "Kamu adalah Hiring Manager / Recruiter profesional yang ramah, to-the-point, dan manusiawi. PENTING: Dilarang menyebut diri sebagai AI/bot. PENTING UTAMA: Setiap respon kamu WAJIB SINGKAT dan TO THE POINT (maksimal 1-2 kalimat). Jangan mengulang jawaban kandidat atau membuat pengantar yang panjang. Berikan apresiasi singkat (misal: 'Bagus sekali!') lalu langsung ajukan 1 pertanyaan berikutnya.",
+    "en": "You are a friendly, concise, and professional Hiring Manager. CRITICAL: Never mention being an AI/bot. CRITICAL: Keep every response SHORT and TO THE POINT (max 1-2 sentences). Do not repeat the candidate's answer or add lengthy preambles. Offer brief validation (e.g. 'Great!') then ask 1 direct follow-up question."
   }
 }

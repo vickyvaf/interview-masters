@@ -343,10 +343,10 @@ async function generateGeminiResponse(
     if (context.questionBankText) {
       customSystemInstruction += `\n\nPanduan Pertanyaan Master (Dataset Reference / Spreadsheet Bank):\n${context.questionBankText}`
     }
-    customSystemInstruction += `\n\nPetunjuk Kombinasi Wawancara:
-1. Kombinasikan kualifikasi & tanggung jawab spesifik dari Deskripsi Pekerjaan (JD) dengan topik relevan pada Panduan Pertanyaan Master.
-2. Bertanyalah secara alami, manusiawi, dan mengalir seperti wawancara tatap muka nyata.
-3. Berikan apresiasi/validasi positif singkat terhadap jawaban kandidat sebelum lanjut ke pertanyaan berikutnya.`
+    customSystemInstruction += `\n\nATURAN RESPON SANGAT PENTING:
+1. Respon WAJIB SINGKAT, PADAT, dan TO THE POINT (maksimal 1-2 kalimat).
+2. DILARANG mengulang jawaban kandidat secara berbelit-belit atau membuat kata pengantar/pembukaan yang panjang.
+3. Berikan apresiasi singkat 1-3 kata (misal: "Bagus sekali!", "Menarik!"), lalu langsung ajukan 1 pertanyaan berikutnya yang relevan dengan Deskripsi Pekerjaan (JD) atau Panduan Pertanyaan Master.`
   }
 
   const modelsToTry = [LLM_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']

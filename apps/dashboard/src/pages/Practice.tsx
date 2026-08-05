@@ -33,7 +33,7 @@ export default function Practice() {
   })
 
   const rawName = userProfile?.full_name?.trim() || ''
-  const displayName = (rawName && rawName.toLowerCase() !== 'candidate') ? rawName.split(' ')[0] : 'Kak'
+  const displayName = (rawName && rawName.toLowerCase() !== 'candidate' && rawName.toLowerCase() !== 'kak') ? rawName.split(' ')[0] : 'Vicky'
 
   // Fetch relevant question bank dataset context to combine with job description
   const { data: questionBankItems } = useQuery({
@@ -239,6 +239,20 @@ export default function Practice() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user || isCancelled) return
 
+      let candidateName = user.user_metadata?.full_name || user.user_metadata?.name || ''
+      if (!candidateName) {
+        const { data: dbUser } = await supabase
+          .from('users')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+        if (dbUser?.full_name) candidateName = dbUser.full_name
+      }
+      if (!candidateName && user.email) {
+        candidateName = user.email.split('@')[0]
+      }
+      const activeName = candidateName ? candidateName.trim().split(' ')[0] : 'Vicky'
+
       const preConfidence = location.state?.preConfidence || 3
       const roleParam = role || 'General'
       const jdParam = location.state?.jobDescription || ''
@@ -250,7 +264,7 @@ export default function Practice() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: user.id,
-            userName: displayName,
+            userName: activeName,
             role: roleParam,
             jobDescription: jdParam,
             preConfidence

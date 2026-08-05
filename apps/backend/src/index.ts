@@ -513,7 +513,7 @@ app.post('/api/interview/start', async (c) => {
 
     // Determine candidate name
     let nameToUse = userName
-    if (nameToUse && (nameToUse.toLowerCase() === 'candidate' || nameToUse.toLowerCase() === 'user')) {
+    if (nameToUse && (nameToUse.toLowerCase() === 'candidate' || nameToUse.toLowerCase() === 'user' || nameToUse.toLowerCase() === 'kak')) {
       nameToUse = ''
     }
 
@@ -524,8 +524,8 @@ app.post('/api/interview/start', async (c) => {
       }
     }
 
-    if (!nameToUse || nameToUse.toLowerCase() === 'candidate') {
-      nameToUse = SYSTEM_LANGUAGE === 'en' ? 'there' : 'Kak'
+    if (!nameToUse) {
+      nameToUse = 'Vicky'
     } else {
       nameToUse = nameToUse.trim().split(' ')[0]
     }

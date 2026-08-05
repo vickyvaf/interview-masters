@@ -447,15 +447,36 @@ export default function Practice() {
     recognition.maxAlternatives = 1
     recognition.lang = systemLanguage === 'id' ? 'id-ID' : 'en-US'
 
-    // Leverage browser native SpeechGrammarList to prime STT engine with role & tech terms
+    // Dynamically extract STT grammar vocabulary terms from role, JD, and question bank (100% no hardcoding)
+    const extractDynamicGrammarTerms = () => {
+      const jdText = location.state?.jobDescription || ''
+      const qTexts = (questionBankItems || []).map((q: any) => q.question_text || '').join(' ')
+      const rawCombined = `${role} ${jdText} ${qTexts}`
+
+      const termSet = new Set<string>()
+      if (role && role.trim()) termSet.add(role.trim())
+
+      const words = rawCombined.match(/[A-Za-z0-9+#.-]+/g) || []
+      words.forEach((w) => {
+        if (w.length >= 3 && !/^[0-9]+$/.test(w)) {
+          termSet.add(w)
+        }
+      })
+
+      return Array.from(termSet).slice(0, 40)
+    }
+
+    // Leverage browser native SpeechGrammarList to prime STT engine with dynamic terms
     const SpeechGrammarList = (window as any).SpeechGrammarList || (window as any).webkitSpeechGrammarList
     if (SpeechGrammarList) {
       try {
         const speechRecognitionList = new SpeechGrammarList()
-        const terms = [role, 'Frontend Engineer', 'Backend Engineer', 'Fullstack Engineer', 'Software Engineer', 'Developer', 'React', 'JavaScript', 'TypeScript', 'Node.js', 'API'].filter(Boolean)
-        const grammar = `#JSGF V1.0; grammar techTerms; public <term> = ${terms.join(' | ')} ;`
-        speechRecognitionList.addFromString(grammar, 1)
-        recognition.grammars = speechRecognitionList
+        const dynamicTerms = extractDynamicGrammarTerms()
+        if (dynamicTerms.length > 0) {
+          const grammar = `#JSGF V1.0; grammar dynamicTerms; public <term> = ${dynamicTerms.join(' | ')} ;`
+          speechRecognitionList.addFromString(grammar, 1)
+          recognition.grammars = speechRecognitionList
+        }
       } catch (e) { }
     }
 

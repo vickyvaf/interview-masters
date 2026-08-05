@@ -313,7 +313,18 @@ export default function Practice() {
 
     const cleanedText = textToSpeak.replace(/\*/g, '')
     const utterance = new SpeechSynthesisUtterance(cleanedText)
-    utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
+    
+    // Select best natural Indonesian voice (id-ID) with Supertonic M1 style logat
+    const voices = window.speechSynthesis.getVoices()
+    const idVoice = voices.find(v => (v.lang.includes('id') || v.lang.includes('ID')) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Indonesian') || v.name.includes('ID')))
+      || voices.find(v => v.lang.includes('id') || v.lang.includes('ID'))
+
+    if (idVoice) {
+      utterance.voice = idVoice
+    }
+    utterance.lang = 'id-ID'
+    utterance.rate = 0.98  // Natural human speaking pace
+    utterance.pitch = 1.05 // Warm friendly Supertonic M1 logat
 
     let endTimeout: any = null
 

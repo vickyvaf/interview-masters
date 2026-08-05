@@ -447,6 +447,18 @@ export default function Practice() {
     recognition.maxAlternatives = 1
     recognition.lang = systemLanguage === 'id' ? 'id-ID' : 'en-US'
 
+    // Leverage browser native SpeechGrammarList to prime STT engine with role & tech terms
+    const SpeechGrammarList = (window as any).SpeechGrammarList || (window as any).webkitSpeechGrammarList
+    if (SpeechGrammarList) {
+      try {
+        const speechRecognitionList = new SpeechGrammarList()
+        const terms = [role, 'Frontend Engineer', 'Backend Engineer', 'Fullstack Engineer', 'Software Engineer', 'Developer', 'React', 'JavaScript', 'TypeScript', 'Node.js', 'API'].filter(Boolean)
+        const grammar = `#JSGF V1.0; grammar techTerms; public <term> = ${terms.join(' | ')} ;`
+        speechRecognitionList.addFromString(grammar, 1)
+        recognition.grammars = speechRecognitionList
+      } catch (e) { }
+    }
+
     let accumulatedTranscript = ''
     let silenceTimer: any = null
 
@@ -530,19 +542,6 @@ export default function Practice() {
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             const data = await res.json()
             setIsThinking(false)
-
-            if (data.correctedText && data.correctedText !== text) {
-              setHistory((prev) => {
-                const nextHistory = [...prev]
-                for (let i = nextHistory.length - 1; i >= 0; i--) {
-                  if (nextHistory[i].role === 'user') {
-                    nextHistory[i] = { ...nextHistory[i], text: data.correctedText }
-                    break
-                  }
-                }
-                return nextHistory
-              })
-            }
 
             if (data.assistantText) {
               sequenceNumberRef.current += 1

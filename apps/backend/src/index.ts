@@ -571,54 +571,6 @@ app.post('/api/interview/start', async (c) => {
   }
 })
 
-async function correctPhoneticErrors(rawText: string, targetRole: string, jobDescription: string): Promise<string> {
-  if (!rawText || !GEMINI_API_KEY || rawText.trim().length < 4) return rawText
-
-  const correctionPrompt = `Kamu adalah sistem koreksi fonetik otomatis untuk Speech-to-Text (STT) wawancara kerja Bahasa Indonesia.
-Tugas kamu adalah memperbaiki kata-kata Bahasa Inggris / istilah teknis / nama posisi pekerjaan yang salah didengar atau salah ditranskripsikan ke kata Bahasa Indonesia oleh mesin STT.
-
-Contoh Kesalahan Fonetik:
-- "pandangan Jenderal" -> "Frontend Engineer"
-- "reboisasi" -> "repository"
-- "reak" -> "React"
-- "bag and developer" -> "Backend Developer"
-- "mesin lari" -> "Machine Learning"
-
-Konteks Pekerjaan Kandidat:
-- Target Posisi/Role: "${targetRole || 'General'}"
-- Deskripsi Pekerjaan: "${jobDescription.slice(0, 300)}"
-
-Teks Mentah dari STT: "${rawText}"
-
-ATURAN SANGAT KETAT:
-1. Hanya perbaiki kata yang JELAS-JELAS salah dengar fonetik akibat istilah teknis/posisi pekerjaan Bahasa Inggris.
-2. JANGAN merubah maksud, struktur kalimat, gaya bahasa, atau menambah-nambah kata yang tidak diucapkan kandidat.
-3. Kembalikan HANYA teks yang sudah dikoreksi tanpa tanda kutip, tanpa penjelasan, dan tanpa pembukaan apapun.`
-
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: correctionPrompt }] }]
-      })
-    })
-
-    if (response.ok) {
-      const resData: any = await response.json()
-      const corrected = resData.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-      if (corrected && corrected.length > 0) {
-        return corrected
-      }
-    }
-  } catch (err) {
-    console.error('[correctPhoneticErrors] Error:', err)
-  }
-
-  return rawText
-}
-
 // 2. Process Answer & Get Next Question
 app.post('/api/interview/answer', async (c) => {
   try {
@@ -648,21 +600,18 @@ app.post('/api/interview/answer', async (c) => {
       }
     }
 
-    // AI Contextual Phonetic Correction to fix STT mishearing (e.g. "pandangan Jenderal" -> "Frontend Engineer")
-    const correctedAnswerText = await correctPhoneticErrors(answerText, targetRole, jobDesc)
-
     const questionBankText = await fetchQuestionBankContext(targetRole || 'General')
 
     // Save candidate's answer and trigger AI evaluation in background
     if (questionId) {
       supabaseRequest('interview_answers', 'POST', {
         interview_question_id: questionId,
-        answer_text: correctedAnswerText,
+        answer_text: answerText,
         response_mode: 'voice'
       }).then(async (answerRes) => {
         if (answerRes && answerRes.length > 0) {
           const answerId = answerRes[0].id
-          const evaluation = await generateEvaluation(questionText || '', correctedAnswerText)
+          const evaluation = await generateEvaluation(questionText || '', answerText)
           if (evaluation) {
             await supabaseRequest('ai_feedbacks', 'POST', {
               interview_answer_id: answerId,
@@ -680,7 +629,7 @@ app.post('/api/interview/answer', async (c) => {
     }
 
     // Generate Next AI Question via Gemini using combined JD and Question Bank context
-    const assistantText = await generateGeminiResponse(correctedAnswerText, history, {
+    const assistantText = await generateGeminiResponse(answerText, history, {
       role: targetRole,
       jobDescription: jobDesc,
       questionBankText
@@ -701,8 +650,7 @@ app.post('/api/interview/answer', async (c) => {
 
     return c.json({
       assistantText,
-      nextQuestionId,
-      correctedText: correctedAnswerText
+      nextQuestionId
     })
   } catch (err: any) {
     console.error('[API /interview/answer] Error:', err)

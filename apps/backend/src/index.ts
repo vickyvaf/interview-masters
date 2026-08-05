@@ -506,14 +506,21 @@ app.post('/api/interview/start', async (c) => {
 
     // Determine candidate name
     let nameToUse = userName
+    if (nameToUse && (nameToUse.toLowerCase() === 'candidate' || nameToUse.toLowerCase() === 'user')) {
+      nameToUse = ''
+    }
+
     if (!nameToUse) {
       const userRes = await supabaseRequest(`users?id=eq.${userId}`, 'GET')
       if (userRes && userRes.length > 0 && userRes[0].full_name) {
-        nameToUse = userRes[0].full_name.split(' ')[0]
+        nameToUse = userRes[0].full_name.trim().split(' ')[0]
       }
     }
-    if (!nameToUse) {
+
+    if (!nameToUse || nameToUse.toLowerCase() === 'candidate') {
       nameToUse = SYSTEM_LANGUAGE === 'en' ? 'there' : 'Kak'
+    } else {
+      nameToUse = nameToUse.trim().split(' ')[0]
     }
 
     // Select random greeting template from array

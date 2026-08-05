@@ -20,18 +20,20 @@ export default function Practice() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return null
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('users')
         .select('full_name')
         .eq('id', user.id)
         .single()
 
-      if (error) return null
-      return data
+      const authName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || ''
+      const name = data?.full_name || authName
+      return { full_name: name }
     }
   })
 
-  const displayName = userProfile?.full_name || 'Candidate'
+  const rawName = userProfile?.full_name?.trim() || ''
+  const displayName = (rawName && rawName.toLowerCase() !== 'candidate') ? rawName.split(' ')[0] : 'Kak'
 
   // Fetch relevant question bank dataset context to combine with job description
   const { data: questionBankItems } = useQuery({

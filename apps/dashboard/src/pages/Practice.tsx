@@ -518,12 +518,16 @@ export default function Practice() {
     }
 
     recognition.onerror = (err: any) => {
-      console.error('Speech recognition error:', err)
-      if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
+      // Ignore routine benign events ('no-speech' and 'aborted') without clogging console
+      if (err?.error === 'no-speech' || err?.error === 'aborted') {
+        return
+      }
+      console.warn('Speech recognition warning:', err?.error || err)
+      if (err?.error === 'not-allowed' || err?.error === 'service-not-allowed') {
         isMicMutedRef.current = true
         setIsMicMuted(true)
         setErrorDialogText("Microphone permission denied. Please allow microphone access in your browser settings to use the voice feature.")
-      } else if (err.error === 'audio-capture') {
+      } else if (err?.error === 'audio-capture') {
         isMicMutedRef.current = true
         setIsMicMuted(true)
         setErrorDialogText("Microphone hardware not found or cannot be accessed. Please check your connection and system sound settings.")

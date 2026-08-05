@@ -747,35 +747,12 @@ export default function Practice() {
           <ArrowLeftIcon /> Back
         </Button>
         <Flex align="center" gap="2">
-          <Badge
-            color="green"
-            variant="surface"
-            size="2"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: '20px'
-            }}
-          >
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--green-9)',
-              boxShadow: '0 0 8px var(--green-9)'
-            }} />
-            <Text size="2" weight="medium">
-              ⚡ Ruang Wawancara Siap
-            </Text>
-          </Badge>
           <Text size="3" weight="bold">Wawancara: {role || 'Umum'}</Text>
           <Badge color="blue" variant="soft" size="1">
-            📄 JD {location.state?.jobDescription ? 'Kustom Terhubung' : 'Default'}
+            📄 JD {location.state?.jobDescription ? 'Kustom' : 'Default'}
           </Badge>
           <Badge color="purple" variant="soft" size="1">
-            📚 {questionBankItems?.length || 0} Topik Master Bank
+            📚 {questionBankItems?.length || 0} Topik
           </Badge>
         </Flex>
         <div style={{ width: '70px' }} /> {/* Spacer to balance header */}
@@ -808,7 +785,7 @@ export default function Practice() {
                   borderRadius: '50%',
                   backgroundColor: wsStatus === 'connected' ? 'var(--green-9)' : 'var(--red-9)'
                 }} />
-                HIRING MANAGER ({wsStatus === 'connected' ? 'TERHUBUNG' : wsStatus.toUpperCase()})
+                Hiring Manager
               </Flex>
             </Badge>
           </Box>
@@ -1047,29 +1024,11 @@ export default function Practice() {
 
       {/* AlertDialog for Readiness Prompt */}
       <AlertDialog.Root open={showReadyModal} onOpenChange={setShowReadyModal}>
-        <AlertDialog.Content style={{ maxWidth: 420 }}>
+        <AlertDialog.Content style={{ maxWidth: 400 }}>
           <AlertDialog.Title>Apakah Anda Sudah Siap?</AlertDialog.Title>
-          <AlertDialog.Description size="2" mb="3">
-            Sesi wawancara telah terhubung. Pastikan kamera dan mikrofon Anda berfungsi dengan baik sebelum memulai wawancara.
+          <AlertDialog.Description size="2" mb="4">
+            Pastikan kamera dan mikrofon Anda berfungsi dengan baik sebelum memulai wawancara.
           </AlertDialog.Description>
-
-          <Card variant="surface" style={{ marginBottom: '16px', padding: '12px', borderRadius: '10px' }}>
-            <Flex align="center" gap="3">
-              <span style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--green-9)',
-                boxShadow: '0 0 10px var(--green-9)'
-              }} />
-              <Flex direction="column">
-                <Text size="2" weight="bold">Ruang Wawancara Digital</Text>
-                <Text size="1" color="green">
-                  ✅ Sistem Terhubung & Siap
-                </Text>
-              </Flex>
-            </Flex>
-          </Card>
 
           <Flex gap="3" justify="end">
             <AlertDialog.Cancel>

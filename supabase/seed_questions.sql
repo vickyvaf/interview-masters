@@ -1,5 +1,33 @@
 -- Master Question Bank Seed Script
--- Auto-generated seed data for question_bank table
+-- Auto-generated seed data for question_bank table (SAFE: Focuses ONLY on question_bank table)
+
+CREATE TABLE IF NOT EXISTS question_bank (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    target_role text NOT NULL,
+    category text NOT NULL,
+    difficulty text DEFAULT 'medium' NOT NULL,
+    question_text text NOT NULL,
+    expected_points text[],
+    sample_star_answer text,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_question_bank_role_category ON question_bank(target_role, category) WHERE is_active = true;
+
+ALTER TABLE question_bank ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE tablename = 'question_bank' AND policyname = 'Allow public read access to active question_bank'
+    ) THEN
+        CREATE POLICY "Allow public read access to active question_bank"
+            ON question_bank FOR SELECT
+            USING (is_active = true);
+    END IF;
+END $$;
 
 INSERT INTO question_bank (target_role, category, difficulty, question_text, expected_points, sample_star_answer, is_active)
 VALUES

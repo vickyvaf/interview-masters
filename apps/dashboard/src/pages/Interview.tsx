@@ -202,7 +202,7 @@ export default function Interview() {
 
               {/* Action */}
               <Button size="3" onClick={handleStart} disabled={!isFormValid} style={{ marginTop: '16px' }}>
-                <PlayIcon /> Mulai Simulasi
+                <PlayIcon /> Mulai Interview
               </Button>
             </Flex>
           </Box>

@@ -530,12 +530,70 @@ export default function Practice() {
       }
     }
 
+    // Pure client-side dynamic phonetic refiner (100% free, 100% local in browser, zero API cost)
+    const refineSTTTranscriptClient = (input: string) => {
+      if (!input || input.trim().length < 3) return input
+
+      let result = input
+      const jdText = location.state?.jobDescription || ''
+      const qTexts = (questionBankItems || []).map((q: any) => q.question_text || '').join(' ')
+      const combinedContext = `${role} ${jdText} ${qTexts}`
+
+      // 1. Dynamic replacement for Target Role mishearing
+      if (role && role.trim()) {
+        const roleName = role.trim()
+        if (roleName.toLowerCase().includes('frontend')) {
+          result = result.replace(/pandangan\s+jender?al/gi, roleName)
+          result = result.replace(/perontok\s+engineer/gi, roleName)
+          result = result.replace(/peron\s+engineer/gi, roleName)
+          result = result.replace(/pro?nte?nd\s+engineer/gi, roleName)
+        } else if (roleName.toLowerCase().includes('backend')) {
+          result = result.replace(/bag\s+and\s+developer/gi, roleName)
+          result = result.replace(/bakan\s+engineer/gi, roleName)
+        } else if (roleName.toLowerCase().includes('fullstack')) {
+          result = result.replace(/pul\s+stek/gi, roleName)
+        }
+      }
+
+      // 2. Candidate Name mishearing protection (e.g. "Vika Darmansyah" -> "Vicky Adi Firmansyah")
+      if (userProfile?.full_name) {
+        const fullName = userProfile.full_name.trim()
+        const firstName = fullName.split(' ')[0]
+        if (firstName.toLowerCase() === 'vicky') {
+          result = result.replace(/vika\s+darmansyah/gi, fullName)
+          result = result.replace(/piki\s+adi/gi, fullName)
+          result = result.replace(/fiki\s+adi/gi, fullName)
+          result = result.replace(/vika\s+adi/gi, fullName)
+        }
+      }
+
+      // 3. Dynamic Tech Term corrections from Job Description / Context
+      const contextTerms = Array.from(new Set(combinedContext.match(/[A-Z][a-zA-Z0-9+#.-]*/g) || []))
+      contextTerms.forEach((term) => {
+        if (term.length >= 3) {
+          if (term.toLowerCase() === 'react') {
+            result = result.replace(/\break\b/gi, 'React')
+            result = result.replace(/\briak\b/gi, 'React')
+          } else if (term.toLowerCase() === 'typescript') {
+            result = result.replace(/\btaip\s*skrip\b/gi, 'TypeScript')
+          } else if (term.toLowerCase() === 'javascript') {
+            result = result.replace(/\bjaba\s*skrip\b/gi, 'JavaScript')
+          } else if (term.toLowerCase() === 'repository') {
+            result = result.replace(/\breboisasi\b/gi, 'repository')
+          }
+        }
+      })
+
+      return result
+    }
+
     recognition.onend = () => {
       if (silenceTimer) clearTimeout(silenceTimer)
       setIsRecording(false)
-      const text = accumulatedTranscript.trim()
-      if (text) {
+      const rawText = accumulatedTranscript.trim()
+      if (rawText) {
         accumulatedTranscript = ''
+        const text = refineSTTTranscriptClient(rawText)
         if (wsStatus === 'connected') {
           setIsThinking(true)
           setHistory((prev) => [...prev, { role: 'user', text }])

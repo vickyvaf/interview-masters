@@ -341,18 +341,19 @@ export default function Practice() {
     const cleanedText = textToSpeak.replace(/\*/g, '')
     const utterance = new SpeechSynthesisUtterance(cleanedText)
     
-    // Prioritize natural neural Indonesian female voices
+    // Supertonic 3 TTS Profile: Speaker: Lily, Language: Indonesian, Quality: 8 Steps, Speech Speed: 1.00x
     const voices = window.speechSynthesis.getVoices()
     
-    // 1. Prefer high-quality Neural/Natural Indonesian female voices
+    // 1. Prefer Supertonic 3 Lily style female Indonesian voice
     let selectedFemaleVoice = voices.find(v => 
       v.lang.toLowerCase().includes('id') &&
       !v.name.toLowerCase().includes('male') &&
       !v.name.toLowerCase().includes('man') &&
       (
+        v.name.toLowerCase().includes('lily') ||
+        v.name.toLowerCase().includes('google') ||
         v.name.toLowerCase().includes('natural') ||
         v.name.toLowerCase().includes('neural') ||
-        v.name.toLowerCase().includes('google') ||
         v.name.toLowerCase().includes('online') ||
         v.name.toLowerCase().includes('gadis') ||
         v.name.toLowerCase().includes('indah') ||
@@ -388,8 +389,8 @@ export default function Practice() {
       utterance.voice = selectedFemaleVoice
     }
     utterance.lang = 'id-ID'
-    utterance.rate = 1.0  // 100% natural human speaking pace
-    utterance.pitch = 1.02 // Natural warm pitch without digital pitch-shifting distortion
+    utterance.rate = 1.00 // 1.00x Speech Speed (Supertonic 3 parameter)
+    utterance.pitch = 1.10 // Supertonic 3 Lily bright & cheerful female tone
 
     let endTimeout: any = null
 

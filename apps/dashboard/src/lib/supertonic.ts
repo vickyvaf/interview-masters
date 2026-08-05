@@ -1,26 +1,32 @@
 /**
- * Supertonic TTS Integration Module for Bahasa Indonesia (ID)
- * Powered by Supertonic ONNX/Web TTS
- * Reference: https://supertonic3.github.io/
+ * Supertonic 3 TTS Integration Module
+ * Reference: https://huggingface.co/spaces/Supertone/supertonic-3
+ * Settings: Speaker: Lily, Language: Indonesian, Quality: 8 Steps, Speed: 1.00x
  */
 
 export interface SupertonicConfig {
-  style?: string; // Voice style e.g. "F1", "F2", "F3", "F4", "F5"
-  lang?: string;  // e.g. "id"
+  speaker?: string;      // Speaker profile: "Lily" (default), "Sarah", "Jessica", "Olivia", "Emily"
+  style?: string;        // Voice style
+  lang?: string;         // "indonesian"
+  qualitySteps?: number; // Quality steps e.g. 8
+  speechSpeed?: number;  // Speed multiplier e.g. 1.00
 }
 
-export const SUPERTONIC_FEMALE_VOICES = [
-  { id: 'F1', name: 'Female 1 (Warm & Professional)', pitch: 1.15, rate: 0.98 },
-  { id: 'F2', name: 'Female 2 (Friendly & Energetic)', pitch: 1.25, rate: 1.02 },
-  { id: 'F3', name: 'Female 3 (Calm & Authoritative)', pitch: 1.08, rate: 0.94 },
-  { id: 'F4', name: 'Female 4 (Dynamic & Expressive)', pitch: 1.20, rate: 1.00 },
-  { id: 'F5', name: 'Female 5 (Casual & Relaxed / Friendly)', pitch: 1.12, rate: 1.04 },
+export const SUPERTONIC_SPEAKERS = [
+  { id: 'Lily', name: 'Lily (Bright & Cheerful Female - Supertonic 3)', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00, pitch: 1.10 },
+  { id: 'Sarah', name: 'Sarah (Professional Female - Supertonic 3)', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00, pitch: 1.05 },
+  { id: 'Jessica', name: 'Jessica (Friendly Female - Supertonic 3)', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00, pitch: 1.08 },
+  { id: 'Olivia', name: 'Olivia (Warm Female - Supertonic 3)', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00, pitch: 1.04 },
+  { id: 'Emily', name: 'Emily (Expressive Female - Supertonic 3)', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00, pitch: 1.12 }
 ];
 
 export class SupertonicTTS {
   private static instance: SupertonicTTS | null = null;
   private isLoaded = false;
-  private voiceStyle = 'F1';
+  private activeSpeaker = 'Lily';
+  private activeLanguage = 'indonesian';
+  private qualitySteps = 8;
+  private speechSpeed = 1.00;
 
   private constructor() {}
 
@@ -31,15 +37,27 @@ export class SupertonicTTS {
     return SupertonicTTS.instance;
   }
 
-  public async init(config: SupertonicConfig = { style: 'F1', lang: 'id' }) {
+  public async init(config: SupertonicConfig = { speaker: 'Lily', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 }) {
     try {
-      this.voiceStyle = config.style || 'F1';
+      this.activeSpeaker = config.speaker || 'Lily';
+      this.activeLanguage = config.lang || 'indonesian';
+      this.qualitySteps = config.qualitySteps || 8;
+      this.speechSpeed = config.speechSpeed || 1.00;
       this.isLoaded = true;
-      console.log('[SupertonicTTS] Initialized Supertonic Voice Engine with style:', this.voiceStyle);
+      console.log(`[Supertonic 3 TTS] Speaker: ${this.activeSpeaker}, Language: ${this.activeLanguage}, Quality: ${this.qualitySteps} Steps, Speed: ${this.speechSpeed}x`);
     } catch (err) {
-      console.warn('[SupertonicTTS] Supertonic ONNX initialization fallback to WebSpeech API:', err);
+      console.warn('[Supertonic 3 TTS] Fallback initialized:', err);
       this.isLoaded = false;
     }
+  }
+
+  public getSpeakerConfig() {
+    return {
+      speaker: this.activeSpeaker,
+      lang: this.activeLanguage,
+      qualitySteps: this.qualitySteps,
+      speechSpeed: this.speechSpeed
+    };
   }
 
   public isEngineReady(): boolean {

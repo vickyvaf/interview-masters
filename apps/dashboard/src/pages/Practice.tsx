@@ -314,17 +314,23 @@ export default function Practice() {
     const cleanedText = textToSpeak.replace(/\*/g, '')
     const utterance = new SpeechSynthesisUtterance(cleanedText)
     
-    // Select best natural Indonesian voice (id-ID) with Supertonic M1 style logat
+    // Select best natural Female Indonesian voice (id-ID) with Supertonic F1 style logat
     const voices = window.speechSynthesis.getVoices()
-    const idVoice = voices.find(v => (v.lang.includes('id') || v.lang.includes('ID')) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Indonesian') || v.name.includes('ID')))
-      || voices.find(v => v.lang.includes('id') || v.lang.includes('ID'))
+    const idFemaleVoice = voices.find(v => (v.lang.includes('id') || v.lang.includes('ID')) && (
+      v.name.toLowerCase().includes('female') || 
+      v.name.toLowerCase().includes('gadis') || 
+      v.name.toLowerCase().includes('indah') || 
+      v.name.toLowerCase().includes('wanita') || 
+      v.name.toLowerCase().includes('google') || 
+      v.name.toLowerCase().includes('natural')
+    )) || voices.find(v => v.lang.includes('id') || v.lang.includes('ID'))
 
-    if (idVoice) {
-      utterance.voice = idVoice
+    if (idFemaleVoice) {
+      utterance.voice = idFemaleVoice
     }
     utterance.lang = 'id-ID'
     utterance.rate = 0.98  // Natural human speaking pace
-    utterance.pitch = 1.05 // Warm friendly Supertonic M1 logat
+    utterance.pitch = 1.15 // Warm friendly female Supertonic F1 logat
 
     let endTimeout: any = null
 

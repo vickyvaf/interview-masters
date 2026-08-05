@@ -12,7 +12,7 @@ export interface SupertonicConfig {
 export class SupertonicTTS {
   private static instance: SupertonicTTS | null = null;
   private isLoaded = false;
-  private voiceStyle = 'M1';
+  private voiceStyle = 'F1';
 
   private constructor() {}
 
@@ -23,9 +23,9 @@ export class SupertonicTTS {
     return SupertonicTTS.instance;
   }
 
-  public async init(config: SupertonicConfig = { style: 'M1', lang: 'id' }) {
+  public async init(config: SupertonicConfig = { style: 'F1', lang: 'id' }) {
     try {
-      this.voiceStyle = config.style || 'M1';
+      this.voiceStyle = config.style || 'F1';
       this.isLoaded = true;
       console.log('[SupertonicTTS] Initialized Supertonic Voice Engine with style:', this.voiceStyle);
     } catch (err) {

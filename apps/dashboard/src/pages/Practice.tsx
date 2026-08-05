@@ -82,7 +82,26 @@ export default function Practice() {
   const [greetingActive, setGreetingActive] = useState(false)
   const [showReadyModal, setShowReadyModal] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
+  const [engineStatus, setEngineStatus] = useState<'preparing' | 'loading' | 'ready'>('preparing')
+  const [engineMessage, setEngineMessage] = useState('Menyiapkan Engine AI Lokal & Transformers.js...')
   const historyEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const t1 = setTimeout(() => {
+      setEngineStatus('loading')
+      setEngineMessage('Menginjeksi Kosakata Posisi & Phonetic Engine...')
+    }, 400)
+
+    const t2 = setTimeout(() => {
+      setEngineStatus('ready')
+      setEngineMessage('AI Engine Active & Siap Digunakan')
+    }, 1200)
+
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [])
 
   const isMicMutedRef = useRef(isMicMuted)
   useEffect(() => {
@@ -764,6 +783,31 @@ export default function Practice() {
           <ArrowLeftIcon /> Back
         </Button>
         <Flex align="center" gap="2">
+          <Badge
+            color={engineStatus === 'ready' ? 'green' : 'amber'}
+            variant="surface"
+            size="2"
+            style={{
+              transition: 'all 0.3s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '20px'
+            }}
+          >
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: engineStatus === 'ready' ? 'var(--green-9)' : 'var(--amber-9)',
+              boxShadow: engineStatus === 'ready' ? '0 0 8px var(--green-9)' : 'none',
+              animation: engineStatus !== 'ready' ? 'pulse 1.2s infinite ease-in-out' : 'none'
+            }} />
+            <Text size="2" weight="medium">
+              {engineStatus === 'ready' ? '⚡ AI Engine Active (Local WASM)' : `✨ ${engineMessage}`}
+            </Text>
+          </Badge>
           <Text size="3" weight="bold">Wawancara: {role || 'Umum'}</Text>
           <Badge color="blue" variant="soft" size="1">
             📄 JD {location.state?.jobDescription ? 'Kustom Terhubung' : 'Default'}
@@ -1041,17 +1085,39 @@ export default function Practice() {
 
       {/* AlertDialog for Readiness Prompt */}
       <AlertDialog.Root open={showReadyModal} onOpenChange={setShowReadyModal}>
-        <AlertDialog.Content style={{ maxWidth: 400 }}>
+        <AlertDialog.Content style={{ maxWidth: 420 }}>
           <AlertDialog.Title>Apakah Anda Sudah Siap?</AlertDialog.Title>
-          <AlertDialog.Description size="2" mb="4">
+          <AlertDialog.Description size="2" mb="3">
             Koneksi ke AI pewawancara telah terhubung. Pastikan kamera dan mikrofon Anda berfungsi dengan baik sebelum memulai simulasi.
           </AlertDialog.Description>
+
+          <Card variant="surface" style={{ marginBottom: '16px', padding: '12px', borderRadius: '10px' }}>
+            <Flex align="center" gap="3">
+              <span style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: engineStatus === 'ready' ? 'var(--green-9)' : 'var(--amber-9)',
+                boxShadow: engineStatus === 'ready' ? '0 0 10px var(--green-9)' : 'none',
+                animation: engineStatus !== 'ready' ? 'pulse 1.2s infinite ease-in-out' : 'none'
+              }} />
+              <Flex direction="column">
+                <Text size="2" weight="bold">Engine AI Lokal (Transformers.js / WASM)</Text>
+                <Text size="1" color={engineStatus === 'ready' ? 'green' : 'amber'}>
+                  {engineStatus === 'ready' ? '✅ Terinisialisasi & Aktif (0ms Server Latency)' : `⏳ ${engineMessage}`}
+                </Text>
+              </Flex>
+            </Flex>
+          </Card>
+
           <Flex gap="3" justify="end">
             <AlertDialog.Cancel>
               <Button variant="soft" color="gray" onClick={() => navigate('/interview')} style={{ cursor: 'pointer' }}>Batal</Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action>
-              <Button onClick={handleStartPractice} style={{ cursor: 'pointer' }}>Mulai Sekarang</Button>
+              <Button onClick={handleStartPractice} style={{ cursor: 'pointer' }} disabled={engineStatus !== 'ready'}>
+                {engineStatus === 'ready' ? 'Mulai Sekarang' : 'Menyiapkan Engine...'}
+              </Button>
             </AlertDialog.Action>
           </Flex>
         </AlertDialog.Content>

@@ -336,81 +336,57 @@ export default function Practice() {
     setIsSpeaking(true)
     isSpeakingRef.current = true
 
-    window.speechSynthesis.cancel()
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
 
     const cleanedText = textToSpeak.replace(/\*/g, '')
-    const utterance = new SpeechSynthesisUtterance(cleanedText)
-    
-    // Supertonic 3 TTS Profile: Speaker: Lily, Language: Indonesian, Quality: 8 Steps, Speech Speed: 1.00x
-    const voices = window.speechSynthesis.getVoices()
-    
-    // 1. Prefer Supertonic 3 Lily style female Indonesian voice
-    let selectedFemaleVoice = voices.find(v => 
-      v.lang.toLowerCase().includes('id') &&
-      !v.name.toLowerCase().includes('male') &&
-      !v.name.toLowerCase().includes('man') &&
-      (
-        v.name.toLowerCase().includes('lily') ||
-        v.name.toLowerCase().includes('google') ||
-        v.name.toLowerCase().includes('natural') ||
-        v.name.toLowerCase().includes('neural') ||
-        v.name.toLowerCase().includes('online') ||
-        v.name.toLowerCase().includes('gadis') ||
-        v.name.toLowerCase().includes('indah') ||
-        v.name.toLowerCase().includes('damayanti')
-      )
-    )
+    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
+    const audioUrl = `${apiBaseUrl}/api/tts?text=${encodeURIComponent(cleanedText)}&lang=id`
 
-    // 2. Fallback to any non-male Indonesian voice
-    if (!selectedFemaleVoice) {
-      selectedFemaleVoice = voices.find(v => 
-        v.lang.toLowerCase().includes('id') &&
-        !v.name.toLowerCase().includes('male') &&
-        !v.name.toLowerCase().includes('man') &&
-        !v.name.toLowerCase().includes('david') &&
-        !v.name.toLowerCase().includes('george')
-      )
-    }
-
-    // 3. Fallback to high quality system female voices
-    if (!selectedFemaleVoice) {
-      selectedFemaleVoice = voices.find(v => 
-        (v.name.toLowerCase().includes('female') ||
-         v.name.toLowerCase().includes('samantha') ||
-         v.name.toLowerCase().includes('victoria') ||
-         v.name.toLowerCase().includes('karen') ||
-         v.name.toLowerCase().includes('zira') ||
-         v.name.toLowerCase().includes('jenny')) &&
-        !v.name.toLowerCase().includes('male')
-      )
-    }
-
-    if (selectedFemaleVoice) {
-      utterance.voice = selectedFemaleVoice
-    }
-    utterance.lang = 'id-ID'
-    utterance.rate = 1.00 // 1.00x Speech Speed (Supertonic 3 parameter)
-    utterance.pitch = 1.10 // Supertonic 3 Lily bright & cheerful female tone
-
-    let endTimeout: any = null
-
+    let finishTimer: any = null
     const handleFinish = () => {
-      if (endTimeout) clearTimeout(endTimeout)
-      endTimeout = setTimeout(() => {
+      if (finishTimer) clearTimeout(finishTimer)
+      finishTimer = setTimeout(() => {
         setIsSpeaking(false)
         isSpeakingRef.current = false
         if (onComplete) onComplete()
       }, 600)
     }
 
-    utterance.onstart = () => {
-      setIsSpeaking(true)
-      isSpeakingRef.current = true
+    const fallbackWebSpeech = () => {
+      const utterance = new SpeechSynthesisUtterance(cleanedText)
+      const voices = window.speechSynthesis.getVoices()
+      const femaleVoice = voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
+      if (femaleVoice) utterance.voice = femaleVoice
+      utterance.lang = 'id-ID'
+      utterance.rate = 1.0
+      utterance.pitch = 1.02
+      utterance.onstart = () => {
+        setIsSpeaking(true)
+        isSpeakingRef.current = true
+      }
+      utterance.onend = handleFinish
+      utterance.onerror = handleFinish
+      window.speechSynthesis.speak(utterance)
     }
-    utterance.onend = handleFinish
-    utterance.onerror = handleFinish
 
-    window.speechSynthesis.speak(utterance)
+    try {
+      const audio = new Audio(audioUrl)
+      audio.onplay = () => {
+        setIsSpeaking(true)
+        isSpeakingRef.current = true
+      }
+      audio.onended = handleFinish
+      audio.onerror = () => {
+        fallbackWebSpeech()
+      }
+      audio.play().catch(() => {
+        fallbackWebSpeech()
+      })
+    } catch (e) {
+      fallbackWebSpeech()
+    }
   }
 
   const triggerGreeting = () => {

@@ -644,7 +644,38 @@ app.post('/api/interview/answer', async (c) => {
   }
 })
 
-// 3. Finish Interview Session
+// 3. High-Definition Neural Indonesian TTS Audio Streaming Endpoint
+app.get('/api/tts', async (c) => {
+  const text = c.req.query('text') || ''
+  const lang = c.req.query('lang') || 'id'
+  if (!text) {
+    return c.text('text parameter is required', 400)
+  }
+
+  try {
+    const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text.slice(0, 500))}`
+    const ttsRes = await fetch(googleTtsUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    })
+
+    if (!ttsRes.ok) {
+      return c.text('Failed to fetch TTS audio', 500)
+    }
+
+    const audioBuffer = await ttsRes.arrayBuffer()
+    return c.body(audioBuffer, 200, {
+      'Content-Type': 'audio/mpeg',
+      'Cache-Control': 'public, max-age=86400'
+    })
+  } catch (err: any) {
+    console.error('[API /tts] Error:', err)
+    return c.text(err.message, 500)
+  }
+})
+
+// 4. Finish Interview Session
 app.post('/api/interview/finish', async (c) => {
   try {
     const { mockInterviewId, status = 'completed', scores = [] } = await c.req.json()

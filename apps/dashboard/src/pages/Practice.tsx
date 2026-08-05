@@ -408,6 +408,12 @@ export default function Practice() {
 
   const handleStartPractice = () => {
     setShowReadyModal(false)
+    // Unlock browser audio / Web Speech autoplay policies on user gesture
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.resume()
+      const dummy = new SpeechSynthesisUtterance('')
+      window.speechSynthesis.speak(dummy)
+    }
     setCountdown(3)
   }
 

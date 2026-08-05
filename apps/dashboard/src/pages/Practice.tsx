@@ -455,10 +455,10 @@ export default function Practice() {
 
     const applyVoice = () => {
       const voices = window.speechSynthesis.getVoices()
-      if (!selectedVoiceRef.current) {
-        // Prioritize natural female/natural voices or Indonesian voice if available
-        const preferred = voices.find(v => (v.name.includes('Lily') || v.name.includes('Natural') || v.lang.toLowerCase().startsWith('id')) && !v.name.toLowerCase().includes('male'))
-          || voices.find(v => v.lang.toLowerCase().startsWith('id'))
+      if (voices.length > 0 && !selectedVoiceRef.current) {
+        // Find best match: Indonesian voice or natural/female voice
+        const preferred = voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id'))
+          || voices.find(v => (v.name.includes('Lily') || v.name.includes('Natural')) && !v.name.toLowerCase().includes('male'))
           || voices[0]
         if (preferred) {
           selectedVoiceRef.current = preferred
@@ -466,8 +466,10 @@ export default function Practice() {
       }
       if (selectedVoiceRef.current) {
         utterance.voice = selectedVoiceRef.current
+        utterance.lang = selectedVoiceRef.current.lang
+      } else {
+        utterance.lang = 'id-ID'
       }
-      utterance.lang = selectedVoiceRef.current?.lang || 'id-ID'
       utterance.rate = 1.1
       utterance.pitch = 1.0
     }
@@ -481,16 +483,16 @@ export default function Practice() {
     }
 
     utterance.onend = handleFinish
-    utterance.onerror = handleFinish
+    utterance.onerror = (e) => {
+      console.warn('[TTS Error]', e)
+      handleFinish()
+    }
 
-    // Chrome bug: voices may not be ready on first call — retry once if needed
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        applyVoice()
-        window.speechSynthesis.speak(utterance)
-      }
-    } else {
+    try {
       window.speechSynthesis.speak(utterance)
+    } catch (err) {
+      console.error('[TTS Speak Exception]', err)
+      handleFinish()
     }
   }
 

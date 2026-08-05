@@ -453,15 +453,30 @@ Berikan penilaian dalam format JSON dengan kunci berikut (pastikan hanya mengemb
 // 1. Start Interview Session
 app.post('/api/interview/start', async (c) => {
   try {
-    const { userId, role = 'General', jobDescription = '', preConfidence = 3 } = await c.req.json()
+    const { userId, role = 'General', jobDescription = '', preConfidence = 3, userName } = await c.req.json()
     if (!userId) {
       return c.json({ error: 'userId is required' }, 400)
     }
 
+    // Determine candidate name
+    let nameToUse = userName
+    if (!nameToUse) {
+      const userRes = await supabaseRequest(`users?id=eq.${userId}`, 'GET')
+      if (userRes && userRes.length > 0 && userRes[0].full_name) {
+        nameToUse = userRes[0].full_name.split(' ')[0]
+      }
+    }
+    if (!nameToUse) {
+      nameToUse = SYSTEM_LANGUAGE === 'en' ? 'there' : 'Kak'
+    }
+
+    // Select random greeting template from array
+    const greetingsList = SYSTEM_LANGUAGE === 'en' ? promptsConfig.greetings.en : promptsConfig.greetings.id
+    const randomTemplate = greetingsList[Math.floor(Math.random() * greetingsList.length)]
+    const greetingText = randomTemplate.replace(/{name}/g, nameToUse).replace(/{role}/g, role)
+
     let mockInterviewId: string | null = null
     let initialQuestionId: string | null = null
-    const template = SYSTEM_LANGUAGE === 'en' ? promptsConfig.greetings.en : promptsConfig.greetings.id
-    const greetingText = template.replace('{role}', role)
 
     const interviewRes = await supabaseRequest('mock_interviews', 'POST', {
       user_id: userId,

@@ -196,6 +196,7 @@ export default function Practice() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: user.id,
+            userName: displayName,
             role: roleParam,
             jobDescription: jdParam,
             preConfidence

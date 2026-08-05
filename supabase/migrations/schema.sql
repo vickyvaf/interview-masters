@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS ai_feedbacks CASCADE;
 DROP TABLE IF EXISTS interview_answers CASCADE;
 DROP TABLE IF EXISTS interview_questions CASCADE;
 DROP TABLE IF EXISTS mock_interviews CASCADE;
+DROP TABLE IF EXISTS question_bank CASCADE;
 DROP TABLE IF EXISTS payments CASCADE;
 DROP TABLE IF EXISTS subscriptions CASCADE;
 DROP TABLE IF EXISTS organization_members CASCADE;
@@ -182,4 +183,30 @@ CREATE POLICY "Allow authenticated users to update their own profile"
     TO authenticated
     USING (auth.uid() = id)
     WITH CHECK (auth.uid() = id);
+
+-- 10. Master Question Bank Table
+CREATE TABLE question_bank (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    target_role text NOT NULL,
+    category text NOT NULL,
+    difficulty text DEFAULT 'medium' NOT NULL,
+    question_text text NOT NULL,
+    expected_points text[],
+    sample_star_answer text,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Index for fast lookup by role and category
+CREATE INDEX idx_question_bank_role_category ON question_bank(target_role, category) WHERE is_active = true;
+
+-- Enable Row Level Security for question_bank
+ALTER TABLE question_bank ENABLE ROW LEVEL SECURITY;
+
+-- Allow public & authenticated users to read active questions
+CREATE POLICY "Allow public read access to active question_bank"
+    ON question_bank FOR SELECT
+    USING (is_active = true);
+
 

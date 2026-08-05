@@ -548,6 +548,18 @@ export default function Practice() {
       }
     }
 
+    // Phonetic normalization for Indonesian acoustic speech (v/f/p, d/t, g/k, j/z, e/i/a)
+    const normalizePhonemes = (str: string) => {
+      return str
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .replace(/[fvp]/g, 'p')
+        .replace(/[dt]/g, 't')
+        .replace(/[gk]/g, 'k')
+        .replace(/[jgz]/g, 'j')
+        .replace(/[eiaou]/g, 'a')
+    }
+
     // Pure dynamic Levenshtein distance algorithm for 100% zero-hardcode fuzzy matching
     const levenshteinDistance = (a: string, b: string): number => {
       const m = a.length
@@ -597,24 +609,27 @@ export default function Practice() {
       const contextMatches = combinedContext.match(/[A-Z][a-zA-Z0-9+#.-]*/g) || []
       contextMatches.forEach((w: string) => { if (w.length >= 4) targetWords.add(w) })
 
-      // 1. Dynamic Phrase-level Fuzzy Matching for full name or multi-word target role
+      // 1. Variable 1-4 N-Gram Phonetic Sliding Window Matching (handles mishearings like "Evan dan Jenner" -> "Frontend Engineer")
       targetPhrases.forEach((targetPhrase) => {
-        const phraseWords = targetPhrase.split(/\s+/)
-        const phraseLen = phraseWords.length
         const inputTokens = result.split(/\s+/)
+        const normTarget = normalizePhonemes(targetPhrase)
 
-        for (let i = 0; i <= inputTokens.length - phraseLen; i++) {
-          const windowPhrase = inputTokens.slice(i, i + phraseLen).join(' ')
-          const dist = levenshteinDistance(windowPhrase, targetPhrase)
-          const maxLen = Math.max(windowPhrase.length, targetPhrase.length)
+        for (let windowLen = 1; windowLen <= 4; windowLen++) {
+          for (let i = 0; i <= inputTokens.length - windowLen; i++) {
+            const windowPhrase = inputTokens.slice(i, i + windowLen).join(' ')
+            const normWindow = normalizePhonemes(windowPhrase)
 
-          if (maxLen > 0 && (1 - dist / maxLen) >= 0.55) {
-            result = result.replace(windowPhrase, targetPhrase)
+            const dist = levenshteinDistance(normWindow, normTarget)
+            const maxLen = Math.max(normWindow.length, normTarget.length)
+
+            if (maxLen > 0 && (1 - dist / maxLen) >= 0.50) {
+              result = result.replace(windowPhrase, targetPhrase)
+            }
           }
         }
       })
 
-      // 2. Dynamic Word-level Fuzzy Matching for single proper nouns / tech terms
+      // 2. Dynamic Phonetic Word-level Matching for single proper nouns / tech terms
       const tokens = result.split(/(\s+)/)
       const correctedTokens = tokens.map((token) => {
         const cleanToken = token.replace(/[^a-zA-Z0-9]/g, '')
@@ -622,13 +637,15 @@ export default function Practice() {
 
         let bestMatch = cleanToken
         let highestSimilarity = 0
+        const normClean = normalizePhonemes(cleanToken)
 
         targetWords.forEach((target) => {
-          if (Math.abs(target.length - cleanToken.length) <= 3) {
-            const dist = levenshteinDistance(cleanToken, target)
-            const similarity = 1 - dist / Math.max(cleanToken.length, target.length)
+          const normTarget = normalizePhonemes(target)
+          if (Math.abs(normTarget.length - normClean.length) <= 3) {
+            const dist = levenshteinDistance(normClean, normTarget)
+            const similarity = 1 - dist / Math.max(normClean.length, normTarget.length)
 
-            if (similarity >= 0.65 && similarity > highestSimilarity) {
+            if (similarity >= 0.55 && similarity > highestSimilarity) {
               highestSimilarity = similarity
               bestMatch = target
             }

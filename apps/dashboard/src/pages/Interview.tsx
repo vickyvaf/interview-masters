@@ -23,7 +23,7 @@ export default function Interview() {
 
       const { data, error } = await supabase
         .from('users')
-        .select('target_role, job_description, pre_confidence_score')
+        .select('target_role, job_description')
         .eq('id', user.id)
         .single()
 
@@ -39,9 +39,6 @@ export default function Interview() {
     if (userProfile && isInitialLoad.current) {
       setRole(userProfile.target_role || '')
       setJobDescription(userProfile.job_description || '')
-      if (userProfile.pre_confidence_score) {
-        setPreConfidence([userProfile.pre_confidence_score])
-      }
       // Mark initial load finished on next tick
       setTimeout(() => {
         isInitialLoad.current = false
@@ -62,7 +59,6 @@ export default function Interview() {
           .update({
             target_role: role.trim(),
             job_description: jobDescription.trim(),
-            pre_confidence_score: preConfidence[0],
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id)
@@ -86,7 +82,6 @@ export default function Interview() {
           .update({
             target_role: role.trim(),
             job_description: jobDescription.trim(),
-            pre_confidence_score: preConfidence[0],
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id)

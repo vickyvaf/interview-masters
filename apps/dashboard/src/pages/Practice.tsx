@@ -456,9 +456,22 @@ export default function Practice() {
     const applyVoice = () => {
       const voices = window.speechSynthesis.getVoices()
       if (voices.length > 0 && !selectedVoiceRef.current) {
-        const preferred = voices.find(v => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('lily')) || voices[0]
+        // Filter out any voice containing 'male' or male names
+        const nonMaleVoices = voices.filter(v => {
+          const name = v.name.toLowerCase()
+          return !name.includes('male') && !name.includes('david') && !name.includes('adam') && !name.includes('mark') && !name.includes('george')
+        })
+
+        const preferred = nonMaleVoices.find(v => v.name.toLowerCase().includes('lily'))
+          || nonMaleVoices.find(v => v.name.toLowerCase().includes('female'))
+          || nonMaleVoices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id'))
+          || nonMaleVoices.find(v => v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('natural'))
+          || nonMaleVoices[0]
+          || voices[0]
+
         if (preferred) selectedVoiceRef.current = preferred
       }
+
       if (selectedVoiceRef.current) {
         utterance.voice = selectedVoiceRef.current
         utterance.lang = selectedVoiceRef.current.lang
@@ -466,7 +479,7 @@ export default function Practice() {
         utterance.lang = 'id-ID'
       }
       utterance.rate = 1.05
-      utterance.pitch = 1.0
+      utterance.pitch = 1.25 // Higher pitch guarantees clear female tone across all TTS engines
     }
 
     applyVoice()

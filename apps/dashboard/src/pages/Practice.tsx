@@ -362,7 +362,7 @@ export default function Practice() {
       const femaleVoice = voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
       if (femaleVoice) utterance.voice = femaleVoice
       utterance.lang = 'id-ID'
-      utterance.rate = 1.0
+      utterance.rate = 1.15 // <--- Kecepatan bicara fallback WebSpeech
       utterance.pitch = 1.02
       utterance.onstart = () => {
         setIsSpeaking(true)
@@ -375,6 +375,7 @@ export default function Practice() {
 
     try {
       const audio = new Audio(audioUrl)
+      audio.playbackRate = 1.15 // <--- Kecepatan bicara Audio Stream Neural (1.15x)
       audio.onplay = () => {
         setIsSpeaking(true)
         isSpeakingRef.current = true

@@ -327,7 +327,7 @@ async function generateGeminiResponse(
   context?: { role?: string; jobDescription?: string; questionBankText?: string }
 ): Promise<string> {
   if (!GEMINI_API_KEY) {
-    return `[No API Key] Terima kasih atas jawaban Anda mengenai '${message}'. Bisakah Anda menjelaskan lebih detail menggunakan metode STAR (Situation, Task, Action, Result)?`
+    return `Wah menarik sekali! Boleh cerita lebih detail tentang langkah konkret yang kamu ambil saat menangani hal itu?`
   }
 
   let customSystemInstruction = SYSTEM_INSTRUCTION
@@ -394,7 +394,7 @@ async function generateGeminiResponse(
     }
   }
 
-  return `[Gemini Error: ${lastError?.message || lastError}] Terima kasih atas jawaban Anda. Bisakah Anda menjelaskan lebih detail menggunakan metode STAR?`
+  return `Bagus sekali! Boleh dijelaskan lebih spesifik tantangan terbesar dan solusi konkret yang kamu terapkan saat itu?`
 }
 
 const supabaseUrl = process.env.SUPABASE_URL || ''

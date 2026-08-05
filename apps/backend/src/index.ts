@@ -285,17 +285,17 @@ app.post('/webhook/mayar', handleMayarWebhook)
 app.post('/webhook/doku', handleMayarWebhook)
 
 // Environment configurations
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
+const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
 const SYSTEM_LANGUAGE = process.env.SYSTEM_LANGUAGE || 'id'
-const LLM_MODEL = process.env.LLM_MODEL || 'gemini-2.5-flash'
+const LLM_MODEL = process.env.LLM_MODEL || 'llama-3.3-70b-versatile'
 
 const SYSTEM_INSTRUCTION = SYSTEM_LANGUAGE === 'en'
   ? promptsConfig.systemInstructions.en
   : promptsConfig.systemInstructions.id
 
-interface GeminiMessage {
-  role: 'user' | 'model';
-  parts: { text: string }[];
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 async function fetchQuestionBankContext(role: string): Promise<string> {
@@ -321,77 +321,63 @@ async function fetchQuestionBankContext(role: string): Promise<string> {
     .join('\n')
 }
 
-async function generateGeminiResponse(
+async function generateGroqResponse(
   message: string,
-  history: GeminiMessage[] = [],
+  history: ChatMessage[] = [],
   context?: { role?: string; jobDescription?: string; questionBankText?: string }
 ): Promise<string> {
-  if (!GEMINI_API_KEY) {
+  if (!GROQ_API_KEY) {
     return `Wah menarik sekali! Boleh cerita lebih detail tentang langkah konkret yang kamu ambil saat menangani hal itu?`
   }
 
-  let customSystemInstruction = SYSTEM_INSTRUCTION
+  let systemPrompt = SYSTEM_INSTRUCTION
 
   if (context?.jobDescription || context?.role || context?.questionBankText) {
-    customSystemInstruction += `\n\n--- KONTEKS PEKERJAAN & DATASET MASTER PERTANYAAN ---`
+    systemPrompt += `\n\n--- KONTEKS PEKERJAAN & DATASET MASTER PERTANYAAN ---`
     if (context.role) {
-      customSystemInstruction += `\nTarget Posisi: ${context.role}`
+      systemPrompt += `\nTarget Posisi: ${context.role}`
     }
     if (context.jobDescription) {
-      customSystemInstruction += `\n\nDeskripsi Pekerjaan (Job Description / JD dari Rekrutmen):\n"${context.jobDescription}"`
+      systemPrompt += `\n\nDeskripsi Pekerjaan (Job Description / JD dari Rekrutmen):\n"${context.jobDescription}"`
     }
     if (context.questionBankText) {
-      customSystemInstruction += `\n\nPanduan Pertanyaan Master (Dataset Reference / Spreadsheet Bank):\n${context.questionBankText}`
+      systemPrompt += `\n\nPanduan Pertanyaan Master (Dataset Reference / Spreadsheet Bank):\n${context.questionBankText}`
     }
-    customSystemInstruction += `\n\nATURAN RESPON SANGAT PENTING:
+    systemPrompt += `\n\nATURAN RESPON SANGAT PENTING:
 1. Respon WAJIB SINGKAT, PADAT, dan TO THE POINT (maksimal 1-2 kalimat).
 2. DILARANG mengulang jawaban kandidat secara berbelit-belit atau membuat kata pengantar/pembukaan yang panjang.
 3. Berikan apresiasi singkat 1-3 kata (misal: "Bagus sekali!", "Menarik!"), lalu langsung ajukan 1 pertanyaan berikutnya yang relevan dengan Deskripsi Pekerjaan (JD) atau Panduan Pertanyaan Master.`
   }
 
-  const modelsToTry = [LLM_MODEL, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
-  let lastError: any = null
-
-  for (const model of modelsToTry) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`
-    const payload = {
-      systemInstruction: {
-        parts: [{ text: customSystemInstruction }]
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
       },
-      contents: [
-        ...history,
-        {
-          role: 'user',
-          parts: [{ text: message }]
-        }
-      ]
-    }
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      body: JSON.stringify({
+        model: LLM_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...history,
+          { role: 'user', content: message }
+        ],
+        max_tokens: 256,
+        temperature: 0.7
       })
+    })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`)
-      }
-
-      const resData: any = await response.json()
-      const candidates = resData.candidates || []
-      if (candidates.length > 0) {
-        const text = candidates[0].content?.parts?.[0]?.text
-        if (text) {
-          return text
-        }
-      }
-      throw new Error('No valid response candidate from model.')
-    } catch (err) {
-      lastError = err
-      // ponytail: fallback loop to try the next model
-      continue
+    if (!response.ok) {
+      throw new Error(`Groq HTTP ${response.status}: ${await response.text()}`)
     }
+
+    const resData: any = await response.json()
+    const text = resData.choices?.[0]?.message?.content
+    if (text) return text
+    throw new Error('No content from Groq')
+  } catch (err) {
+    console.error('[Groq] generateGroqResponse error:', err)
   }
 
   return `Bagus sekali! Boleh dijelaskan lebih spesifik tantangan terbesar dan solusi konkret yang kamu terapkan saat itu?`
@@ -438,7 +424,7 @@ async function supabaseRequest(path: string, method: 'GET' | 'POST' | 'PATCH', b
 }
 
 async function generateEvaluation(questionText: string, answerText: string): Promise<any> {
-  if (!GEMINI_API_KEY) {
+  if (!GROQ_API_KEY) {
     return {
       overall_score: 80,
       structure_score: 80,
@@ -450,44 +436,45 @@ async function generateEvaluation(questionText: string, answerText: string): Pro
     }
   }
 
-  const prompt = `Anda adalah penilai simulasi wawancara kerja yang profesional. Evaluasi jawaban kandidat terhadap pertanyaan berikut.
+  const prompt = `Anda adalah penilai wawancara kerja profesional. Evaluasi jawaban kandidat.
 
 Pertanyaan: "${questionText}"
 Jawaban: "${answerText}"
 
-Berikan penilaian dalam format JSON dengan kunci berikut (pastikan hanya mengembalikan JSON valid tanpa format markdown atau penjelasan lain):
+Kembalikan HANYA JSON valid (tanpa markdown/penjelasan lain):
 {
-  "overall_score": (angka antara 0 dan 100),
-  "structure_score": (angka antara 0 dan 100),
-  "relevance_score": (angka antara 0 dan 100),
-  "brevity_score": (angka antara 0 dan 100),
-  "feedback_text": "(penjelasan evaluasi terperinci dalam Bahasa Indonesia)",
-  "highlights_rambling": "(kutipan bagian jawaban yang bertele-tele atau null jika tidak ada)",
-  "what_you_could_have_said": "(saran jawaban alternatif yang lebih baik)"
+  "overall_score": (0-100),
+  "structure_score": (0-100),
+  "relevance_score": (0-100),
+  "brevity_score": (0-100),
+  "feedback_text": "(evaluasi terperinci Bahasa Indonesia)",
+  "highlights_rambling": "(kutipan bertele-tele atau null)",
+  "what_you_could_have_said": "(saran jawaban lebih baik)"
 }`
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`
-    const response = await fetch(url, {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json'
-        }
+        model: LLM_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 512,
+        temperature: 0.3,
+        response_format: { type: 'json_object' }
       })
     })
 
     if (response.ok) {
       const resData: any = await response.json()
-      const text = resData.candidates?.[0]?.content?.parts?.[0]?.text
-      if (text) {
-        return JSON.parse(text)
-      }
+      const text = resData.choices?.[0]?.message?.content
+      if (text) return JSON.parse(text)
     }
   } catch (err) {
-    console.error('Error generating evaluation:', err)
+    console.error('[Groq] generateEvaluation error:', err)
   }
 
   return {
@@ -628,8 +615,8 @@ app.post('/api/interview/answer', async (c) => {
       }).catch(err => console.error('[API /interview/answer] Error saving evaluation:', err))
     }
 
-    // Generate Next AI Question via Gemini using combined JD and Question Bank context
-    const assistantText = await generateGeminiResponse(answerText, history, {
+    // Generate next question via Groq using combined JD and Question Bank context
+    const assistantText = await generateGroqResponse(answerText, history, {
       role: targetRole,
       jobDescription: jobDesc,
       questionBankText

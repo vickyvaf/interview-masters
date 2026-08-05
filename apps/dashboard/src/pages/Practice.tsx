@@ -548,6 +548,14 @@ export default function Practice() {
       }
     }
 
+    // Common Indonesian words protection set to prevent false fuzzy replacements on standard speech
+    const commonIndonesianWords = new Set([
+      'saya', 'pikir', 'kurang', 'lebih', 'selama', 'tahun', 'dengan', 'yang', 'dan', 'di', 'ke',
+      'ini', 'itu', 'untuk', 'sebagai', 'adalah', 'akan', 'bisa', 'ada', 'tidak', 'nama', 'terima',
+      'kasih', 'sebelumnya', 'perkenalkan', 'pengalaman', 'kerja', 'memiliki', 'posisi', 'dalam',
+      'pada', 'oleh', 'karena', 'juga', 'atau', 'kami', 'kita', 'anda', 'kamu', 'sudah'
+    ])
+
     // Phonetic normalization for Indonesian acoustic speech (v/f/p, d/t, g/k, j/z, e/i/a)
     const normalizePhonemes = (str: string) => {
       return str
@@ -589,32 +597,35 @@ export default function Practice() {
       let result = input
       const targetRole = role || ''
       const fullName = userProfile?.full_name || ''
-      const jdText = location.state?.jobDescription || ''
-      const qTexts = (questionBankItems || []).map((q: any) => q.question_text || '').join(' ')
 
       const targetPhrases = new Set<string>()
       const targetWords = new Set<string>()
 
       if (fullName && fullName.trim()) {
         targetPhrases.add(fullName.trim())
-        fullName.trim().split(/\s+/).forEach((w: string) => { if (w.length >= 3) targetWords.add(w) })
+        fullName.trim().split(/\s+/).forEach((w: string) => {
+          if (w.length >= 3 && !commonIndonesianWords.has(w.toLowerCase())) targetWords.add(w)
+        })
       }
 
       if (targetRole && targetRole.trim()) {
         targetPhrases.add(targetRole.trim())
-        targetRole.trim().split(/\s+/).forEach((w: string) => { if (w.length >= 3) targetWords.add(w) })
+        targetRole.trim().split(/\s+/).forEach((w: string) => {
+          if (w.length >= 3 && !commonIndonesianWords.has(w.toLowerCase())) targetWords.add(w)
+        })
       }
 
-      const combinedContext = `${jdText} ${qTexts}`
-      const contextMatches = combinedContext.match(/[A-Z][a-zA-Z0-9+#.-]*/g) || []
-      contextMatches.forEach((w: string) => { if (w.length >= 4) targetWords.add(w) })
-
-      // 1. Variable 1-4 N-Gram Phonetic Sliding Window Matching (handles mishearings like "Evan dan Jenner" -> "Frontend Engineer")
+      // 1. Target Phrase Fuzzy Replacement (handles multi-word target role / full name)
       targetPhrases.forEach((targetPhrase) => {
-        const inputTokens = result.split(/\s+/)
+        if (!targetPhrase || targetPhrase.trim().length < 3) return
         const normTarget = normalizePhonemes(targetPhrase)
+        const inputTokens = result.split(/\s+/)
 
-        for (let windowLen = 1; windowLen <= 4; windowLen++) {
+        const targetWordCount = targetPhrase.trim().split(/\s+/).length
+        const minWin = Math.max(1, targetWordCount - 1)
+        const maxWin = Math.min(4, targetWordCount + 1)
+
+        for (let windowLen = minWin; windowLen <= maxWin; windowLen++) {
           for (let i = 0; i <= inputTokens.length - windowLen; i++) {
             const windowPhrase = inputTokens.slice(i, i + windowLen).join(' ')
             const normWindow = normalizePhonemes(windowPhrase)
@@ -622,30 +633,34 @@ export default function Practice() {
             const dist = levenshteinDistance(normWindow, normTarget)
             const maxLen = Math.max(normWindow.length, normTarget.length)
 
-            if (maxLen > 0 && (1 - dist / maxLen) >= 0.50) {
-              result = result.replace(windowPhrase, targetPhrase)
+            if (maxLen > 0 && (1 - dist / maxLen) >= 0.75) {
+              const regex = new RegExp(windowPhrase.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'i')
+              result = result.replace(regex, targetPhrase)
             }
           }
         }
       })
 
-      // 2. Dynamic Phonetic Word-level Matching for single proper nouns / tech terms
+      // 2. Word-level Fuzzy Matching for Proper Nouns & Tech Words (excluding common Indonesian words)
       const tokens = result.split(/(\s+)/)
       const correctedTokens = tokens.map((token) => {
         const cleanToken = token.replace(/[^a-zA-Z0-9]/g, '')
-        if (cleanToken.length < 3) return token
+        if (cleanToken.length < 3 || commonIndonesianWords.has(cleanToken.toLowerCase())) {
+          return token
+        }
 
         let bestMatch = cleanToken
         let highestSimilarity = 0
         const normClean = normalizePhonemes(cleanToken)
 
         targetWords.forEach((target) => {
+          if (commonIndonesianWords.has(target.toLowerCase())) return
           const normTarget = normalizePhonemes(target)
-          if (Math.abs(normTarget.length - normClean.length) <= 3) {
+          if (Math.abs(normTarget.length - normClean.length) <= 2) {
             const dist = levenshteinDistance(normClean, normTarget)
             const similarity = 1 - dist / Math.max(normClean.length, normTarget.length)
 
-            if (similarity >= 0.55 && similarity > highestSimilarity) {
+            if (similarity >= 0.78 && similarity > highestSimilarity) {
               highestSimilarity = similarity
               bestMatch = target
             }

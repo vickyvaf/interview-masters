@@ -870,110 +870,122 @@ export default function Practice() {
             </Badge>
           </Box>
 
-          {/* AI Pulse Circle & Status */}
+          {/* Premium Pulse Orb */}
           <style>{`
-            @keyframes waveScale {
-              0% {
-                transform: scale(1);
-                opacity: 0.8;
-              }
-              100% {
-                transform: scale(2.2);
-                opacity: 0;
-              }
+            @keyframes orbBreath {
+              0%, 100% { transform: scale(1); opacity: 0.18; }
+              50% { transform: scale(1.18); opacity: 0.32; }
             }
-            .pulse-wave {
+            @keyframes rippleOut {
+              0% { transform: scale(1); opacity: 0.55; }
+              100% { transform: scale(2.6); opacity: 0; }
+            }
+            @keyframes thinkSpin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+            .orb-idle-ring {
               position: absolute;
-              width: 80px;
-              height: 80px;
               border-radius: 50%;
-              background-color: var(--blue-a4);
-              animation: waveScale 2s infinite linear;
-              z-index: 1;
+              background: radial-gradient(circle, rgba(0,119,255,0.18) 0%, rgba(0,119,255,0) 70%);
+              animation: orbBreath 3s ease-in-out infinite;
             }
-            .wave-2 {
-              animation-delay: 1s;
+            .orb-ripple {
+              position: absolute;
+              border-radius: 50%;
+              border: 1.5px solid rgba(59,130,246,0.5);
+              animation: rippleOut 1.8s ease-out infinite;
+              pointer-events: none;
             }
-            .ai-speaking-pulse {
-              /* clean minimal style */
+            .orb-ripple-2 { animation-delay: 0.6s; }
+            .orb-ripple-3 { animation-delay: 1.2s; }
+            .orb-think-arc {
+              position: absolute;
+              width: 88px;
+              height: 88px;
+              border-radius: 50%;
+              border: 2px solid transparent;
+              border-top-color: rgba(59,130,246,0.7);
+              border-right-color: rgba(59,130,246,0.3);
+              animation: thinkSpin 1.1s linear infinite;
             }
           `}</style>
-          <Flex direction="column" align="center" gap="3" style={{ marginBottom: '40px' }}>
-            <div 
-              style={{
-                position: 'relative',
-                width: '100px',
-                height: '100px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
-            >
-              {/* Dynamic Outer Frequency Wave (User Mic Input Volume or Speaker TTS Volume) */}
-              <div
-                style={{
-                  position: 'absolute',
-                  width: '90px',
-                  height: '90px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--blue-a4)',
-                  transform: isRecording
-                    ? `scale(${1 + micVolume * 0.95})`
-                    : isSpeaking
-                    ? `scale(${1 + speakerVolume * 0.85})`
-                    : 'scale(1)',
-                  opacity: isRecording
-                    ? Math.max(0.2, micVolume * 0.9)
-                    : isSpeaking
-                    ? Math.max(0.3, speakerVolume * 0.8)
-                    : isThinking
-                    ? 0.5
-                    : 0,
-                  transition: 'transform 0.06s ease-out, opacity 0.08s ease-out',
-                  zIndex: 1
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  width: '70px',
-                  height: '70px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--blue-9)',
-                  opacity: isRecording ? 0.25 + micVolume * 0.3 : isSpeaking ? 0.25 + speakerVolume * 0.3 : 0.1,
-                  transform: isRecording
-                    ? `scale(${1 + micVolume * 0.45})`
-                    : isSpeaking
-                    ? `scale(${1 + speakerVolume * 0.4})`
-                    : 'scale(1)',
-                  transition: 'transform 0.06s ease-out, opacity 0.08s ease-out',
-                  zIndex: 1
-                }}
-              />
+          <Flex direction="column" align="center" gap="4" style={{ marginBottom: '40px' }}>
+            <div style={{ position: 'relative', width: '120px', height: '120px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
 
-              {/* Core Dynamic Frequency Orb */}
-              <div
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--blue-9)',
-                  zIndex: 2,
-                  transform: isRecording
-                    ? `scale(${1 + micVolume * 0.25})`
-                    : isSpeaking
-                    ? `scale(${1 + speakerVolume * 0.2})`
-                    : isThinking
-                    ? 'scale(1.15)'
-                    : 'scale(1.0)',
-                  transition: 'transform 0.06s ease-out, background-color 0.3s ease',
-                  boxShadow: (isRecording || isSpeaking)
-                    ? `0 0 ${12 + Math.max(micVolume, speakerVolume) * 22}px var(--blue-9)`
-                    : 'none'
-                }}
-              />
+              {/* Idle breathing halo — always visible when not active */}
+              {!isRecording && !isSpeaking && !isThinking && (
+                <div className="orb-idle-ring" style={{ width: '110px', height: '110px' }} />
+              )}
+
+              {/* Thinking arc spinner */}
+              {isThinking && <div className="orb-think-arc" />}
+
+              {/* Ripple rings — driven by volume */}
+              {(isRecording || isSpeaking) && (<>
+                <div className="orb-ripple" style={{
+                  width: '80px', height: '80px',
+                  borderColor: `rgba(59,130,246,${0.15 + Math.max(micVolume, speakerVolume) * 0.6})`
+                }} />
+                <div className="orb-ripple orb-ripple-2" style={{
+                  width: '80px', height: '80px',
+                  borderColor: `rgba(99,155,255,${0.1 + Math.max(micVolume, speakerVolume) * 0.45})`
+                }} />
+                <div className="orb-ripple orb-ripple-3" style={{
+                  width: '80px', height: '80px',
+                  borderColor: `rgba(59,130,246,${0.08 + Math.max(micVolume, speakerVolume) * 0.3})`
+                }} />
+              </>)}
+
+              {/* Mid soft glow ring — frequency reactive */}
+              <div style={{
+                position: 'absolute',
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                background: isRecording || isSpeaking
+                  ? `radial-gradient(circle, rgba(59,130,246,${0.12 + Math.max(micVolume, speakerVolume) * 0.55}) 0%, rgba(59,130,246,0) 75%)`
+                  : isThinking
+                  ? 'radial-gradient(circle, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0) 75%)'
+                  : 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(59,130,246,0) 75%)',
+                transform: isRecording
+                  ? `scale(${1 + micVolume * 1.1})`
+                  : isSpeaking
+                  ? `scale(${1 + speakerVolume * 0.95})`
+                  : 'scale(1)',
+                transition: 'transform 0.05s ease-out, background 0.1s ease-out',
+              }} />
+
+              {/* Core orb */}
+              <div style={{
+                position: 'relative',
+                width: '52px',
+                height: '52px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle at 35% 35%, #60a5fa 0%, #2563eb 55%, #1d4ed8 100%)',
+                zIndex: 3,
+                transform: isRecording
+                  ? `scale(${1 + micVolume * 0.3})`
+                  : isSpeaking
+                  ? `scale(${1 + speakerVolume * 0.22})`
+                  : isThinking ? 'scale(1.08)' : 'scale(1)',
+                transition: 'transform 0.05s ease-out, box-shadow 0.08s ease-out',
+                boxShadow: isRecording || isSpeaking
+                  ? `0 0 ${16 + Math.max(micVolume, speakerVolume) * 32}px rgba(59,130,246,0.85),
+                     0 0 ${6 + Math.max(micVolume, speakerVolume) * 12}px rgba(147,197,253,0.6),
+                     inset 0 1px 2px rgba(255,255,255,0.3)`
+                  : isThinking
+                  ? '0 0 18px rgba(59,130,246,0.5), inset 0 1px 2px rgba(255,255,255,0.25)'
+                  : '0 0 8px rgba(59,130,246,0.3), inset 0 1px 2px rgba(255,255,255,0.2)',
+              }} />
             </div>
-            <Text size="3" color="gray" style={{ fontWeight: 500 }}>
+
+            <Text size="2" style={{
+              color: 'var(--gray-10)',
+              fontWeight: 500,
+              letterSpacing: '0.04em',
+              opacity: 0.85,
+            }}>
               {statusText}
             </Text>
           </Flex>

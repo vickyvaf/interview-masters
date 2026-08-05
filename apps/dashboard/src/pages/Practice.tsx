@@ -33,7 +33,7 @@ export default function Practice() {
   })
 
   const rawName = userProfile?.full_name?.trim() || ''
-  const displayName = (rawName && rawName.toLowerCase() !== 'candidate' && rawName.toLowerCase() !== 'kak') ? rawName.split(' ')[0] : 'Vicky'
+  const displayName = rawName ? rawName.split(' ')[0] : ''
 
   // Fetch relevant question bank dataset context to combine with job description
   const { data: questionBankItems } = useQuery({
@@ -251,7 +251,7 @@ export default function Practice() {
       if (!candidateName && user.email) {
         candidateName = user.email.split('@')[0]
       }
-      const activeName = candidateName ? candidateName.trim().split(' ')[0] : 'Vicky'
+      const activeName = candidateName ? candidateName.trim().split(' ')[0] : ''
 
       const preConfidence = location.state?.preConfidence || 3
       const roleParam = role || 'General'

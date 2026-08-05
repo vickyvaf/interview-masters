@@ -511,8 +511,8 @@ app.post('/api/interview/start', async (c) => {
       return c.json({ error: 'userId is required' }, 400)
     }
 
-    // Determine candidate name
-    let nameToUse = userName
+    // Determine candidate name dynamically
+    let nameToUse = userName || ''
     if (nameToUse && (nameToUse.toLowerCase() === 'candidate' || nameToUse.toLowerCase() === 'user' || nameToUse.toLowerCase() === 'kak')) {
       nameToUse = ''
     }
@@ -523,17 +523,17 @@ app.post('/api/interview/start', async (c) => {
         nameToUse = userRes[0].full_name.trim().split(' ')[0]
       }
     }
-
-    if (!nameToUse) {
-      nameToUse = 'Vicky'
-    } else {
-      nameToUse = nameToUse.trim().split(' ')[0]
-    }
+    nameToUse = nameToUse ? nameToUse.trim().split(' ')[0] : ''
 
     // Select random greeting template from array
     const greetingsList = SYSTEM_LANGUAGE === 'en' ? promptsConfig.greetings.en : promptsConfig.greetings.id
     const randomTemplate = greetingsList[Math.floor(Math.random() * greetingsList.length)]
-    const greetingText = randomTemplate.replace(/{name}/g, nameToUse).replace(/{role}/g, role)
+    let greetingText = randomTemplate.replace(/{role}/g, role)
+    if (nameToUse) {
+      greetingText = greetingText.replace(/{name}/g, nameToUse)
+    } else {
+      greetingText = greetingText.replace(/ {name}/g, '').replace(/{name}/g, '')
+    }
 
     let mockInterviewId: string | null = null
     let initialQuestionId: string | null = null

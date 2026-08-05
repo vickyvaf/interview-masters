@@ -126,24 +126,51 @@ export default function Practice() {
   const [statusText, setStatusText] = useState('Ready to listen')
   const [statusOpacity, setStatusOpacity] = useState(1)
 
+  // Comprehensive Media & Audio Listener Cleanup
+  const stopAllMediaAndListeners = () => {
+    // 1. Immediately cancel SpeechSynthesis (TTS)
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
+
+    // 2. Abort SpeechRecognition (STT) and strip all event listeners
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onstart = null
+        recognitionRef.current.onresult = null
+        recognitionRef.current.onerror = null
+        recognitionRef.current.onend = null
+        recognitionRef.current.abort()
+        recognitionRef.current.stop()
+      } catch (e) { }
+      recognitionRef.current = null
+    }
+
+    // 3. Stop all Webcam / Microphone MediaStream tracks
+    if (webcamStreamRef.current) {
+      webcamStreamRef.current.getTracks().forEach((track) => {
+        track.stop()
+        track.enabled = false
+      })
+      webcamStreamRef.current = null
+    }
+
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream
+      if (stream && stream.getTracks) {
+        stream.getTracks().forEach((track) => {
+          track.stop()
+          track.enabled = false
+        })
+      }
+      videoRef.current.srcObject = null
+    }
+  }
+
   // Unmount cleanup: release all hardware and network resources
   useEffect(() => {
     return () => {
-      // 1. Stop webcam stream tracks
-      if (webcamStreamRef.current) {
-        webcamStreamRef.current.getTracks().forEach((track) => track.stop())
-      }
-      // 2. Cancel speech synthesis (TTS)
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel()
-      }
-      // 3. Stop speech recognition (STT)
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop()
-        } catch (e) { }
-      }
-
+      stopAllMediaAndListeners()
     }
   }, [])
 
@@ -772,7 +799,7 @@ export default function Practice() {
               </Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action>
-              <Button variant="solid" color="red" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+              <Button variant="solid" color="red" onClick={() => { stopAllMediaAndListeners(); navigate('/') }} style={{ cursor: 'pointer' }}>
                 Keluar
               </Button>
             </AlertDialog.Action>

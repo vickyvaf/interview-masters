@@ -456,9 +456,12 @@ export default function Practice() {
     const applyVoice = () => {
       const voices = window.speechSynthesis.getVoices()
       if (voices.length > 0 && !selectedVoiceRef.current) {
-        // Find best match: Indonesian voice or natural/female voice
-        const preferred = voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id'))
-          || voices.find(v => (v.name.includes('Lily') || v.name.includes('Natural')) && !v.name.toLowerCase().includes('male'))
+        // Explicitly prioritize "Lily", "Natural", "Google", "Online" or female neural voices
+        const preferred = voices.find(v => v.name.toLowerCase().includes('lily'))
+          || voices.find(v => v.name.toLowerCase().includes('natural') && !v.name.toLowerCase().includes('male'))
+          || voices.find(v => v.name.toLowerCase().includes('online') && !v.name.toLowerCase().includes('male'))
+          || voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id') && !v.name.toLowerCase().includes('male'))
+          || voices.find(v => v.lang.toLowerCase().replace('_', '-').startsWith('id'))
           || voices[0]
         if (preferred) {
           selectedVoiceRef.current = preferred
@@ -470,7 +473,7 @@ export default function Practice() {
       } else {
         utterance.lang = 'id-ID'
       }
-      utterance.rate = 1.1
+      utterance.rate = 1.05
       utterance.pitch = 1.0
     }
 

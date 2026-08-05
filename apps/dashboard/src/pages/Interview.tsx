@@ -31,7 +31,6 @@ export default function Interview() {
 
   // Debounced auto-sync to Supabase users table whenever role or jobDescription changes
   const isInitialLoad = useRef(true)
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'saved'>('idle')
 
   useEffect(() => {
     if (userProfile && isInitialLoad.current) {
@@ -47,7 +46,6 @@ export default function Interview() {
   useEffect(() => {
     if (isInitialLoad.current) return
 
-    setSyncStatus('syncing')
     const timer = setTimeout(async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -59,7 +57,6 @@ export default function Interview() {
             updated_at: new Date().toISOString()
           })
           .eq('id', user.id)
-        setSyncStatus('saved')
       }
     }, 800)
 
@@ -131,19 +128,12 @@ export default function Interview() {
     <Container size="3" style={{ padding: '40px 24px' }}>
       <Flex direction="column" gap="5">
         {/* Header */}
-        <Flex justify="between" align="center">
-          <Box>
-            <Heading size="6" mb="1">Mulai Interview Baru</Heading>
-            <Text size="2" color="gray">
-              Konfigurasikan detail pekerjaan Anda untuk memulai simulasi wawancara kerja adaptif berbasis AI.
-            </Text>
-          </Box>
-          {syncStatus !== 'idle' && (
-            <Badge color={syncStatus === 'syncing' ? 'amber' : 'green'} variant="soft" size="2">
-              {syncStatus === 'syncing' ? '🔄 Menyimpan ke Supabase...' : '✓ Tersimpan di Supabase'}
-            </Badge>
-          )}
-        </Flex>
+        <Box>
+          <Heading size="6" mb="1">Mulai Interview Baru</Heading>
+          <Text size="2" color="gray">
+            Konfigurasikan detail pekerjaan Anda untuk memulai simulasi wawancara kerja adaptif berbasis AI.
+          </Text>
+        </Box>
 
         <Separator size="4" />
 

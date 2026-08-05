@@ -83,18 +83,18 @@ export default function Practice() {
   const [showReadyModal, setShowReadyModal] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [engineStatus, setEngineStatus] = useState<'preparing' | 'loading' | 'ready'>('preparing')
-  const [engineMessage, setEngineMessage] = useState('Menyiapkan Engine AI Lokal & Transformers.js...')
+  const [engineMessage, setEngineMessage] = useState('Menyiapkan Ruang Wawancara & Kosakata...')
   const historyEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const t1 = setTimeout(() => {
       setEngineStatus('loading')
-      setEngineMessage('Menginjeksi Kosakata Posisi & Phonetic Engine...')
+      setEngineMessage('Menghubungkan Sesi & Posisi Pekerjaan...')
     }, 400)
 
     const t2 = setTimeout(() => {
       setEngineStatus('ready')
-      setEngineMessage('AI Engine Active & Siap Digunakan')
+      setEngineMessage('Ruang Wawancara Siap')
     }, 1200)
 
     return () => {
@@ -805,7 +805,7 @@ export default function Practice() {
               animation: engineStatus !== 'ready' ? 'pulse 1.2s infinite ease-in-out' : 'none'
             }} />
             <Text size="2" weight="medium">
-              {engineStatus === 'ready' ? '⚡ AI Engine Active (Local WASM)' : `✨ ${engineMessage}`}
+              {engineStatus === 'ready' ? '⚡ Ruang Wawancara Siap' : `✨ ${engineMessage}`}
             </Text>
           </Badge>
           <Text size="3" weight="bold">Wawancara: {role || 'Umum'}</Text>
@@ -821,7 +821,7 @@ export default function Practice() {
 
       {/* Main Grid Area */}
       <Grid columns={isMobile ? '1' : '2'} gap="4" style={{ flexGrow: 1, overflow: 'hidden' }}>
-        {/* AI Box (Left) */}
+        {/* Interviewer Box (Left) */}
         <Card size="3" style={{
           position: 'relative',
           display: 'flex',
@@ -846,7 +846,7 @@ export default function Practice() {
                   borderRadius: '50%',
                   backgroundColor: wsStatus === 'connected' ? 'var(--green-9)' : 'var(--red-9)'
                 }} />
-                AI INTERVIEWER ({wsStatus.toUpperCase()})
+                HIRING MANAGER ({wsStatus === 'connected' ? 'TERHUBUNG' : wsStatus.toUpperCase()})
               </Flex>
             </Badge>
           </Box>
@@ -933,8 +933,8 @@ export default function Practice() {
           }}>
             {history.map((msg, idx) => (
               <Flex key={idx} gap="2" style={{ fontSize: '14px', lineHeight: '1.5' }}>
-                <Text size="2" weight="bold" color={msg.role === 'user' ? 'green' : 'blue'} style={{ minWidth: '75px' }}>
-                  {msg.role === 'user' ? `${displayName}:` : 'AI:'}
+                <Text size="2" weight="bold" color={msg.role === 'user' ? 'green' : 'blue'} style={{ minWidth: '95px' }}>
+                  {msg.role === 'user' ? (displayName ? `${displayName}:` : 'Kandidat:') : 'Pewawancara:'}
                 </Text>
                 <Text size="2" color="gray" style={{ flexGrow: 1 }}>{msg.text.replace(/\*/g, '')}</Text>
               </Flex>
@@ -1088,7 +1088,7 @@ export default function Practice() {
         <AlertDialog.Content style={{ maxWidth: 420 }}>
           <AlertDialog.Title>Apakah Anda Sudah Siap?</AlertDialog.Title>
           <AlertDialog.Description size="2" mb="3">
-            Koneksi ke AI pewawancara telah terhubung. Pastikan kamera dan mikrofon Anda berfungsi dengan baik sebelum memulai simulasi.
+            Sesi wawancara telah terhubung. Pastikan kamera dan mikrofon Anda berfungsi dengan baik sebelum memulai wawancara.
           </AlertDialog.Description>
 
           <Card variant="surface" style={{ marginBottom: '16px', padding: '12px', borderRadius: '10px' }}>
@@ -1102,9 +1102,9 @@ export default function Practice() {
                 animation: engineStatus !== 'ready' ? 'pulse 1.2s infinite ease-in-out' : 'none'
               }} />
               <Flex direction="column">
-                <Text size="2" weight="bold">Engine AI Lokal (Transformers.js / WASM)</Text>
+                <Text size="2" weight="bold">Ruang Wawancara Digital</Text>
                 <Text size="1" color={engineStatus === 'ready' ? 'green' : 'amber'}>
-                  {engineStatus === 'ready' ? '✅ Terinisialisasi & Aktif (0ms Server Latency)' : `⏳ ${engineMessage}`}
+                  {engineStatus === 'ready' ? '✅ Sistem Terhubung & Siap' : `⏳ ${engineMessage}`}
                 </Text>
               </Flex>
             </Flex>

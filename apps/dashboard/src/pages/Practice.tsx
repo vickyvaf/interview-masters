@@ -296,6 +296,46 @@ export default function Practice() {
     }
   }, [countdown])
 
+  const speakText = (textToSpeak: string, onComplete?: () => void) => {
+    // 1. Immediately abort active microphone recording
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort()
+      } catch (e) { }
+    }
+    setIsRecording(false)
+
+    // 2. Synchronously lock speaking state
+    setIsSpeaking(true)
+    isSpeakingRef.current = true
+
+    window.speechSynthesis.cancel()
+
+    const cleanedText = textToSpeak.replace(/\*/g, '')
+    const utterance = new SpeechSynthesisUtterance(cleanedText)
+    utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
+
+    let endTimeout: any = null
+
+    const handleFinish = () => {
+      if (endTimeout) clearTimeout(endTimeout)
+      endTimeout = setTimeout(() => {
+        setIsSpeaking(false)
+        isSpeakingRef.current = false
+        if (onComplete) onComplete()
+      }, 600)
+    }
+
+    utterance.onstart = () => {
+      setIsSpeaking(true)
+      isSpeakingRef.current = true
+    }
+    utterance.onend = handleFinish
+    utterance.onerror = handleFinish
+
+    window.speechSynthesis.speak(utterance)
+  }
+
   const triggerGreeting = () => {
     setHasGreeted(true)
     setGreetingActive(true)
@@ -303,21 +343,11 @@ export default function Practice() {
     const greetingText = currentQuestionTextRef.current || `Hai ${displayName.split(' ')[0]}, apa kabar? Terima kasih ya sudah melamar sebagai ${role || 'Umum'} di tim kami. Boleh perkenalkan diri kamu dulu?`
 
     setHistory((prev) => [...prev, { role: 'assistant', text: greetingText }])
-
     setIsThinking(false)
-    const utterance = new SpeechSynthesisUtterance(greetingText.replace(/\*/g, ''))
-    utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
-    utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend = () => {
-      setIsSpeaking(false)
+
+    speakText(greetingText, () => {
       setGreetingActive(false)
-    }
-    utterance.onerror = () => {
-      setIsSpeaking(false)
-      setGreetingActive(false)
-    }
-    window.speechSynthesis.cancel()
-    window.speechSynthesis.speak(utterance)
+    })
   }
 
   // 3. Status text transitions
@@ -367,6 +397,11 @@ export default function Practice() {
     }
 
     recognition.onresult = (event: any) => {
+      // Guard: Ignore microphone input if AI is currently speaking or just finished speaking
+      if (isSpeakingRef.current || isSpeaking) {
+        console.warn('[STT] Ignored speech recognition result while AI was speaking')
+        return
+      }
       const result = event.results[event.resultIndex]
       if (result.isFinal) {
         finalTranscript = result[0].transcript
@@ -424,14 +459,7 @@ export default function Practice() {
               currentQuestionIdRef.current = data.nextQuestionId
 
               setHistory((prev) => [...prev, { role: 'assistant', text: data.assistantText }])
-              const cleanedText = data.assistantText.replace(/\*/g, '')
-              const utterance = new SpeechSynthesisUtterance(cleanedText)
-              utterance.lang = systemLanguageRef.current === 'id' ? 'id-ID' : 'en-US'
-              utterance.onstart = () => setIsSpeaking(true)
-              utterance.onend = () => setIsSpeaking(false)
-              utterance.onerror = () => setIsSpeaking(false)
-              window.speechSynthesis.cancel()
-              window.speechSynthesis.speak(utterance)
+              speakText(data.assistantText)
             }
           }).catch((err) => {
             console.error('Error sending answer:', err)

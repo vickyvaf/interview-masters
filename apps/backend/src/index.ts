@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import dotenv from 'dotenv'
 import path from 'path'
+import promptsConfig from './prompts.json' with { type: 'json' }
 
 // Load environment variables
 dotenv.config()
@@ -289,8 +290,8 @@ const SYSTEM_LANGUAGE = process.env.SYSTEM_LANGUAGE || 'id'
 const LLM_MODEL = process.env.LLM_MODEL || 'gemini-2.5-flash'
 
 const SYSTEM_INSTRUCTION = SYSTEM_LANGUAGE === 'en'
-  ? "You are a professional, helpful, and friendly job interview evaluator. Always respond in English. Keep your responses concise and interactive. Start the conversation with natural, human-like small talk (e.g. greeting the candidate, asking how their day is going) before asking about the job position or explaining the STAR methodology. Only introduce and guide the candidate through the STAR (Situation, Task, Action, Result) methodology once the interview topic formally begins."
-  : "Anda adalah penilai simulasi wawancara kerja yang profesional, membantu, dan ramah. Selalu berikan respons dalam Bahasa Indonesia yang ringkas dan interaktif. Mulailah percakapan dengan basa-basi yang santai dan alami layaknya manusia (seperti menyapa hangat, menanyakan kabar, atau menanyakan hari mereka) sebelum menanyakan posisi pekerjaan atau menjelaskan metode STAR. Hanya jelaskan dan pandu kandidat menggunakan metode STAR (Situation, Task, Action, Result) setelah obrolan wawancara secara formal dimulai."
+  ? promptsConfig.systemInstructions.en
+  : promptsConfig.systemInstructions.id
 
 interface GeminiMessage {
   role: 'user' | 'model';
@@ -459,7 +460,8 @@ app.post('/api/interview/start', async (c) => {
 
     let mockInterviewId: string | null = null
     let initialQuestionId: string | null = null
-    const greetingText = `Halo. Saya adalah pewawancara AI Anda hari ini. Selamat datang di simulasi wawancara untuk posisi ${role}. Mari kita mulai. Silakan perkenalkan diri Anda terlebih dahulu.`
+    const template = SYSTEM_LANGUAGE === 'en' ? promptsConfig.greetings.en : promptsConfig.greetings.id
+    const greetingText = template.replace('{role}', role)
 
     const interviewRes = await supabaseRequest('mock_interviews', 'POST', {
       user_id: userId,

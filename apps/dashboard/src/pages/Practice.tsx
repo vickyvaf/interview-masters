@@ -452,16 +452,31 @@ export default function Practice() {
     window.speechSynthesis.cancel()
 
     const cleanedText = textToSpeak.replace(/\*/g, '')
-    const utterance = new SpeechSynthesisUtterance(cleanedText)
 
-    const applyVoice = () => {
-      // Initialize Supertonic 3 TTS configuration (Lily, Indonesian)
-      supertonic.init({ speaker: 'Lily', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
+    const handleFinish = () => {
+      setIsSpeaking(false)
+      isSpeakingRef.current = false
+      if (onComplete) onComplete()
+    }
+
+    // Try playing from local Supertonic serve endpoint (127.0.0.1:7788)
+    supertonic.init({ speaker: 'Lily', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
+    supertonic.speakWithServer(cleanedText).then((audio) => {
+      if (audio) {
+        audio.onended = handleFinish
+        audio.onerror = () => fallbackWebSpeech()
+        audio.play().catch(() => fallbackWebSpeech())
+      } else {
+        fallbackWebSpeech()
+      }
+    }).catch(() => fallbackWebSpeech())
+
+    const fallbackWebSpeech = () => {
+      const utterance = new SpeechSynthesisUtterance(cleanedText)
       const lilySpeakerConfig = SUPERTONIC_SPEAKERS.find(s => s.id === 'Lily') || SUPERTONIC_SPEAKERS[0]
 
       const voices = window.speechSynthesis.getVoices()
       if (voices.length > 0 && !selectedVoiceRef.current) {
-        // Prioritize Indonesian female voices matching Supertonic Lily profile
         const idLilyVoice = voices.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
         const idFemaleVoice = voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
         const genericLilyVoice = voices.find(v => v.name.toLowerCase().includes('lily'))
@@ -479,27 +494,19 @@ export default function Practice() {
       }
       utterance.rate = lilySpeakerConfig.speechSpeed
       utterance.pitch = lilySpeakerConfig.pitch
-    }
 
-    applyVoice()
+      utterance.onend = handleFinish
+      utterance.onerror = (e) => {
+        console.warn('[TTS Error]', e)
+        handleFinish()
+      }
 
-    const handleFinish = () => {
-      setIsSpeaking(false)
-      isSpeakingRef.current = false
-      if (onComplete) onComplete()
-    }
-
-    utterance.onend = handleFinish
-    utterance.onerror = (e) => {
-      console.warn('[TTS Error]', e)
-      handleFinish()
-    }
-
-    try {
-      window.speechSynthesis.speak(utterance)
-    } catch (err) {
-      console.error('[TTS Speak Exception]', err)
-      handleFinish()
+      try {
+        window.speechSynthesis.speak(utterance)
+      } catch (err) {
+        console.error('[TTS Speak Exception]', err)
+        handleFinish()
+      }
     }
   }
 

@@ -63,6 +63,29 @@ export class SupertonicTTS {
   public isEngineReady(): boolean {
     return this.isLoaded;
   }
+
+  public async speakWithServer(text: string, serverUrl = 'http://127.0.0.1:7788'): Promise<HTMLAudioElement | null> {
+    try {
+      const res = await fetch(`${serverUrl}/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          speaker: this.activeSpeaker,
+          lang: this.activeLanguage,
+          speed: this.speechSpeed
+        })
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const blob = await res.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      return audio;
+    } catch (err) {
+      console.warn('[Supertonic Serve] Local server unavailable, falling back to Web Speech API:', err);
+      return null;
+    }
+  }
 }
 
 export const supertonic = SupertonicTTS.getInstance();

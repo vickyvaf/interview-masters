@@ -459,15 +459,7 @@ export default function Practice() {
     }
 
     supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
-    supertonic.speakWithServer(cleanedText).then((audio) => {
-      if (audio) {
-        audio.onended = handleFinish
-        audio.onerror = () => supertonic.speakInBrowserWorker(cleanedText).then(handleFinish)
-        audio.play().catch(() => supertonic.speakInBrowserWorker(cleanedText).then(handleFinish))
-      } else {
-        supertonic.speakInBrowserWorker(cleanedText).then(handleFinish)
-      }
-    }).catch(() => supertonic.speakInBrowserWorker(cleanedText).then(handleFinish))
+    supertonic.speakInBrowserWorker(cleanedText).then(handleFinish)
   }
 
   const triggerGreeting = () => {

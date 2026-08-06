@@ -64,41 +64,6 @@ export class SupertonicTTS {
     return this.isLoaded;
   }
 
-  public async speakWithServer(text: string, serverUrl = '/api-tts'): Promise<HTMLAudioElement | null> {
-    try {
-      const voiceMap: Record<string, string> = {
-        Lily: 'F1',
-        Sarah: 'F2',
-        Jessica: 'F3',
-        Olivia: 'F4',
-        Emily: 'F5'
-      };
-      const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
-
-      const res = await fetch(`${serverUrl}/v1/tts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          voice: voiceStyle,
-          lang: 'id',
-          speed: this.speechSpeed
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error(`Supertonic Serve status ${res.status}`);
-      }
-
-      const blob = await res.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      return new Audio(audioUrl);
-    } catch (err) {
-      console.warn('[Supertonic Serve] Local server unavailable, falling back to Web Speech API:', err);
-      return null;
-    }
-  }
-
   public async speakInBrowserWorker(text: string): Promise<HTMLAudioElement | null> {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       return null;

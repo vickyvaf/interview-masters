@@ -118,24 +118,8 @@ export class SupertonicTTS {
       const utterance = new SpeechSynthesisUtterance(text);
 
       const voices = window.speechSynthesis.getVoices();
-      const bannedList = ['google', 'male', 'david', 'mark', 'george', 'stefan', 'adam', 'paul'];
-      const cleanVoices = voices.filter(v => !bannedList.some(b => v.name.toLowerCase().includes(b)));
-      const pool = cleanVoices.length > 0 ? cleanVoices : voices;
-
-      const voiceCandidates = {
-        idSarah: pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('sarah')),
-        idLily: pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily')),
-        idFemale: pool.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male')),
-        genericFemale: pool.find(v => v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male')),
-        anyIndonesian: pool.find(v => v.lang.toLowerCase().includes('id'))
-      };
-
-      const matchedVoice = voiceCandidates.idSarah 
-        || voiceCandidates.idLily 
-        || voiceCandidates.idFemale 
-        || voiceCandidates.genericFemale 
-        || voiceCandidates.anyIndonesian 
-        || pool[0];
+      const matchedVoice = voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male') && v.lang.toLowerCase().includes('id'))
+        || voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male'));
 
       if (matchedVoice) {
         utterance.voice = matchedVoice;

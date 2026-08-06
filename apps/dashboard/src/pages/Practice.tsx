@@ -452,13 +452,22 @@ export default function Practice() {
 
     const cleanedText = textToSpeak.replace(/\*/g, '')
 
-    // Execute 100% pure client-side browser speech client (zero backend server required)
-    supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
-    supertonic.speakInBrowserWorker(cleanedText, () => {
+    const handleFinish = () => {
       setIsSpeaking(false)
       isSpeakingRef.current = false
       if (onComplete) onComplete()
-    })
+    }
+
+    supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
+    supertonic.speakWithServer(cleanedText).then((audio) => {
+      if (audio) {
+        audio.onended = handleFinish
+        audio.onerror = () => supertonic.speakInBrowserWorker(cleanedText, handleFinish)
+        audio.play().catch(() => supertonic.speakInBrowserWorker(cleanedText, handleFinish))
+      } else {
+        supertonic.speakInBrowserWorker(cleanedText, handleFinish)
+      }
+    }).catch(() => supertonic.speakInBrowserWorker(cleanedText, handleFinish))
   }
 
   const triggerGreeting = () => {

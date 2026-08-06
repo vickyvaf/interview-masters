@@ -64,9 +64,39 @@ export class SupertonicTTS {
     return this.isLoaded;
   }
 
-  public async speakWithServer(_text: string): Promise<HTMLAudioElement | null> {
-    // 100% Pure Client-side Browser Engine: zero network server dependencies for Netlify Serverless
-    return null;
+  public async speakWithServer(text: string, serverUrl = '/api-tts'): Promise<HTMLAudioElement | null> {
+    try {
+      const voiceMap: Record<string, string> = {
+        Lily: 'F1',
+        Sarah: 'F2',
+        Jessica: 'F3',
+        Olivia: 'F4',
+        Emily: 'F5'
+      };
+      const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
+
+      const res = await fetch(`${serverUrl}/v1/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          voice: voiceStyle,
+          lang: 'id',
+          speed: this.speechSpeed
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Supertonic Serve status ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      return new Audio(audioUrl);
+    } catch (err) {
+      console.warn('[Supertonic Serve] Local server unavailable, falling back to Web Speech API:', err);
+      return null;
+    }
   }
 
   public speakInBrowserWorker(text: string, onComplete?: () => void): void {

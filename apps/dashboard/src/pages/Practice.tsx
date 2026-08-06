@@ -441,14 +441,9 @@ export default function Practice() {
     setIsSpeaking(true)
     isSpeakingRef.current = true
 
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      setIsSpeaking(false)
-      isSpeakingRef.current = false
-      if (onComplete) onComplete()
-      return
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel() } catch (e) { }
     }
-
-    window.speechSynthesis.cancel()
 
     const cleanedText = textToSpeak.replace(/\*/g, '')
 
@@ -459,7 +454,20 @@ export default function Practice() {
     }
 
     supertonic.init({ speaker: 'Lily', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
-    supertonic.speakInBrowserWorker(cleanedText).then(handleFinish)
+    supertonic.speakInBrowserWorker(cleanedText).then((res) => {
+      if (!res && typeof window !== 'undefined' && window.speechSynthesis) {
+        // Fallback to browser SpeechSynthesis if WebWorker audio play was blocked/failed
+        const utterance = new SpeechSynthesisUtterance(cleanedText)
+        utterance.lang = 'id-ID'
+        utterance.rate = 1.0
+        utterance.pitch = 1.1
+        utterance.onend = handleFinish
+        utterance.onerror = handleFinish
+        window.speechSynthesis.speak(utterance)
+      } else {
+        handleFinish()
+      }
+    }).catch(handleFinish)
   }
 
   const triggerGreeting = () => {

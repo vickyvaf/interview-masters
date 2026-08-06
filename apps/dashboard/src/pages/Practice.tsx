@@ -110,7 +110,6 @@ export default function Practice() {
   const recognitionRef = useRef<any>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const pendingTranscriptRef = useRef<string>('')
-  const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null)
 
   const isSpeakingRef = useRef(false)
   useEffect(() => {
@@ -453,67 +452,13 @@ export default function Practice() {
 
     const cleanedText = textToSpeak.replace(/\*/g, '')
 
-    const handleFinish = () => {
+    // Execute 100% pure client-side browser speech client (zero backend server required)
+    supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
+    supertonic.speakInBrowserWorker(cleanedText, () => {
       setIsSpeaking(false)
       isSpeakingRef.current = false
       if (onComplete) onComplete()
-    }
-
-    // Try Supertonic 3 AI Model via HuggingFace Serverless / Local Client API
-    supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
-    supertonic.speakWithServer(cleanedText).then((audio) => {
-      if (audio) {
-        audio.onended = handleFinish
-        audio.onerror = () => runClientSpeech()
-        audio.play().catch(() => runClientSpeech())
-      } else {
-        runClientSpeech()
-      }
-    }).catch(() => runClientSpeech())
-
-    const runClientSpeech = () => {
-      const utterance = new SpeechSynthesisUtterance(cleanedText)
-
-      // Re-query voices every speak attempt to avoid empty voice list or stale cached Google voice
-      const voices = window.speechSynthesis.getVoices()
-      
-      // Strictly BAN Google, Male, and default generic voices
-      const bannedKeywords = ['google', 'male', 'david', 'mark', 'george', 'stefan', 'adam', 'paul']
-      const cleanVoices = voices.filter(v => !bannedKeywords.some(k => v.name.toLowerCase().includes(k)))
-      const pool = cleanVoices.length > 0 ? cleanVoices : voices
-
-      const idLilyVoice = pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
-      const idFemaleVoice = pool.find(v => v.lang.toLowerCase().includes('id') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('gadis') || v.name.toLowerCase().includes('perempuan') || !v.name.toLowerCase().includes('male')))
-      const genericLilyVoice = pool.find(v => v.name.toLowerCase().includes('lily'))
-      const anyIdVoice = pool.find(v => v.lang.toLowerCase().includes('id'))
-      const fallbackFemaleVoice = pool.find(v => v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male'))
-
-      const matchedVoice = idLilyVoice || idFemaleVoice || genericLilyVoice || anyIdVoice || fallbackFemaleVoice
-      if (matchedVoice) {
-        selectedVoiceRef.current = matchedVoice
-        utterance.voice = matchedVoice
-        utterance.lang = matchedVoice.lang
-      } else {
-        utterance.lang = 'id-ID'
-      }
-
-      // Voice pitch tuning for female Lily accent
-      utterance.rate = 1.0
-      utterance.pitch = 1.3
-
-      utterance.onend = handleFinish
-      utterance.onerror = (e) => {
-        console.warn('[TTS Error]', e)
-        handleFinish()
-      }
-
-      try {
-        window.speechSynthesis.speak(utterance)
-      } catch (err) {
-        console.error('[TTS Speak Exception]', err)
-        handleFinish()
-      }
-    }
+    })
   }
 
   const triggerGreeting = () => {

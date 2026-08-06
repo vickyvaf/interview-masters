@@ -64,39 +64,59 @@ export class SupertonicTTS {
     return this.isLoaded;
   }
 
-  public async speakWithServer(text: string, serverUrl = '/api-tts'): Promise<HTMLAudioElement | null> {
-    try {
-      // Map speaker profile to Supertonic builtin female voice styles (F1: Lily, F2: Sarah, etc)
-      const voiceMap: Record<string, string> = {
-        Lily: 'F1',
-        Sarah: 'F2',
-        Jessica: 'F3',
-        Olivia: 'F4',
-        Emily: 'F5'
+  public async speakWithServer(_text: string): Promise<HTMLAudioElement | null> {
+    // 100% Pure Client-side Browser Engine: zero network server dependencies for Netlify Serverless
+    return null;
+  }
+
+  public speakInBrowserWorker(text: string, onComplete?: () => void): void {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Dynamically query available non-Google female voices
+    const voices = window.speechSynthesis.getVoices();
+    const bannedKeywords = ['google', 'male', 'david', 'mark', 'george', 'stefan', 'adam', 'paul'];
+    const cleanVoices = voices.filter(v => !bannedKeywords.some(k => v.name.toLowerCase().includes(k)));
+    const pool = cleanVoices.length > 0 ? cleanVoices : voices;
+
+    const idSarahVoice = pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('sarah'))
+    const idLilyVoice = pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
+    const idFemaleVoice = pool.find(v => v.lang.toLowerCase().includes('id') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('gadis') || v.name.toLowerCase().includes('perempuan') || !v.name.toLowerCase().includes('male')))
+    const genericLilyVoice = pool.find(v => v.name.toLowerCase().includes('lily') || v.name.toLowerCase().includes('sarah'))
+    const anyIdVoice = pool.find(v => v.lang.toLowerCase().includes('id'))
+    const fallbackFemaleVoice = pool.find(v => v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male'))
+
+    const matchedVoice = idSarahVoice || idLilyVoice || idFemaleVoice || genericLilyVoice || anyIdVoice || fallbackFemaleVoice;
+    
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+      utterance.lang = matchedVoice.lang;
+    } else {
+      utterance.lang = 'id-ID';
+    }
+
+    // Acoustic voice tuning for female speaker (Sarah/Lily accent profile)
+    utterance.rate = this.speechSpeed;
+    utterance.pitch = 1.3;
+
+    if (onComplete) {
+      utterance.onend = onComplete;
+      utterance.onerror = (e) => {
+        console.warn('[Supertonic Worker Client Error]', e);
+        onComplete();
       };
-      const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
+    }
 
-      const res = await fetch(`${serverUrl}/v1/tts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          voice: voiceStyle,
-          lang: 'id',
-          speed: this.speechSpeed
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error(`Supertonic Serve status ${res.status}`);
-      }
-
-      const blob = await res.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      return new Audio(audioUrl);
+    try {
+      window.speechSynthesis.speak(utterance);
     } catch (err) {
-      console.warn('[Supertonic Serve] Local server unavailable, falling back to Web Speech API:', err);
-      return null;
+      console.error('[Supertonic Worker Client Exception]', err);
+      if (onComplete) onComplete();
     }
   }
 }

@@ -1,6 +1,6 @@
-import { pipeline, env, Tensor } from '@huggingface/transformers';
+import { pipeline, env } from '@huggingface/transformers';
 
-// Enable persistent browser CacheStorage for ONNX model files & WASM modules
+// Configure transformers env for persistent browser CacheStorage
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
@@ -9,8 +9,8 @@ class SupertonicNeuralPipeline {
 
   public static async getInstance(progressCallback?: (progress: any) => void) {
     if (!this.instance) {
-      // Load ONNX neural text-to-speech model with persistent CacheStorage
-      this.instance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
+      // Load end-to-end Indonesian ONNX Neural TTS model (Meta MMS-TTS Indonesian)
+      this.instance = await pipeline('text-to-speech', 'Xenova/mms-tts-ind', {
         progress_callback: progressCallback,
       });
     }
@@ -18,17 +18,7 @@ class SupertonicNeuralPipeline {
   }
 }
 
-// Generate valid 512-dim Float32 Tensor for SpeechT5 speaker embeddings
-function getSpeakerEmbeddingTensor(): Tensor {
-  const data = new Float32Array(512);
-  // Deterministic female speaker embedding pattern for 512 dimensions
-  for (let i = 0; i < 512; i++) {
-    data[i] = Math.sin(i * 0.123) * 0.08 + Math.cos(i * 0.456) * 0.04;
-  }
-  return new Tensor('float32', data, [1, 512]);
-}
-
-// Track file download progress map to prevent UI progress reset loops
+// Track file download progress map
 const fileProgressMap: Record<string, number> = {};
 
 self.onmessage = async (e: MessageEvent) => {
@@ -38,7 +28,7 @@ self.onmessage = async (e: MessageEvent) => {
     try {
       (self as any).postMessage({
         status: 'LOADING',
-        message: 'Loading ONNX model from local browser CacheStorage...'
+        message: 'Initializing Indonesian ONNX Neural TTS model...'
       });
 
       const synthesizer = await SupertonicNeuralPipeline.getInstance((progress: any) => {
@@ -70,20 +60,17 @@ self.onmessage = async (e: MessageEvent) => {
         message: `Synthesizing neural speech for "${text.slice(0, 35)}..."`
       });
 
-      // Create guaranteed valid [1, 512] Float32 Tensor for speaker embeddings
-      const speaker_embeddings = getSpeakerEmbeddingTensor();
-
-      // Execute SpeechT5 ONNX synthesis pipeline
-      const output = await synthesizer(text, { speaker_embeddings });
+      // End-to-end ONNX inference (No multi-model tensor input mismatches)
+      const output = await synthesizer(text);
 
       const wavSamples: Float32Array = output.audio;
-      const sampleRate: number = output.sampling_rate || 16000;
+      const sampleRate: number = output.sampling_rate || 22050;
       const duration = wavSamples.length / sampleRate;
 
       (self as any).postMessage(
         {
           status: 'SUCCESS',
-          speaker: speaker || 'Lily',
+          speaker: speaker || 'Lily (Indonesian)',
           duration,
           sampleRate,
           text,

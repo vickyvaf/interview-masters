@@ -1,59 +1,51 @@
-import { env } from '@huggingface/transformers';
+import { pipeline, env, Tensor } from '@huggingface/transformers';
 
-// STRICT 100% LOCAL DEVICE CONFIGURATION: Disable all remote HuggingFace HTTP requests
-env.allowLocalModels = true;
-env.allowRemoteModels = false;
-(env as any).localURL = '/models/';
+// Configure transformers for public HuggingFace CDN & browser CacheStorage
+env.allowLocalModels = false;
+env.allowRemoteModels = true;
 env.useBrowserCache = true;
 
-/**
- * 100% Local On-Device Web Worker Supertonic Synthesis Engine
- * Zero external HuggingFace network calls / Zero 401 Unauthorized errors.
- */
-class LocalSupertonicEngine {
-  private sampleRate = 22050; // 22.05kHz local PCM output
+class SupertonicNeuralPipeline {
+  private static instance: any = null;
 
-  public synthesize(text: string, speaker: string = 'Lily'): { wav: Float32Array; duration: number; sampleRate: number } {
-    // Generate natural local phoneme waveform on-device
-    const speed = 1.0;
-    const duration = Math.max(1.2, (text.length * 0.08) / speed);
-    const numSamples = Math.floor(this.sampleRate * duration);
-    const wav = new Float32Array(numSamples);
-
-    // Profile frequencies for local voices
-    const freqMap: Record<string, number> = {
-      Lily: 240,
-      Sarah: 215,
-      Jessica: 225,
-      Olivia: 200,
-      Emily: 245
-    };
-    const baseFreq = freqMap[speaker] || 230;
-
-    for (let i = 0; i < numSamples; i++) {
-      const t = i / this.sampleRate;
-      
-      // Envelope attack / release
-      const attack = Math.min(1, i / (this.sampleRate * 0.03));
-      const release = Math.min(1, (numSamples - i) / (this.sampleRate * 0.06));
-      const envCurve = attack * release;
-
-      // Vibrato & formants
-      const vibrato = 1 + 0.015 * Math.sin(2 * Math.PI * 5 * t);
-      const f0 = baseFreq * vibrato;
-
-      const s1 = Math.sin(2 * Math.PI * f0 * t);
-      const s2 = Math.sin(2 * Math.PI * f0 * 1.8 * t) * 0.35;
-      const s3 = Math.sin(2 * Math.PI * f0 * 2.5 * t) * 0.15;
-
-      wav[i] = (s1 + s2 + s3) * envCurve * 0.35;
+  public static async getInstance(progressCallback?: (progress: any) => void) {
+    if (!this.instance) {
+      // Load public ONNX SpeechT5 neural TTS model
+      this.instance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
+        progress_callback: progressCallback,
+      } as any);
     }
-
-    return { wav, duration, sampleRate: this.sampleRate };
+    return this.instance;
   }
 }
 
-const localEngine = new LocalSupertonicEngine();
+// Global cached speaker embeddings Tensor [1, 512]
+let cachedSpeakerEmbeddings: Tensor | null = null;
+
+async function getSpeakerEmbeddingsTensor(): Promise<Tensor> {
+  if (!cachedSpeakerEmbeddings) {
+    const url = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin';
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const arrayBuffer = await res.arrayBuffer();
+      const floatData = new Float32Array(arrayBuffer);
+      cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
+    } catch (err) {
+      console.warn('[Speaker Embeddings Fetch Error, using fallback]', err);
+      // Fallback: 512-dim Float32 Tensor
+      const data = new Float32Array(512);
+      for (let i = 0; i < 512; i++) {
+        data[i] = Math.sin(i * 0.1) * 0.05;
+      }
+      cachedSpeakerEmbeddings = new Tensor('float32', data, [1, 512]);
+    }
+  }
+  return cachedSpeakerEmbeddings;
+}
+
+// Track file download progress map to prevent UI progress reset loops
+const fileProgressMap: Record<string, number> = {};
 
 self.onmessage = async (e: MessageEvent) => {
   const { action, text, speaker } = e.data;
@@ -61,12 +53,48 @@ self.onmessage = async (e: MessageEvent) => {
   if (action === 'SYNTHESIZE') {
     try {
       (self as any).postMessage({
-        status: 'SYNTHESIZING',
-        message: `Synthesizing speech locally on-device (${speaker})...`
+        status: 'LOADING',
+        message: 'Loading neural ONNX TTS model...'
       });
 
-      // Execute 100% local on-device Web Worker synthesis
-      const { wav, duration, sampleRate } = localEngine.synthesize(text, speaker);
+      const synthesizer = await SupertonicNeuralPipeline.getInstance((progress: any) => {
+        if (progress && progress.file) {
+          const fileName = progress.file;
+          if (progress.status === 'progress') {
+            fileProgressMap[fileName] = Math.round(progress.progress || 0);
+          } else if (progress.status === 'done') {
+            fileProgressMap[fileName] = 100;
+          }
+
+          const fileNames = Object.keys(fileProgressMap);
+          const totalProgress = Math.round(
+            fileNames.reduce((acc, curr) => acc + fileProgressMap[curr], 0) / Math.max(1, fileNames.length)
+          );
+
+          (self as any).postMessage({
+            status: 'PROGRESS',
+            file: fileName,
+            filePercent: fileProgressMap[fileName],
+            totalPercent: totalProgress,
+            loadedFiles: fileNames.length
+          });
+        }
+      });
+
+      (self as any).postMessage({
+        status: 'SYNTHESIZING',
+        message: `Synthesizing neural human speech for "${text.slice(0, 35)}..."`
+      });
+
+      // Load speaker embeddings Tensor [1, 512]
+      const speaker_embeddings = await getSpeakerEmbeddingsTensor();
+
+      // Run SpeechT5 neural ONNX TTS inference
+      const output = await synthesizer(text, { speaker_embeddings });
+
+      const wavSamples: Float32Array = output.audio;
+      const sampleRate: number = output.sampling_rate || 16000;
+      const duration = wavSamples.length / sampleRate;
 
       (self as any).postMessage(
         {
@@ -75,12 +103,12 @@ self.onmessage = async (e: MessageEvent) => {
           duration,
           sampleRate,
           text,
-          wavBuffer: wav.buffer
+          wavBuffer: wavSamples.buffer
         },
-        [wav.buffer]
+        [wavSamples.buffer]
       );
     } catch (err: any) {
-      console.error('[Supertonic Local Worker Error]', err);
+      console.error('[Supertonic Worker Error]', err);
       (self as any).postMessage({
         status: 'ERROR',
         error: err.message || String(err)

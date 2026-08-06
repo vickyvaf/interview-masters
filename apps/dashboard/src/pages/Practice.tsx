@@ -4,7 +4,7 @@ import { Text, Flex, Card, Box, Badge, IconButton, Button, Grid, AlertDialog } f
 import { ReloadIcon, ArrowLeftIcon, SpeakerLoudIcon, SpeakerOffIcon, CameraIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { supertonic, SUPERTONIC_SPEAKERS } from '../lib/supertonic'
+import { supertonic } from '../lib/supertonic'
 
 
 export default function Practice() {
@@ -473,7 +473,6 @@ export default function Practice() {
 
     const fallbackWebSpeech = () => {
       const utterance = new SpeechSynthesisUtterance(cleanedText)
-      const lilySpeakerConfig = SUPERTONIC_SPEAKERS.find(s => s.id === 'Lily') || SUPERTONIC_SPEAKERS[0]
 
       // Re-query voices every speak attempt to avoid empty voice list or stale cached Google voice
       const voices = window.speechSynthesis.getVoices()

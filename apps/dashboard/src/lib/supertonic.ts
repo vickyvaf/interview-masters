@@ -64,7 +64,13 @@ export class SupertonicTTS {
     return this.isLoaded;
   }
 
-  public async speakWithServer(text: string, serverUrl = '/api-tts'): Promise<HTMLAudioElement | null> {
+  public async speakWithServer(text: string, serverUrl?: string): Promise<HTMLAudioElement | null> {
+    const targetUrl = serverUrl || (import.meta.env ? (import.meta.env.VITE_SUPERTONIC_SERVER_URL || '/api-tts') : '/api-tts');
+    
+    // In serverless / static deployment without explicit backend URL, skip backend fetch immediately to prevent delay
+    if (!targetUrl || targetUrl === 'none') {
+      return null;
+    }
     try {
       // Map speaker profile to Supertonic builtin female voice styles (F1: Lily, F2: Sarah, etc)
       const voiceMap: Record<string, string> = {
@@ -76,7 +82,7 @@ export class SupertonicTTS {
       };
       const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
 
-      const res = await fetch(`${serverUrl}/v1/tts`, {
+      const res = await fetch(`${targetUrl}/v1/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

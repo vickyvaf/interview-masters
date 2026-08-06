@@ -4,7 +4,7 @@ export default function App() {
   const [text, setText] = useState('Halo! Perkenalkan saya Lily dari Supertonic 3. Selamat datang di Interview Masters!');
   const [speaker, setSpeaker] = useState('Lily');
   const [language, setLanguage] = useState('indonesian');
-  const [serverUrl, setServerUrl] = useState('http://127.0.0.1:7788');
+  const [serverUrl, setServerUrl] = useState('/api-tts');
   const [status, setStatus] = useState('Ready');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedWebVoice, setSelectedWebVoice] = useState<string>('');

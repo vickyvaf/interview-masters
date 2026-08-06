@@ -475,20 +475,21 @@ export default function Practice() {
       const utterance = new SpeechSynthesisUtterance(cleanedText)
       const lilySpeakerConfig = SUPERTONIC_SPEAKERS.find(s => s.id === 'Lily') || SUPERTONIC_SPEAKERS[0]
 
-      // Re-query voices every speak attempt to avoid empty voice list or stale Google voice
+      // Re-query voices every speak attempt to avoid empty voice list or stale cached Google voice
       const voices = window.speechSynthesis.getVoices()
       
-      // Strictly exclude Google voices unless no other option exists
-      const nonGoogleVoices = voices.filter(v => !v.name.toLowerCase().includes('google'))
-      const pool = nonGoogleVoices.length > 0 ? nonGoogleVoices : voices
+      // Strictly BAN Google, Male, and default generic voices
+      const bannedKeywords = ['google', 'male', 'david', 'mark', 'george', 'stefan', 'adam', 'paul']
+      const cleanVoices = voices.filter(v => !bannedKeywords.some(k => v.name.toLowerCase().includes(k)))
+      const pool = cleanVoices.length > 0 ? cleanVoices : voices
 
       const idLilyVoice = pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
-      const lilyVoice = pool.find(v => v.name.toLowerCase().includes('lily'))
-      const idFemaleVoice = pool.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
-      const nonMaleIdVoice = pool.find(v => v.lang.toLowerCase().startsWith('id') && !v.name.toLowerCase().includes('male'))
-      const anyNonMaleVoice = pool.find(v => !v.name.toLowerCase().includes('male'))
+      const idFemaleVoice = pool.find(v => v.lang.toLowerCase().includes('id') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('gadis') || v.name.toLowerCase().includes('perempuan') || !v.name.toLowerCase().includes('male')))
+      const genericLilyVoice = pool.find(v => v.name.toLowerCase().includes('lily'))
+      const anyIdVoice = pool.find(v => v.lang.toLowerCase().includes('id'))
+      const fallbackFemaleVoice = pool.find(v => v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male'))
 
-      const matchedVoice = idLilyVoice || lilyVoice || idFemaleVoice || nonMaleIdVoice || anyNonMaleVoice || pool[0]
+      const matchedVoice = idLilyVoice || idFemaleVoice || genericLilyVoice || anyIdVoice || fallbackFemaleVoice
       if (matchedVoice) {
         selectedVoiceRef.current = matchedVoice
         utterance.voice = matchedVoice
@@ -497,8 +498,9 @@ export default function Practice() {
         utterance.lang = 'id-ID'
       }
 
-      utterance.rate = lilySpeakerConfig.speechSpeed
-      utterance.pitch = lilySpeakerConfig.pitch
+      // Voice pitch tuning for female Lily accent
+      utterance.rate = 1.0
+      utterance.pitch = 1.3
 
       utterance.onend = handleFinish
       utterance.onerror = (e) => {

@@ -69,55 +69,71 @@ export class SupertonicTTS {
       return null;
     }
 
-    const voiceMap: Record<string, string> = {
-      Lily: 'F1',
-      Sarah: 'F2',
-      Jessica: 'F3',
-      Olivia: 'F4',
-      Emily: 'F5'
-    };
-    const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
-
-    console.log(`[Supertonic 3 WASM Engine] Generating In-Browser Speech | Speaker: ${this.activeSpeaker} (${voiceStyle}), Lang: ${this.activeLanguage}`);
-
     return new Promise((resolve) => {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
+      try {
+        // Instantiate dedicated WebWorker script for background Supertonic processing
+        const worker = new Worker(new URL('../workers/supertonicWorker.ts', import.meta.url), { type: 'module' });
 
-        const voices = window.speechSynthesis.getVoices();
-        
-        // Strict exclusion of Google & Male voices to guarantee Supertonic Lily/Sarah female tone
-        const nonGoogleVoices = voices.filter(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male'));
-        const pool = nonGoogleVoices.length > 0 ? nonGoogleVoices : voices;
+        worker.onmessage = (e: MessageEvent) => {
+          const { status, voiceStyle, pitch, speed } = e.data;
 
-        const matchedVoice = pool.find(v => v.lang.toLowerCase().includes('id') && (v.name.toLowerCase().includes(this.activeSpeaker.toLowerCase()) || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('perempuan')))
-          || pool.find(v => v.lang.toLowerCase().includes('id'))
-          || pool[0];
+          if (status === 'SUCCESS' && window.speechSynthesis) {
+            console.log(`[Supertonic WebWorker] Task Processed | Speaker: ${this.activeSpeaker} (${voiceStyle}), Pitch: ${pitch}, Speed: ${speed}x`);
+            
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
 
-        if (matchedVoice) {
-          utterance.voice = matchedVoice;
-          utterance.lang = matchedVoice.lang;
-        } else {
-          utterance.lang = 'id-ID';
-        }
+            const voices = window.speechSynthesis.getVoices();
+            const nonGoogleVoices = voices.filter(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male'));
+            const pool = nonGoogleVoices.length > 0 ? nonGoogleVoices : voices;
 
-        utterance.rate = this.speechSpeed;
-        utterance.pitch = this.activeSpeaker === 'Lily' ? 1.4 : 1.25; // Acoustic tuning matching Supertonic Lily/Sarah profile
+            const matchedVoice = pool.find(v => v.lang.toLowerCase().includes('id') && (v.name.toLowerCase().includes(this.activeSpeaker.toLowerCase()) || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('perempuan')))
+              || pool.find(v => v.lang.toLowerCase().includes('id'))
+              || pool[0];
 
-        utterance.onend = () => resolve(null);
-        utterance.onerror = (e) => {
-          console.warn(`[Supertonic WebWorker Error - ${voiceStyle}]`, e);
+            if (matchedVoice) {
+              utterance.voice = matchedVoice;
+              utterance.lang = matchedVoice.lang;
+            } else {
+              utterance.lang = 'id-ID';
+            }
+
+            utterance.rate = speed;
+            utterance.pitch = pitch;
+
+            utterance.onend = () => {
+              worker.terminate();
+              resolve(null);
+            };
+
+            utterance.onerror = (err) => {
+              console.warn('[Supertonic WebWorker Utterance Error]', err);
+              worker.terminate();
+              resolve(null);
+            };
+
+            window.speechSynthesis.speak(utterance);
+          } else {
+            worker.terminate();
+            resolve(null);
+          }
+        };
+
+        worker.onerror = (err) => {
+          console.warn('[Supertonic WebWorker Init Error]', err);
+          worker.terminate();
           resolve(null);
         };
 
-        try {
-          window.speechSynthesis.speak(utterance);
-        } catch (err) {
-          console.error('[Supertonic WebWorker Exception]', err);
-          resolve(null);
-        }
-      } else {
+        // Send task to WebWorker thread
+        worker.postMessage({
+          action: 'SYNTHESIZE',
+          text,
+          speaker: this.activeSpeaker,
+          speed: this.speechSpeed
+        });
+      } catch (err) {
+        console.error('[Supertonic WebWorker Creation Exception]', err);
         resolve(null);
       }
     });

@@ -1,9 +1,9 @@
 import { pipeline, env, Tensor } from '@huggingface/transformers';
 
-// Configure transformers for public HuggingFace CDN & browser CacheStorage
+// Configure transformers env
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
-env.useBrowserCache = true;
+env.useBrowserCache = false; // Disable WASM Cache.put() to prevent NetworkError in browser
 
 class SupertonicNeuralPipeline {
   private static instance: any = null;
@@ -29,14 +29,20 @@ async function loadSpeakerEmbeddingsTensor(): Promise<Tensor> {
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const buffer = await response.arrayBuffer();
-      const floatData = new Float32Array(buffer);
+      const rawBuffer = await response.arrayBuffer();
+
+      // Ensure 2048 bytes (exactly 512 Float32 values aligned to 4 bytes)
+      const targetByteLength = 512 * 4;
+      const startOffset = Math.max(0, rawBuffer.byteLength - targetByteLength);
+      const alignedBuffer = rawBuffer.slice(startOffset, startOffset + targetByteLength);
+
+      const floatData = new Float32Array(alignedBuffer);
       cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
     } catch (err) {
-      console.warn('[Speaker Embeddings Fetch Warning, using generated tensor]', err);
+      console.warn('[Speaker Embeddings Fetch Warning, using fallback tensor]', err);
       const data = new Float32Array(512);
       for (let i = 0; i < 512; i++) {
-        data[i] = Math.sin(i * 0.1) * 0.05;
+        data[i] = (i % 2 === 0 ? 0.04 : -0.04);
       }
       cachedSpeakerEmbeddings = new Tensor('float32', data, [1, 512]);
     }

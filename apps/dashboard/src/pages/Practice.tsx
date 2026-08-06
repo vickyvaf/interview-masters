@@ -459,19 +459,10 @@ export default function Practice() {
       if (onComplete) onComplete()
     }
 
-    // Try playing from local Supertonic serve endpoint (127.0.0.1:7788)
+    // Pure serverless client-side TTS execution
     supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
-    supertonic.speakWithServer(cleanedText).then((audio) => {
-      if (audio) {
-        audio.onended = handleFinish
-        audio.onerror = () => fallbackWebSpeech()
-        audio.play().catch(() => fallbackWebSpeech())
-      } else {
-        fallbackWebSpeech()
-      }
-    }).catch(() => fallbackWebSpeech())
-
-    const fallbackWebSpeech = () => {
+    
+    const runClientSpeech = () => {
       const utterance = new SpeechSynthesisUtterance(cleanedText)
 
       // Re-query voices every speak attempt to avoid empty voice list or stale cached Google voice
@@ -514,6 +505,8 @@ export default function Practice() {
         handleFinish()
       }
     }
+
+    runClientSpeech()
   }
 
   const triggerGreeting = () => {

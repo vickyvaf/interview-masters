@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 
 export default function App() {
-  const [text, setText] = useState('Halo! Perkenalkan saya Lily dari Supertonic 3. Selamat datang di Interview Masters!');
-  const [speaker, setSpeaker] = useState('Lily');
+  const [text, setText] = useState('Halo! Perkenalkan saya Sarah dari Supertonic 3. Selamat datang di Interview Masters!');
+  const [speaker, setSpeaker] = useState('Sarah');
   const [language, setLanguage] = useState('indonesian');
   const [serverUrl, setServerUrl] = useState('/api-tts');
   const [status, setStatus] = useState('Ready');

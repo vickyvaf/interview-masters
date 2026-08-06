@@ -460,7 +460,7 @@ export default function Practice() {
     }
 
     // Try playing from local Supertonic serve endpoint (127.0.0.1:7788)
-    supertonic.init({ speaker: 'Lily', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
+    supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
     supertonic.speakWithServer(cleanedText).then((audio) => {
       if (audio) {
         audio.onended = handleFinish

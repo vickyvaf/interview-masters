@@ -108,21 +108,27 @@ export class SupertonicTTS {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
 
-    // Dynamically query available non-Google female voices
+    // Query clean non-Google voices using structured candidate matching
     const voices = window.speechSynthesis.getVoices();
-    const bannedKeywords = ['google', 'male', 'david', 'mark', 'george', 'stefan', 'adam', 'paul'];
-    const cleanVoices = voices.filter(v => !bannedKeywords.some(k => v.name.toLowerCase().includes(k)));
+    const bannedList = ['google', 'male', 'david', 'mark', 'george', 'stefan', 'adam', 'paul'];
+    const cleanVoices = voices.filter(v => !bannedList.some(b => v.name.toLowerCase().includes(b)));
     const pool = cleanVoices.length > 0 ? cleanVoices : voices;
 
-    const idSarahVoice = pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('sarah'))
-    const idLilyVoice = pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
-    const idFemaleVoice = pool.find(v => v.lang.toLowerCase().includes('id') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('gadis') || v.name.toLowerCase().includes('perempuan') || !v.name.toLowerCase().includes('male')))
-    const genericLilyVoice = pool.find(v => v.name.toLowerCase().includes('lily') || v.name.toLowerCase().includes('sarah'))
-    const anyIdVoice = pool.find(v => v.lang.toLowerCase().includes('id'))
-    const fallbackFemaleVoice = pool.find(v => v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male'))
+    const voiceCandidates = {
+      idSarah: pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('sarah')),
+      idLily: pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily')),
+      idFemale: pool.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male')),
+      genericFemale: pool.find(v => v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male')),
+      anyIndonesian: pool.find(v => v.lang.toLowerCase().includes('id'))
+    };
 
-    const matchedVoice = idSarahVoice || idLilyVoice || idFemaleVoice || genericLilyVoice || anyIdVoice || fallbackFemaleVoice;
-    
+    const matchedVoice = voiceCandidates.idSarah 
+      || voiceCandidates.idLily 
+      || voiceCandidates.idFemale 
+      || voiceCandidates.genericFemale 
+      || voiceCandidates.anyIndonesian 
+      || pool[0];
+
     if (matchedVoice) {
       utterance.voice = matchedVoice;
       utterance.lang = matchedVoice.lang;

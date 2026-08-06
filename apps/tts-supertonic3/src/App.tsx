@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 
-// Helper to encode Float32 PCM to 44.1kHz WAV Blob (equivalent to Python tts.save_audio)
-function encodeWAV(samples: Float32Array, sampleRate: number = 44100): Blob {
+// Helper to encode Float32 PCM to WAV Blob
+function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
   const buffer = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(buffer);
 
@@ -35,35 +35,44 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 44100): Blob {
 }
 
 export default function App() {
-  const [text, setText] = useState('Supertonic is a lightning fast, on-device TTS system.');
-  const [voiceName, setVoiceName] = useState('F1');
-  const [lang, setLang] = useState('en');
-  const [totalSteps, setTotalSteps] = useState<number>(8);
-  const [speed, setSpeed] = useState<number>(1.05);
-  const [status, setStatus] = useState('Ready (Supertonic JS Web Worker API)');
+  const [text, setText] = useState('Halo! Selamat datang di Interview Masters. Ini adalah sintesis suara neural Supertonic.');
+  const [speaker, setSpeaker] = useState('Lily');
+  const [status, setStatus] = useState('Ready (ONNX Neural Web Worker TTS)');
+  const [progress, setProgress] = useState<string>('');
   const [lastWavBlob, setLastWavBlob] = useState<Blob | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // JS equivalent of Python: tts.synthesize(text, lang, voice_style, total_steps, speed)
+  // Neural ONNX WebWorker Synthesis (SpeechT5 / Supertonic Neural Model)
   const handleSynthesize = async () => {
     if (typeof window === 'undefined') return;
 
-    setStatus(`Synthesizing Supertonic audio in Web Worker (voice: ${voiceName}, steps: ${totalSteps}, speed: ${speed}x)...`);
+    setIsLoading(true);
+    setStatus('Initializing Web Worker & loading ONNX model...');
+    setProgress('');
 
     try {
       const worker = new Worker(new URL('./workers/supertonicWorker.ts', import.meta.url), { type: 'module' });
 
       worker.onmessage = (e: MessageEvent) => {
-        const { status: resultStatus, wavBuffer, duration, sampleRate, voiceName: resolvedVoice } = e.data;
+        const { status: msgStatus, message, progress: prog, wavBuffer, duration, sampleRate, error } = e.data;
 
-        if (resultStatus === 'SUCCESS' && wavBuffer) {
+        if (msgStatus === 'LOADING' || msgStatus === 'SYNTHESIZING') {
+          setStatus(message);
+        } else if (msgStatus === 'PROGRESS') {
+          if (prog && prog.status === 'progress') {
+            setProgress(`Downloading ONNX model: ${Math.round(prog.progress || 0)}% (${prog.file})`);
+          }
+        } else if (msgStatus === 'SUCCESS' && wavBuffer) {
+          setIsLoading(false);
+          setProgress('');
           const wavSamples = new Float32Array(wavBuffer);
           const wavBlob = encodeWAV(wavSamples, sampleRate);
           setLastWavBlob(wavBlob);
 
-          setStatus(`Generated ${duration.toFixed(2)}s of audio at ${sampleRate} Hz (${resolvedVoice})`);
+          setStatus(`Generated ${duration.toFixed(2)}s of neural spoken audio at ${sampleRate} Hz`);
 
-          // Play audio using 44.1kHz WebAudio API
+          // Play audio using WebAudio API
           if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
             audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
           }
@@ -85,34 +94,32 @@ export default function App() {
           };
 
           source.start(0);
-        } else {
-          setStatus('Supertonic Web Worker synthesis failed.');
+        } else if (msgStatus === 'ERROR') {
+          setIsLoading(false);
+          setStatus(`ONNX Model Error: ${error}`);
           worker.terminate();
         }
       };
 
       worker.onerror = (err) => {
         console.error('[Supertonic Worker Error]', err);
-        setStatus('Supertonic Web Worker error.');
+        setIsLoading(false);
+        setStatus('Web Worker initialization error.');
         worker.terminate();
       };
 
-      // Post message matching Supertonic Python params
       worker.postMessage({
         action: 'SYNTHESIZE',
         text,
-        lang,
-        voiceName,
-        totalSteps,
-        speed
+        speaker
       });
     } catch (err: any) {
       console.error(err);
+      setIsLoading(false);
       setStatus(`Worker Exception: ${err.message}`);
     }
   };
 
-  // JS equivalent of Python: tts.save_audio(wav, "output.wav")
   const handleSaveAudio = () => {
     if (!lastWavBlob) return;
     const url = URL.createObjectURL(lastWavBlob);
@@ -127,8 +134,8 @@ export default function App() {
 
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
-      <h1>Supertonic TTS Web Worker (JS API)</h1>
-      <p style={{ color: '#666' }}>Engine: <strong>On-Device Supertonic Worker (Python TTS JS Port)</strong></p>
+      <h1>Supertonic Neural TTS (ONNX Web Worker)</h1>
+      <p style={{ color: '#666' }}>Engine: <strong>In-Browser ONNX Neural Model (100% Neural Spoken Speech)</strong></p>
 
       <div style={{ marginBottom: '16px' }}>
         <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Input Text:</label>
@@ -141,65 +148,32 @@ export default function App() {
       </div>
 
       <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Voice Name (voice_style):</label>
+        <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Speaker Profile:</label>
         <select
           style={{ width: '100%', padding: '8px' }}
-          value={voiceName}
-          onChange={(e) => setVoiceName(e.target.value)}
+          value={speaker}
+          onChange={(e) => setSpeaker(e.target.value)}
         >
-          <option value="F1">F1 / Lily (Female Bright - Recommended)</option>
-          <option value="F2">F2 / Sarah (Female Professional)</option>
-          <option value="M1">M1 (Male Deep)</option>
-          <option value="M2">M2 (Male Soft)</option>
-          <option value="Jessica">Jessica (Female Friendly)</option>
-          <option value="Olivia">Olivia (Female Warm)</option>
-          <option value="Emily">Emily (Female Expressive)</option>
+          <option value="Lily">Lily (Female Indonesian)</option>
+          <option value="Sarah">Sarah (Female Professional)</option>
         </select>
-      </div>
-
-      <div style={{ marginBottom: '16px', display: 'flex', gap: '16px' }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Language (lang):</label>
-          <input
-            type="text"
-            style={{ width: '100%', padding: '8px' }}
-            value={lang}
-            onChange={(e) => setLang(e.target.value)}
-          />
-        </div>
-
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Quality (total_steps: 5 - 12):</label>
-          <input
-            type="number"
-            min={5}
-            max={12}
-            style={{ width: '100%', padding: '8px' }}
-            value={totalSteps}
-            onChange={(e) => setTotalSteps(Number(e.target.value))}
-          />
-        </div>
-
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Speed (speed: 0.7 - 2.0):</label>
-          <input
-            type="number"
-            step="0.05"
-            min={0.7}
-            max={2.0}
-            style={{ width: '100%', padding: '8px' }}
-            value={speed}
-            onChange={(e) => setSpeed(Number(e.target.value))}
-          />
-        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         <button
           onClick={handleSynthesize}
-          style={{ padding: '10px 16px', cursor: 'pointer', fontWeight: 'bold', backgroundColor: '#0066cc', color: '#fff', border: 'none', borderRadius: '4px' }}
+          disabled={isLoading}
+          style={{
+            padding: '10px 16px',
+            cursor: isLoading ? 'wait' : 'pointer',
+            fontWeight: 'bold',
+            backgroundColor: isLoading ? '#666' : '#0066cc',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px'
+          }}
         >
-          ⚡ Synthesize & Play (44.1 kHz)
+          {isLoading ? '⏳ Processing Model...' : '🔊 Speak Neural Speech (ONNX Worker)'}
         </button>
 
         <button
@@ -215,12 +189,13 @@ export default function App() {
             borderRadius: '4px'
           }}
         >
-          💾 save_audio("output.wav")
+          💾 Download output.wav
         </button>
       </div>
 
       <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '4px', fontSize: '13px' }}>
-        <strong>Status:</strong> {status}
+        <div><strong>Status:</strong> {status}</div>
+        {progress && <div style={{ color: '#0066cc', marginTop: '4px' }}>{progress}</div>}
       </div>
     </div>
   );

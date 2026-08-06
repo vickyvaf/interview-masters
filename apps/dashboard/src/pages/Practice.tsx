@@ -456,7 +456,11 @@ export default function Practice() {
     const applyVoice = () => {
       const voices = window.speechSynthesis.getVoices()
       if (voices.length > 0 && !selectedVoiceRef.current) {
-        selectedVoiceRef.current = voices.find(v => v.name.includes('Lily') || (v.lang.startsWith('id') && !v.name.toLowerCase().includes('male'))) || voices[0]
+        // Exclude Google voices explicitly and target Lily
+        const lilyVoice = voices.find(v => v.name.toLowerCase().includes('lily'))
+        const femaleVoice = voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male') && v.lang.toLowerCase().startsWith('id'))
+          || voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male'))
+        selectedVoiceRef.current = lilyVoice || femaleVoice || voices[0]
       }
 
       if (selectedVoiceRef.current) {
@@ -466,7 +470,7 @@ export default function Practice() {
         utterance.lang = 'id-ID'
       }
       utterance.rate = 1.05
-      utterance.pitch = 1.25 // Higher pitch guarantees clear female tone across all TTS engines
+      utterance.pitch = 1.2
     }
 
     applyVoice()

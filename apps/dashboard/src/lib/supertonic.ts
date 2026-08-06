@@ -69,6 +69,31 @@ export class SupertonicTTS {
       return null;
     }
 
+    const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // In production, use dedicated external server endpoint
+    if (!isLocalDev) {
+      return new Promise((resolve) => {
+        try {
+          const ttsServerUrl = import.meta.env.VITE_API_URL || '';
+          const audio = new Audio(`${ttsServerUrl}/api/tts?speaker=Lily&lang=indonesian&text=${encodeURIComponent(text)}`);
+          audio.onended = () => resolve(audio);
+          audio.onerror = (err) => {
+            console.warn('[Supertonic Remote Server Error]', err);
+            resolve(null);
+          };
+          audio.play().catch((err) => {
+            console.warn('[Supertonic Remote Play Error]', err);
+            resolve(null);
+          });
+        } catch (err) {
+          console.error('[Supertonic Remote Exception]', err);
+          resolve(null);
+        }
+      });
+    }
+
+    // Local dev (e.g. port 5173): use local Supertone worker & browser voice
     return new Promise((resolve) => {
       try {
         // Instantiate dedicated WebWorker script for background Supertonic processing

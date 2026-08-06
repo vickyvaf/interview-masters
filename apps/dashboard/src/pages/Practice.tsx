@@ -458,7 +458,7 @@ export default function Practice() {
       if (onComplete) onComplete()
     }
 
-    supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
+    supertonic.init({ speaker: 'Lily', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
     supertonic.speakInBrowserWorker(cleanedText).then(handleFinish)
   }
 

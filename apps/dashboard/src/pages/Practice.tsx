@@ -456,11 +456,14 @@ export default function Practice() {
     const applyVoice = () => {
       const voices = window.speechSynthesis.getVoices()
       if (voices.length > 0 && !selectedVoiceRef.current) {
-        // Exclude Google voices explicitly and target Lily
-        const lilyVoice = voices.find(v => v.name.toLowerCase().includes('lily'))
-        const femaleVoice = voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male') && v.lang.toLowerCase().startsWith('id'))
-          || voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male'))
-        selectedVoiceRef.current = lilyVoice || femaleVoice || voices[0]
+        // Prioritize Indonesian female voices (Lily / id-ID female voices)
+        const idLilyVoice = voices.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
+        const idFemaleVoice = voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
+        const genericLilyVoice = voices.find(v => v.name.toLowerCase().includes('lily'))
+        const fallbackFemaleVoice = voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male') && v.lang.toLowerCase().startsWith('id'))
+          || voices.find(v => !v.name.toLowerCase().includes('male'))
+        
+        selectedVoiceRef.current = idLilyVoice || idFemaleVoice || genericLilyVoice || fallbackFemaleVoice || voices[0]
       }
 
       if (selectedVoiceRef.current) {

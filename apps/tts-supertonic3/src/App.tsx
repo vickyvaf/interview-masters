@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 // Helper to encode Float32 PCM to WAV Blob
 function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
@@ -42,82 +42,83 @@ export default function App() {
   const [lastWavBlob, setLastWavBlob] = useState<Blob | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const workerRef = useRef<Worker | null>(null);
 
-  // Neural ONNX WebWorker Synthesis (SpeechT5 / Supertonic Neural Model)
+  // Initialize persistent Web Worker once
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !workerRef.current) {
+      workerRef.current = new Worker(new URL('./workers/supertonicWorker.ts', import.meta.url), { type: 'module' });
+    }
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Neural ONNX WebWorker Synthesis
   const handleSynthesize = async () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !workerRef.current) return;
 
     setIsLoading(true);
-    setStatus('Initializing Web Worker & loading ONNX model...');
+    setStatus('Initializing ONNX model in WebWorker...');
     setProgress('');
 
-    try {
-      const worker = new Worker(new URL('./workers/supertonicWorker.ts', import.meta.url), { type: 'module' });
+    const worker = workerRef.current;
 
-      worker.onmessage = (e: MessageEvent) => {
-        const { status: msgStatus, message, progress: prog, wavBuffer, duration, sampleRate, error } = e.data;
+    worker.onmessage = (e: MessageEvent) => {
+      const { status: msgStatus, message, file, filePercent, totalPercent, wavBuffer, duration, sampleRate, error } = e.data;
 
-        if (msgStatus === 'LOADING' || msgStatus === 'SYNTHESIZING') {
-          setStatus(message);
-        } else if (msgStatus === 'PROGRESS') {
-          if (prog && prog.status === 'progress') {
-            setProgress(`Downloading ONNX model: ${Math.round(prog.progress || 0)}% (${prog.file})`);
-          }
-        } else if (msgStatus === 'SUCCESS' && wavBuffer) {
-          setIsLoading(false);
-          setProgress('');
-          const wavSamples = new Float32Array(wavBuffer);
-          const wavBlob = encodeWAV(wavSamples, sampleRate);
-          setLastWavBlob(wavBlob);
-
-          setStatus(`Generated ${duration.toFixed(2)}s of neural spoken audio at ${sampleRate} Hz`);
-
-          // Play audio using WebAudio API
-          if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-            audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
-          }
-
-          const ctx = audioCtxRef.current;
-          if (ctx.state === 'suspended') {
-            ctx.resume();
-          }
-
-          const audioBuffer = ctx.createBuffer(1, wavSamples.length, sampleRate);
-          audioBuffer.getChannelData(0).set(wavSamples);
-
-          const source = ctx.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(ctx.destination);
-
-          source.onended = () => {
-            worker.terminate();
-          };
-
-          source.start(0);
-        } else if (msgStatus === 'ERROR') {
-          setIsLoading(false);
-          setStatus(`ONNX Model Error: ${error}`);
-          worker.terminate();
+      if (msgStatus === 'LOADING' || msgStatus === 'SYNTHESIZING') {
+        setStatus(message);
+      } else if (msgStatus === 'PROGRESS') {
+        if (file) {
+          setProgress(`Downloading ONNX assets: ${totalPercent}% (${file}: ${filePercent}%)`);
         }
-      };
-
-      worker.onerror = (err) => {
-        console.error('[Supertonic Worker Error]', err);
+      } else if (msgStatus === 'SUCCESS' && wavBuffer) {
         setIsLoading(false);
-        setStatus('Web Worker initialization error.');
-        worker.terminate();
-      };
+        setProgress('');
+        const wavSamples = new Float32Array(wavBuffer);
+        const wavBlob = encodeWAV(wavSamples, sampleRate);
+        setLastWavBlob(wavBlob);
 
-      worker.postMessage({
-        action: 'SYNTHESIZE',
-        text,
-        speaker
-      });
-    } catch (err: any) {
-      console.error(err);
+        setStatus(`Generated ${duration.toFixed(2)}s of neural spoken audio at ${sampleRate} Hz`);
+
+        // Play audio using WebAudio API
+        if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+          audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
+        }
+
+        const ctx = audioCtxRef.current;
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+
+        const audioBuffer = ctx.createBuffer(1, wavSamples.length, sampleRate);
+        audioBuffer.getChannelData(0).set(wavSamples);
+
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(ctx.destination);
+        source.start(0);
+      } else if (msgStatus === 'ERROR') {
+        setIsLoading(false);
+        setStatus(`ONNX Model Error: ${error}`);
+      }
+    };
+
+    worker.onerror = (err) => {
+      console.error('[Supertonic Worker Error]', err);
       setIsLoading(false);
-      setStatus(`Worker Exception: ${err.message}`);
-    }
+      setStatus('Web Worker execution error.');
+    };
+
+    worker.postMessage({
+      action: 'SYNTHESIZE',
+      text,
+      speaker
+    });
   };
 
   const handleSaveAudio = () => {

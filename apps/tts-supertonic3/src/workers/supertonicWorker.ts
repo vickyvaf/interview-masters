@@ -1,6 +1,6 @@
 import { pipeline, env } from '@huggingface/transformers';
 
-// Enable browser cache and HuggingFace CDN loading for ONNX models in Web Worker
+// Configure transformers env
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
@@ -9,7 +9,7 @@ class SupertonicNeuralPipeline {
 
   public static async getInstance(progressCallback?: (progress: any) => void) {
     if (!this.instance) {
-      // Load ONNX neural speech synthesis model in WebWorker background thread
+      // Load ONNX neural text-to-speech model
       this.instance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
         progress_callback: progressCallback,
       });
@@ -18,6 +18,9 @@ class SupertonicNeuralPipeline {
   }
 }
 
+// Track file download progress map to prevent UI progress reset loops
+const fileProgressMap: Record<string, number> = {};
+
 self.onmessage = async (e: MessageEvent) => {
   const { action, text, speaker } = e.data;
 
@@ -25,22 +28,41 @@ self.onmessage = async (e: MessageEvent) => {
     try {
       (self as any).postMessage({
         status: 'LOADING',
-        message: 'Downloading / initializing ONNX neural TTS model in WebWorker...'
+        message: 'Initializing ONNX neural TTS model...'
       });
 
       const synthesizer = await SupertonicNeuralPipeline.getInstance((progress: any) => {
-        (self as any).postMessage({ status: 'PROGRESS', progress });
+        if (progress && progress.file) {
+          const fileName = progress.file;
+          if (progress.status === 'progress') {
+            fileProgressMap[fileName] = Math.round(progress.progress || 0);
+          } else if (progress.status === 'done') {
+            fileProgressMap[fileName] = 100;
+          }
+
+          const fileNames = Object.keys(fileProgressMap);
+          const totalProgress = Math.round(
+            fileNames.reduce((acc, curr) => acc + fileProgressMap[curr], 0) / Math.max(1, fileNames.length)
+          );
+
+          (self as any).postMessage({
+            status: 'PROGRESS',
+            file: fileName,
+            filePercent: fileProgressMap[fileName],
+            totalPercent: totalProgress,
+            loadedFiles: fileNames.length
+          });
+        }
       });
 
       (self as any).postMessage({
         status: 'SYNTHESIZING',
-        message: `Synthesizing neural speech for "${text.slice(0, 30)}..."`
+        message: `Synthesizing neural speech for "${text.slice(0, 35)}..."`
       });
 
-      // Default speaker embedding binary
+      // Standard speaker embedding
       const speaker_embeddings = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin';
 
-      // Perform ONNX model neural speech synthesis
       const output = await synthesizer(text, { speaker_embeddings });
 
       const wavSamples: Float32Array = output.audio;

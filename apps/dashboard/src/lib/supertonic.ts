@@ -64,7 +64,7 @@ export class SupertonicTTS {
     return this.isLoaded;
   }
 
-  public async speakWithServer(text: string): Promise<HTMLAudioElement | null> {
+  public async speakWithServer(text: string, serverUrl = '/api-tts'): Promise<HTMLAudioElement | null> {
     try {
       // Map speaker profile to Supertonic builtin female voice styles (F1: Lily, F2: Sarah, etc)
       const voiceMap: Record<string, string> = {
@@ -76,31 +76,26 @@ export class SupertonicTTS {
       };
       const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
 
-      // Supertonic 3 HuggingFace Inference API Serverless Endpoint
-      const response = await fetch('https://api-inference.huggingface.co/models/Supertone/supertonic-3', {
+      const res = await fetch(`${serverUrl}/v1/tts`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          inputs: text,
-          parameters: {
-            voice: voiceStyle,
-            lang: 'id',
-            speed: this.speechSpeed
-          }
+          text,
+          voice: voiceStyle,
+          lang: 'id',
+          speed: this.speechSpeed
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`Supertonic HF API status ${response.status}`);
+      if (!res.ok) {
+        throw new Error(`Supertonic Serve status ${res.status}`);
       }
 
-      const blob = await response.blob();
+      const blob = await res.blob();
       const audioUrl = URL.createObjectURL(blob);
       return new Audio(audioUrl);
     } catch (err) {
-      console.warn('[Supertonic HF Client] API fallback triggered:', err);
+      console.warn('[Supertonic Serve] Local server unavailable, falling back to Web Speech API:', err);
       return null;
     }
   }

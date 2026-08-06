@@ -64,7 +64,7 @@ export class SupertonicTTS {
     return this.isLoaded;
   }
 
-  public async speakWithServer(text: string, serverUrl = 'http://127.0.0.1:7788'): Promise<HTMLAudioElement | null> {
+  public async speakWithServer(text: string, serverUrl = '/api-tts'): Promise<HTMLAudioElement | null> {
     try {
       // Map speaker profile to Supertonic builtin female voice styles (F1: Lily, F2: Sarah, etc)
       const voiceMap: Record<string, string> = {

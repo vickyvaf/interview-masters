@@ -6,4 +6,13 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   envDir: path.resolve(__dirname, '../../'),
+  server: {
+    proxy: {
+      '/api-tts': {
+        target: 'http://127.0.0.1:7788',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-tts/, '')
+      }
+    }
+  }
 })

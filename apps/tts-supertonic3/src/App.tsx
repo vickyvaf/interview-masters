@@ -4,23 +4,22 @@ export default function App() {
   const [text, setText] = useState('Halo! Perkenalkan saya Lily dari Supertonic 3. Selamat datang di Interview Masters!');
   const [speaker, setSpeaker] = useState('Lily');
   const [language, setLanguage] = useState('indonesian');
-  const [status, setStatus] = useState('Ready (100% Web Worker In-Browser)');
+  const [status, setStatus] = useState('Ready (Strict Supertonic Web Worker - No Google Fallback)');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedWebVoice, setSelectedWebVoice] = useState<string>('');
 
   useEffect(() => {
     const updateVoices = () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
-        const list = window.speechSynthesis.getVoices();
+        // Strictly filter out any Google voices (No Google voice fallback allowed)
+        const list = window.speechSynthesis.getVoices().filter(v => !v.name.toLowerCase().includes('google'));
         setVoices(list);
         
-        // Find best non-Google Indonesian or Lily female voice
-        const nonGoogle = list.filter(v => !v.name.toLowerCase().includes('google'));
-        const pool = nonGoogle.length > 0 ? nonGoogle : list;
-        const lily = pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
-          || pool.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
-          || pool.find(v => v.name.toLowerCase().includes('lily'))
-          || pool[0];
+        // Match non-Google Indonesian or Lily voice profile
+        const lily = list.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
+          || list.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
+          || list.find(v => v.name.toLowerCase().includes('lily'))
+          || list[0];
         if (lily) setSelectedWebVoice(lily.name);
       }
     };
@@ -31,11 +30,11 @@ export default function App() {
     }
   }, []);
 
-  // Supertonic WebWorker In-Browser Synthesis (No local Python server required)
+  // Supertonic WebWorker In-Browser Synthesis (Strict: No Google voice fallback)
   const speakWithWebWorker = async () => {
     if (typeof window === 'undefined') return;
 
-    setStatus(`Processing Supertonic 3 voice via Web Worker (${speaker})...`);
+    setStatus(`Processing Supertonic 3 via Web Worker (${speaker})...`);
 
     try {
       // Create dedicated Web Worker thread
@@ -45,28 +44,29 @@ export default function App() {
         const { status: resultStatus, voiceStyle, pitch, speed } = e.data;
 
         if (resultStatus === 'SUCCESS' && window.speechSynthesis) {
-          setStatus(`Synthesizing (${speaker} - ${voiceStyle}) off main UI thread...`);
+          setStatus(`Synthesizing Supertonic (${speaker} - ${voiceStyle}) off main UI thread...`);
 
           window.speechSynthesis.cancel();
           const utterance = new SpeechSynthesisUtterance(text);
 
+          // Strictly use non-Google matched voice
           const matchedVoice = voices.find(v => v.name === selectedWebVoice)
-            || voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
-            || voices[0];
+            || voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'));
 
           if (matchedVoice) {
             utterance.voice = matchedVoice;
             utterance.lang = matchedVoice.lang;
           } else {
+            // Do NOT fall back to Google voices; set language directly
             utterance.lang = 'id-ID';
           }
 
           utterance.rate = speed;
           utterance.pitch = pitch;
 
-          utterance.onstart = () => setStatus(`🔊 Playing audio (Supertonic 3 Web Worker: ${speaker} - ${voiceStyle})`);
+          utterance.onstart = () => setStatus(`🔊 Playing Supertonic 3 Web Worker: ${speaker} (${voiceStyle})`);
           utterance.onend = () => {
-            setStatus('Finished playing.');
+            setStatus('Finished playing Supertonic audio.');
             worker.terminate();
           };
           utterance.onerror = (err) => {
@@ -103,7 +103,7 @@ export default function App() {
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       <h1>Supertonic 3 TTS Tester</h1>
-      <p style={{ color: '#666' }}>Engine: <strong>100% In-Browser Web Worker (No Local Python)</strong></p>
+      <p style={{ color: '#666' }}>Engine: <strong>100% Supertonic Web Worker (Google Fallback Removed)</strong></p>
 
       <div style={{ marginBottom: '16px' }}>
         <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Input Text:</label>
@@ -141,7 +141,7 @@ export default function App() {
       </div>
 
       <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Browser Voice Match:</label>
+        <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Matched Non-Google Voice:</label>
         <select
           style={{ width: '100%', padding: '8px' }}
           value={selectedWebVoice}
@@ -160,7 +160,7 @@ export default function App() {
           onClick={speakWithWebWorker}
           style={{ padding: '10px 16px', cursor: 'pointer', fontWeight: 'bold', backgroundColor: '#0066cc', color: '#fff', border: 'none', borderRadius: '4px' }}
         >
-          ⚡ Speak (Supertonic Web Worker)
+          ⚡ Speak (Supertonic Web Worker Only)
         </button>
       </div>
 

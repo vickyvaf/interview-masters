@@ -79,6 +79,7 @@ export class SupertonicTTS {
     const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
 
     return new Promise((resolve) => {
+      console.log(`[Supertonic Client Engine] Running 100% in Local Browser | Speaker: ${this.activeSpeaker} (${voiceStyle}), Speed: ${this.speechSpeed}x`);
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
 

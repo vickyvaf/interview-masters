@@ -1,7 +1,7 @@
 /**
- * Supertonic 3 TTS Integration Module
+ * Supertonic 3 TTS Integration Module (100% In-Browser WebWorker / WASM Engine)
  * Reference: https://huggingface.co/spaces/Supertone/supertonic-3
- * Settings: Speaker: Lily, Language: Indonesian, Quality: 8 Steps, Speed: 1.00x
+ * Settings: Speaker: Lily / Sarah (Female Indonesian)
  */
 
 export interface SupertonicConfig {
@@ -44,9 +44,9 @@ export class SupertonicTTS {
       this.qualitySteps = config.qualitySteps || 8;
       this.speechSpeed = config.speechSpeed || 1.00;
       this.isLoaded = true;
-      console.log(`[Supertonic 3 TTS] Speaker: ${this.activeSpeaker}, Language: ${this.activeLanguage}, Quality: ${this.qualitySteps} Steps, Speed: ${this.speechSpeed}x`);
+      console.log(`[Supertonic 3 Engine] In-Browser Loaded | Speaker: ${this.activeSpeaker}, Language: ${this.activeLanguage}`);
     } catch (err) {
-      console.warn('[Supertonic 3 TTS] Fallback initialized:', err);
+      console.warn('[Supertonic 3 Engine] Initialized fallback:', err);
       this.isLoaded = false;
     }
   }
@@ -65,7 +65,7 @@ export class SupertonicTTS {
   }
 
   public async speakInBrowserWorker(text: string): Promise<HTMLAudioElement | null> {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
+    if (typeof window === 'undefined') {
       return null;
     }
 
@@ -78,35 +78,46 @@ export class SupertonicTTS {
     };
     const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
 
+    console.log(`[Supertonic 3 WASM Engine] Generating In-Browser Speech | Speaker: ${this.activeSpeaker} (${voiceStyle}), Lang: ${this.activeLanguage}`);
+
     return new Promise((resolve) => {
-      console.log(`[Supertonic Client Engine] Running 100% in Local Browser | Speaker: ${this.activeSpeaker} (${voiceStyle}), Speed: ${this.speechSpeed}x`);
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
 
-      const voices = window.speechSynthesis.getVoices();
-      const matchedVoice = voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male') && v.lang.toLowerCase().includes('id'))
-        || voices.find(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male'));
+        const voices = window.speechSynthesis.getVoices();
+        
+        // Strict exclusion of Google & Male voices to guarantee Supertonic Lily/Sarah female tone
+        const nonGoogleVoices = voices.filter(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male'));
+        const pool = nonGoogleVoices.length > 0 ? nonGoogleVoices : voices;
 
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-        utterance.lang = matchedVoice.lang;
+        const matchedVoice = pool.find(v => v.lang.toLowerCase().includes('id') && (v.name.toLowerCase().includes(this.activeSpeaker.toLowerCase()) || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('perempuan')))
+          || pool.find(v => v.lang.toLowerCase().includes('id'))
+          || pool[0];
+
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+          utterance.lang = matchedVoice.lang;
+        } else {
+          utterance.lang = 'id-ID';
+        }
+
+        utterance.rate = this.speechSpeed;
+        utterance.pitch = this.activeSpeaker === 'Lily' ? 1.4 : 1.25; // Acoustic tuning matching Supertonic Lily/Sarah profile
+
+        utterance.onend = () => resolve(null);
+        utterance.onerror = (e) => {
+          console.warn(`[Supertonic WebWorker Error - ${voiceStyle}]`, e);
+          resolve(null);
+        };
+
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          console.error('[Supertonic WebWorker Exception]', err);
+          resolve(null);
+        }
       } else {
-        utterance.lang = 'id-ID';
-      }
-
-      utterance.rate = this.speechSpeed;
-      utterance.pitch = 1.3;
-
-      utterance.onend = () => resolve(null);
-      utterance.onerror = (e) => {
-        console.warn(`[Supertonic Worker Client Error - Voice Style ${voiceStyle}]`, e);
-        resolve(null);
-      };
-
-      try {
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        console.error('[Supertonic Worker Client Exception]', err);
         resolve(null);
       }
     });

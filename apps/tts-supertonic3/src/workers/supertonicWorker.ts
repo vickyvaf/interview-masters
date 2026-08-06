@@ -1,4 +1,4 @@
-import { pipeline, env } from '@huggingface/transformers';
+import { pipeline, env, Tensor } from '@huggingface/transformers';
 
 // Configure transformers for public HuggingFace CDN & browser CacheStorage
 env.allowLocalModels = false;
@@ -18,6 +18,30 @@ class SupertonicNeuralPipeline {
     }
     return this.instance;
   }
+}
+
+// Cached speaker embeddings Tensor [1, 512]
+let cachedSpeakerEmbeddings: Tensor | null = null;
+
+async function loadSpeakerEmbeddingsTensor(): Promise<Tensor> {
+  if (!cachedSpeakerEmbeddings) {
+    const url = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin';
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const buffer = await response.arrayBuffer();
+      const floatData = new Float32Array(buffer);
+      cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
+    } catch (err) {
+      console.warn('[Speaker Embeddings Fetch Warning, using generated tensor]', err);
+      const data = new Float32Array(512);
+      for (let i = 0; i < 512; i++) {
+        data[i] = Math.sin(i * 0.1) * 0.05;
+      }
+      cachedSpeakerEmbeddings = new Tensor('float32', data, [1, 512]);
+    }
+  }
+  return cachedSpeakerEmbeddings;
 }
 
 // Track file download progress map
@@ -62,10 +86,10 @@ self.onmessage = async (e: MessageEvent) => {
         message: `Synthesizing neural human speech for "${text.slice(0, 35)}..."`
       });
 
-      // Pass official speaker embeddings URL string directly
-      const speaker_embeddings = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin';
+      // Load 512-dim Float32 Tensor for speaker embeddings
+      const speaker_embeddings = await loadSpeakerEmbeddingsTensor();
 
-      // Run SpeechT5 neural ONNX TTS inference with paired vocoder
+      // Run SpeechT5 neural ONNX TTS inference with paired vocoder and Tensor speaker_embeddings
       const output = await synthesizer(text, { speaker_embeddings });
 
       const wavSamples: Float32Array = output.audio;

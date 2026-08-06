@@ -10,8 +10,9 @@ class SupertonicNeuralPipeline {
 
   public static async getInstance(progressCallback?: (progress: any) => void) {
     if (!this.instance) {
-      // Load public ONNX SpeechT5 neural TTS model
+      // Load public ONNX SpeechT5 model with paired HiFi-GAN vocoder
       this.instance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
+        vocoder: 'Xenova/speecht5_hifigan',
         progress_callback: progressCallback,
       } as any);
     }
@@ -29,7 +30,7 @@ self.onmessage = async (e: MessageEvent) => {
     try {
       (self as any).postMessage({
         status: 'LOADING',
-        message: 'Loading neural ONNX TTS model...'
+        message: 'Loading neural ONNX SpeechT5 + HiFi-GAN vocoder...'
       });
 
       const synthesizer = await SupertonicNeuralPipeline.getInstance((progress: any) => {
@@ -61,10 +62,10 @@ self.onmessage = async (e: MessageEvent) => {
         message: `Synthesizing neural human speech for "${text.slice(0, 35)}..."`
       });
 
-      // Pass official speaker embeddings URL string directly to pipeline
+      // Pass official speaker embeddings URL string directly
       const speaker_embeddings = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin';
 
-      // Run SpeechT5 neural ONNX TTS inference
+      // Run SpeechT5 neural ONNX TTS inference with paired vocoder
       const output = await synthesizer(text, { speaker_embeddings });
 
       const wavSamples: Float32Array = output.audio;

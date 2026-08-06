@@ -82,7 +82,7 @@ export class SupertonicTTS {
             console.warn('[Supertonic Remote Server Error]', err);
             resolve(null);
           };
-          audio.play().catch((err) => {
+          audio.play().then(() => {}).catch((err) => {
             console.warn('[Supertonic Remote Play Error]', err);
             resolve(null);
           });
@@ -93,97 +93,44 @@ export class SupertonicTTS {
       });
     }
 
-    // Local dev (e.g. port 5173): run neural Supertonic 3 ONNX TTS in Web Worker
+    // Local dev (e.g. port 5173/5174): Direct browser TTS with Lily Indonesian configuration
     return new Promise((resolve) => {
+      if (!window.speechSynthesis) {
+        resolve(null);
+        return;
+      }
+
       try {
-        const worker = new Worker(new URL('../workers/supertonicWorker.ts', import.meta.url), { type: 'module' });
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
 
-        worker.onmessage = (e: MessageEvent) => {
-          const { status, wavBuffer, sampleRate, error } = e.data;
+        const voices = window.speechSynthesis.getVoices();
+        const nonGoogleVoices = voices.filter(v => !v.name.toLowerCase().includes('google') && !v.name.toLowerCase().includes('male'));
+        const pool = nonGoogleVoices.length > 0 ? nonGoogleVoices : voices;
 
-          if (status === 'SUCCESS' && wavBuffer) {
-            console.log(`[Supertonic Neural ONNX Worker] Synthesized PCM audio for speaker: ${this.activeSpeaker}`);
-            try {
-              const float32Samples = new Float32Array(wavBuffer);
+        const matchedVoice = pool.find(v => v.lang.toLowerCase().includes('id') && (v.name.toLowerCase().includes('lily') || v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('perempuan')))
+          || pool.find(v => v.lang.toLowerCase().includes('id'))
+          || pool[0];
 
-              // Encode PCM to WAV blob
-              const wavHeaderBuffer = new ArrayBuffer(44 + float32Samples.length * 2);
-              const view = new DataView(wavHeaderBuffer);
-              const writeString = (v: DataView, offset: number, str: string) => {
-                for (let i = 0; i < str.length; i++) v.setUint8(offset + i, str.charCodeAt(i));
-              };
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+          utterance.lang = matchedVoice.lang;
+        } else {
+          utterance.lang = 'id-ID';
+        }
 
-              writeString(view, 0, 'RIFF');
-              view.setUint32(4, 36 + float32Samples.length * 2, true);
-              writeString(view, 8, 'WAVE');
-              writeString(view, 12, 'fmt ');
-              view.setUint32(16, 16, true);
-              view.setUint16(20, 1, true); // PCM
-              view.setUint16(22, 1, true); // Mono
-              view.setUint32(24, sampleRate || 16000, true);
-              view.setUint32(28, (sampleRate || 16000) * 2, true);
-              view.setUint16(32, 2, true);
-              view.setUint16(34, 16, true); // 16-bit
-              writeString(view, 36, 'data');
-              view.setUint32(40, float32Samples.length * 2, true);
+        utterance.rate = this.speechSpeed;
+        utterance.pitch = 1.15; // Tuned pitch for Lily female voice tone
 
-              let offset = 44;
-              for (let i = 0; i < float32Samples.length; i++, offset += 2) {
-                const s = Math.max(-1, Math.min(1, float32Samples[i]));
-                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-              }
-
-              const blob = new Blob([wavHeaderBuffer], { type: 'audio/wav' });
-              const audioUrl = URL.createObjectURL(blob);
-              const audio = new Audio(audioUrl);
-
-              audio.onended = () => {
-                URL.revokeObjectURL(audioUrl);
-                worker.terminate();
-                resolve(audio);
-              };
-
-              audio.onerror = (err) => {
-                console.warn('[Supertonic Audio Play Error]', err);
-                URL.revokeObjectURL(audioUrl);
-                worker.terminate();
-                resolve(null);
-              };
-
-              audio.play().then(() => {
-                // Audio started successfully
-              }).catch((err) => {
-                console.warn('[Supertonic Play Autoplay Blocked]', err);
-                URL.revokeObjectURL(audioUrl);
-                worker.terminate();
-                resolve(null);
-              });
-            } catch (err) {
-              console.error('[Supertonic Audio Buffer Decoding Failed]', err);
-              worker.terminate();
-              resolve(null);
-            }
-          } else if (status === 'ERROR') {
-            console.warn('[Supertonic WebWorker Error]', error);
-            worker.terminate();
-            resolve(null);
-          }
-        };
-
-        worker.onerror = (err) => {
-          console.warn('[Supertonic WebWorker Init Exception]', err);
-          worker.terminate();
+        utterance.onend = () => resolve(null);
+        utterance.onerror = (err) => {
+          console.warn('[Supertonic SpeechSynthesis Error]', err);
           resolve(null);
         };
 
-        // Post synthesis task to neural ONNX worker
-        worker.postMessage({
-          action: 'SYNTHESIZE',
-          text,
-          speaker: this.activeSpeaker
-        });
+        window.speechSynthesis.speak(utterance);
       } catch (err) {
-        console.error('[Supertonic WebWorker Exception]', err);
+        console.error('[Supertonic SpeechSynthesis Exception]', err);
         resolve(null);
       }
     });

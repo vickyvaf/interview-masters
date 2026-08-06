@@ -3,7 +3,6 @@ import { pipeline, env, Tensor } from '@huggingface/transformers';
 // Enable persistent browser CacheStorage for ONNX model files & WASM modules
 env.allowLocalModels = false;
 env.useBrowserCache = true;
-env.useCustomCache = true;
 
 class SupertonicNeuralPipeline {
   private static instance: any = null;

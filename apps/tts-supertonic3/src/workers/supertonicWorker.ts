@@ -1,15 +1,16 @@
 import { pipeline, env, Tensor } from '@huggingface/transformers';
 
-// Configure transformers env
+// Enable persistent browser CacheStorage for ONNX model files & WASM modules
 env.allowLocalModels = false;
 env.useBrowserCache = true;
+env.useCustomCache = true;
 
 class SupertonicNeuralPipeline {
   private static instance: any = null;
 
   public static async getInstance(progressCallback?: (progress: any) => void) {
     if (!this.instance) {
-      // Load ONNX neural text-to-speech model
+      // Load ONNX neural text-to-speech model with persistent CacheStorage
       this.instance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
         progress_callback: progressCallback,
       });
@@ -23,16 +24,27 @@ let cachedSpeakerEmbeddings: Tensor | null = null;
 
 async function getSpeakerEmbeddingsTensor(): Promise<Tensor> {
   if (!cachedSpeakerEmbeddings) {
+    const url = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin';
     try {
-      const url = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin';
-      const res = await fetch(url);
-      const arrayBuffer = await res.arrayBuffer();
-      // SpeechT5 expects speaker embeddings Tensor of shape [1, 512]
-      const floatData = new Float32Array(arrayBuffer);
-      cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
+      // Persist speaker embeddings in browser CacheStorage so closing browser never deletes it
+      if ('caches' in self) {
+        const cache = await caches.open('supertonic-embeddings-v1');
+        let res = await cache.match(url);
+        if (!res) {
+          res = await fetch(url);
+          await cache.put(url, res.clone());
+        }
+        const arrayBuffer = await res.arrayBuffer();
+        const floatData = new Float32Array(arrayBuffer);
+        cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
+      } else {
+        const res = await fetch(url);
+        const arrayBuffer = await res.arrayBuffer();
+        const floatData = new Float32Array(arrayBuffer);
+        cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
+      }
     } catch (err) {
-      console.warn('[Speaker Embeddings Fetch Fallback]', err);
-      // Fallback: zeros Tensor of shape [1, 512]
+      console.warn('[Speaker Embeddings Cache Fallback]', err);
       cachedSpeakerEmbeddings = new Tensor('float32', new Float32Array(512), [1, 512]);
     }
   }
@@ -49,7 +61,7 @@ self.onmessage = async (e: MessageEvent) => {
     try {
       (self as any).postMessage({
         status: 'LOADING',
-        message: 'Initializing ONNX neural TTS model...'
+        message: 'Loading ONNX model from local browser CacheStorage...'
       });
 
       const synthesizer = await SupertonicNeuralPipeline.getInstance((progress: any) => {
@@ -81,7 +93,7 @@ self.onmessage = async (e: MessageEvent) => {
         message: `Synthesizing neural speech for "${text.slice(0, 35)}..."`
       });
 
-      // Load speaker embeddings Tensor [1, 512] required by SpeechT5 ONNX
+      // Load speaker embeddings Tensor [1, 512] from CacheStorage
       const speaker_embeddings = await getSpeakerEmbeddingsTensor();
 
       const output = await synthesizer(text, { speaker_embeddings });

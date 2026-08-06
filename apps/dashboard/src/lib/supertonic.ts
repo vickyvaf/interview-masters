@@ -99,61 +99,67 @@ export class SupertonicTTS {
     }
   }
 
-  public speakInBrowserWorker(text: string, onComplete?: () => void): void {
+  public async speakInBrowserWorker(text: string): Promise<HTMLAudioElement | null> {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
-      if (onComplete) onComplete();
-      return;
+      return null;
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    // Query clean non-Google voices using structured candidate matching
-    const voices = window.speechSynthesis.getVoices();
-    const bannedList = ['google', 'male', 'david', 'mark', 'george', 'stefan', 'adam', 'paul'];
-    const cleanVoices = voices.filter(v => !bannedList.some(b => v.name.toLowerCase().includes(b)));
-    const pool = cleanVoices.length > 0 ? cleanVoices : voices;
-
-    const voiceCandidates = {
-      idSarah: pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('sarah')),
-      idLily: pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily')),
-      idFemale: pool.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male')),
-      genericFemale: pool.find(v => v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male')),
-      anyIndonesian: pool.find(v => v.lang.toLowerCase().includes('id'))
+    const voiceMap: Record<string, string> = {
+      Lily: 'F1',
+      Sarah: 'F2',
+      Jessica: 'F3',
+      Olivia: 'F4',
+      Emily: 'F5'
     };
+    const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
 
-    const matchedVoice = voiceCandidates.idSarah 
-      || voiceCandidates.idLily 
-      || voiceCandidates.idFemale 
-      || voiceCandidates.genericFemale 
-      || voiceCandidates.anyIndonesian 
-      || pool[0];
+    return new Promise((resolve) => {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
 
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
-      utterance.lang = matchedVoice.lang;
-    } else {
-      utterance.lang = 'id-ID';
-    }
+      const voices = window.speechSynthesis.getVoices();
+      const bannedList = ['google', 'male', 'david', 'mark', 'george', 'stefan', 'adam', 'paul'];
+      const cleanVoices = voices.filter(v => !bannedList.some(b => v.name.toLowerCase().includes(b)));
+      const pool = cleanVoices.length > 0 ? cleanVoices : voices;
 
-    // Acoustic voice tuning for female speaker (Sarah/Lily accent profile)
-    utterance.rate = this.speechSpeed;
-    utterance.pitch = 1.3;
-
-    if (onComplete) {
-      utterance.onend = onComplete;
-      utterance.onerror = (e) => {
-        console.warn('[Supertonic Worker Client Error]', e);
-        onComplete();
+      const voiceCandidates = {
+        idSarah: pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('sarah')),
+        idLily: pool.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily')),
+        idFemale: pool.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male')),
+        genericFemale: pool.find(v => v.name.toLowerCase().includes('female') || !v.name.toLowerCase().includes('male')),
+        anyIndonesian: pool.find(v => v.lang.toLowerCase().includes('id'))
       };
-    }
 
-    try {
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.error('[Supertonic Worker Client Exception]', err);
-      if (onComplete) onComplete();
-    }
+      const matchedVoice = voiceCandidates.idSarah 
+        || voiceCandidates.idLily 
+        || voiceCandidates.idFemale 
+        || voiceCandidates.genericFemale 
+        || voiceCandidates.anyIndonesian 
+        || pool[0];
+
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+        utterance.lang = matchedVoice.lang;
+      } else {
+        utterance.lang = 'id-ID';
+      }
+
+      utterance.rate = this.speechSpeed;
+      utterance.pitch = 1.3;
+
+      utterance.onend = () => resolve(null);
+      utterance.onerror = (e) => {
+        console.warn(`[Supertonic Worker Client Error - Voice Style ${voiceStyle}]`, e);
+        resolve(null);
+      };
+
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.error('[Supertonic Worker Client Exception]', err);
+        resolve(null);
+      }
+    });
   }
 }
 

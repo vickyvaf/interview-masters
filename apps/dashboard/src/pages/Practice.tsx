@@ -462,12 +462,12 @@ export default function Practice() {
     supertonic.speakWithServer(cleanedText).then((audio) => {
       if (audio) {
         audio.onended = handleFinish
-        audio.onerror = () => supertonic.speakInBrowserWorker(cleanedText, handleFinish)
-        audio.play().catch(() => supertonic.speakInBrowserWorker(cleanedText, handleFinish))
+        audio.onerror = () => supertonic.speakInBrowserWorker(cleanedText).then(handleFinish)
+        audio.play().catch(() => supertonic.speakInBrowserWorker(cleanedText).then(handleFinish))
       } else {
-        supertonic.speakInBrowserWorker(cleanedText, handleFinish)
+        supertonic.speakInBrowserWorker(cleanedText).then(handleFinish)
       }
-    }).catch(() => supertonic.speakInBrowserWorker(cleanedText, handleFinish))
+    }).catch(() => supertonic.speakInBrowserWorker(cleanedText).then(handleFinish))
   }
 
   const triggerGreeting = () => {

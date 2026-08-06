@@ -1,93 +1,65 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 export default function App() {
   const [text, setText] = useState('Halo! Perkenalkan saya Lily dari Supertonic 3. Selamat datang di Interview Masters!');
   const [speaker, setSpeaker] = useState('Lily');
   const [language, setLanguage] = useState('indonesian');
-  const [status, setStatus] = useState('Ready (Strict Supertonic Web Worker - No Google Fallback)');
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedWebVoice, setSelectedWebVoice] = useState<string>('');
+  const [status, setStatus] = useState('Ready (Pure Supertonic Web Worker PCM Audio - No Google Voices)');
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
-  useEffect(() => {
-    const updateVoices = () => {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        // Strictly filter out any Google voices (No Google voice fallback allowed)
-        const list = window.speechSynthesis.getVoices().filter(v => !v.name.toLowerCase().includes('google'));
-        setVoices(list);
-        
-        // Match non-Google Indonesian or Lily voice profile
-        const lily = list.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
-          || list.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
-          || list.find(v => v.name.toLowerCase().includes('lily'))
-          || list[0];
-        if (lily) setSelectedWebVoice(lily.name);
-      }
-    };
-
-    updateVoices();
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = updateVoices;
-    }
-  }, []);
-
-  // Supertonic WebWorker In-Browser Synthesis (Strict: No Google voice fallback)
-  const speakWithWebWorker = async () => {
+  // Supertonic Pure WebWorker PCM Synthesis (Zero Google/SpeechSynthesis dependency)
+  const speakWithSupertonicWorker = async () => {
     if (typeof window === 'undefined') return;
 
-    setStatus(`Processing Supertonic 3 via Web Worker (${speaker})...`);
+    setStatus(`Synthesizing Supertonic 3 PCM audio in Web Worker thread (${speaker})...`);
 
     try {
       // Create dedicated Web Worker thread
       const worker = new Worker(new URL('./workers/supertonicWorker.ts', import.meta.url), { type: 'module' });
 
       worker.onmessage = (e: MessageEvent) => {
-        const { status: resultStatus, voiceStyle, pitch, speed } = e.data;
+        const { status: resultStatus, pcmBuffer, sampleRate, speaker: voiceSpeaker } = e.data;
 
-        if (resultStatus === 'SUCCESS' && window.speechSynthesis) {
-          setStatus(`Synthesizing Supertonic (${speaker} - ${voiceStyle}) off main UI thread...`);
+        if (resultStatus === 'SUCCESS' && pcmBuffer) {
+          setStatus(`Playing Supertonic 3 synthesized PCM audio (${voiceSpeaker})...`);
 
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-
-          // Strictly use non-Google matched voice
-          const matchedVoice = voices.find(v => v.name === selectedWebVoice)
-            || voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'));
-
-          if (matchedVoice) {
-            utterance.voice = matchedVoice;
-            utterance.lang = matchedVoice.lang;
-          } else {
-            // Do NOT fall back to Google voices; set language directly
-            utterance.lang = 'id-ID';
+          // Initialize WebAudio API AudioContext
+          if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+            audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
           }
 
-          utterance.rate = speed;
-          utterance.pitch = pitch;
+          const ctx = audioCtxRef.current;
+          if (ctx.state === 'suspended') {
+            ctx.resume();
+          }
 
-          utterance.onstart = () => setStatus(`🔊 Playing Supertonic 3 Web Worker: ${speaker} (${voiceStyle})`);
-          utterance.onend = () => {
-            setStatus('Finished playing Supertonic audio.');
+          const float32Data = new Float32Array(pcmBuffer);
+          const audioBuffer = ctx.createBuffer(1, float32Data.length, sampleRate);
+          audioBuffer.getChannelData(0).set(float32Data);
+
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(ctx.destination);
+
+          source.onended = () => {
+            setStatus('Finished playing Supertonic 3 audio.');
             worker.terminate();
           };
-          utterance.onerror = (err) => {
-            setStatus(`Playback error: ${err.error}`);
-            worker.terminate();
-          };
 
-          window.speechSynthesis.speak(utterance);
+          source.start(0);
         } else {
-          setStatus('Web Worker returned non-success response.');
+          setStatus('Supertonic Web Worker returned non-success response.');
           worker.terminate();
         }
       };
 
       worker.onerror = (err) => {
         console.error('[Supertonic Worker Error]', err);
-        setStatus('Web Worker initialization error.');
+        setStatus('Supertonic Web Worker initialization error.');
         worker.terminate();
       };
 
-      // Send payload off to background worker thread
+      // Send task to background worker thread
       worker.postMessage({
         action: 'SYNTHESIZE',
         text,
@@ -96,14 +68,14 @@ export default function App() {
       });
     } catch (err: any) {
       console.error(err);
-      setStatus(`Worker Exception: ${err.message}`);
+      setStatus(`Supertonic Worker Exception: ${err.message}`);
     }
   };
 
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       <h1>Supertonic 3 TTS Tester</h1>
-      <p style={{ color: '#666' }}>Engine: <strong>100% Supertonic Web Worker (Google Fallback Removed)</strong></p>
+      <p style={{ color: '#666' }}>Engine: <strong>Pure Supertonic Web Worker PCM (100% No Google Voice)</strong></p>
 
       <div style={{ marginBottom: '16px' }}>
         <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Input Text:</label>
@@ -140,27 +112,12 @@ export default function App() {
         />
       </div>
 
-      <div style={{ marginBottom: '16px' }}>
-        <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Matched Non-Google Voice:</label>
-        <select
-          style={{ width: '100%', padding: '8px' }}
-          value={selectedWebVoice}
-          onChange={(e) => setSelectedWebVoice(e.target.value)}
-        >
-          {voices.map((v) => (
-            <option key={v.name} value={v.name}>
-              {v.name} ({v.lang})
-            </option>
-          ))}
-        </select>
-      </div>
-
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         <button
-          onClick={speakWithWebWorker}
+          onClick={speakWithSupertonicWorker}
           style={{ padding: '10px 16px', cursor: 'pointer', fontWeight: 'bold', backgroundColor: '#0066cc', color: '#fff', border: 'none', borderRadius: '4px' }}
         >
-          ⚡ Speak (Supertonic Web Worker Only)
+          ⚡ Speak Pure Supertonic (Web Worker PCM)
         </button>
       </div>
 

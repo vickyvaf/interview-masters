@@ -4,6 +4,7 @@ import { Text, Flex, Card, Box, Badge, IconButton, Button, Grid, AlertDialog } f
 import { ReloadIcon, ArrowLeftIcon, SpeakerLoudIcon, SpeakerOffIcon, CameraIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { supertonic, SUPERTONIC_SPEAKERS } from '../lib/supertonic'
 
 
 export default function Practice() {
@@ -454,9 +455,13 @@ export default function Practice() {
     const utterance = new SpeechSynthesisUtterance(cleanedText)
 
     const applyVoice = () => {
+      // Initialize Supertonic 3 TTS configuration (Lily, Indonesian)
+      supertonic.init({ speaker: 'Lily', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
+      const lilySpeakerConfig = SUPERTONIC_SPEAKERS.find(s => s.id === 'Lily') || SUPERTONIC_SPEAKERS[0]
+
       const voices = window.speechSynthesis.getVoices()
       if (voices.length > 0 && !selectedVoiceRef.current) {
-        // Prioritize Indonesian female voices (Lily / id-ID female voices)
+        // Prioritize Indonesian female voices matching Supertonic Lily profile
         const idLilyVoice = voices.find(v => v.lang.toLowerCase().includes('id') && v.name.toLowerCase().includes('lily'))
         const idFemaleVoice = voices.find(v => v.lang.toLowerCase().includes('id') && !v.name.toLowerCase().includes('male'))
         const genericLilyVoice = voices.find(v => v.name.toLowerCase().includes('lily'))
@@ -472,8 +477,8 @@ export default function Practice() {
       } else {
         utterance.lang = 'id-ID'
       }
-      utterance.rate = 1.05
-      utterance.pitch = 1.2
+      utterance.rate = lilySpeakerConfig.speechSpeed
+      utterance.pitch = lilySpeakerConfig.pitch
     }
 
     applyVoice()

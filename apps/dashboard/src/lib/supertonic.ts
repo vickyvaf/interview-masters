@@ -150,8 +150,10 @@ export class SupertonicTTS {
                 resolve(null);
               };
 
-              audio.play().catch((err) => {
-                console.warn('[Supertonic Play Exception]', err);
+              audio.play().then(() => {
+                // Audio started successfully
+              }).catch((err) => {
+                console.warn('[Supertonic Play Autoplay Blocked]', err);
                 URL.revokeObjectURL(audioUrl);
                 worker.terminate();
                 resolve(null);

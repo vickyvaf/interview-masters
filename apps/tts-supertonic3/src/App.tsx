@@ -36,13 +36,22 @@ export default function App() {
   const speakSupertonicServe = async () => {
     try {
       setStatus('Synthesizing via Supertonic 3 Serve Server...');
-      const res = await fetch(`${serverUrl}/tts`, {
+      const voiceMap: Record<string, string> = {
+        Lily: 'F1',
+        Sarah: 'F2',
+        Jessica: 'F3',
+        Olivia: 'F4',
+        Emily: 'F5'
+      };
+      const voiceStyle = voiceMap[speaker] || 'F1';
+
+      const res = await fetch(`${serverUrl}/v1/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          speaker,
-          lang: language,
+          voice: voiceStyle,
+          lang: 'id',
           speed: 1.0
         })
       });

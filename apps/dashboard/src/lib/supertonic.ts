@@ -66,13 +66,23 @@ export class SupertonicTTS {
 
   public async speakWithServer(text: string, serverUrl = 'http://127.0.0.1:7788'): Promise<HTMLAudioElement | null> {
     try {
-      const res = await fetch(`${serverUrl}/tts`, {
+      // Map speaker profile to Supertonic builtin female voice styles (F1: Lily, F2: Sarah, etc)
+      const voiceMap: Record<string, string> = {
+        Lily: 'F1',
+        Sarah: 'F2',
+        Jessica: 'F3',
+        Olivia: 'F4',
+        Emily: 'F5'
+      };
+      const voiceStyle = voiceMap[this.activeSpeaker] || 'F1';
+
+      const res = await fetch(`${serverUrl}/v1/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          speaker: this.activeSpeaker,
-          lang: this.activeLanguage,
+          voice: voiceStyle,
+          lang: 'id',
           speed: this.speechSpeed
         })
       });

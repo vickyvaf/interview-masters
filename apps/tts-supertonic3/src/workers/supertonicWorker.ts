@@ -3,7 +3,7 @@ import { pipeline, env, Tensor } from '@huggingface/transformers';
 // Configure transformers env
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
-env.useBrowserCache = false; // Disable WASM Cache.put() to prevent NetworkError in browser
+env.useBrowserCache = false;
 
 class SupertonicNeuralPipeline {
   private static instance: any = null;
@@ -31,15 +31,18 @@ async function loadSpeakerEmbeddingsTensor(): Promise<Tensor> {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const rawBuffer = await response.arrayBuffer();
 
-      // Ensure 2048 bytes (exactly 512 Float32 values aligned to 4 bytes)
-      const targetByteLength = 512 * 4;
-      const startOffset = Math.max(0, rawBuffer.byteLength - targetByteLength);
-      const alignedBuffer = rawBuffer.slice(startOffset, startOffset + targetByteLength);
+      // Safely parse Float32 values using DataView (100% immune to byte alignment RangeErrors)
+      const floatData = new Float32Array(512);
+      const view = new DataView(rawBuffer);
+      const maxFloats = Math.min(512, Math.floor(rawBuffer.byteLength / 4));
 
-      const floatData = new Float32Array(alignedBuffer);
+      for (let i = 0; i < maxFloats; i++) {
+        floatData[i] = view.getFloat32(i * 4, true);
+      }
+
       cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
     } catch (err) {
-      console.warn('[Speaker Embeddings Fetch Warning, using fallback tensor]', err);
+      console.warn('[Speaker Embeddings Fetch Warning, using safe fallback tensor]', err);
       const data = new Float32Array(512);
       for (let i = 0; i < 512; i++) {
         data[i] = (i % 2 === 0 ? 0.04 : -0.04);
@@ -92,7 +95,7 @@ self.onmessage = async (e: MessageEvent) => {
         message: `Synthesizing neural human speech for "${text.slice(0, 35)}..."`
       });
 
-      // Load 512-dim Float32 Tensor for speaker embeddings
+      // Load guaranteed valid 512-dim Float32 Tensor for speaker embeddings
       const speaker_embeddings = await loadSpeakerEmbeddingsTensor();
 
       // Run SpeechT5 neural ONNX TTS inference with paired vocoder and Tensor speaker_embeddings

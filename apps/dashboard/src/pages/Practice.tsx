@@ -459,9 +459,18 @@ export default function Practice() {
       if (onComplete) onComplete()
     }
 
-    // Pure serverless client-side TTS execution
+    // Try Supertonic 3 AI Model via HuggingFace Serverless / Local Client API
     supertonic.init({ speaker: 'Sarah', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
-    
+    supertonic.speakWithServer(cleanedText).then((audio) => {
+      if (audio) {
+        audio.onended = handleFinish
+        audio.onerror = () => runClientSpeech()
+        audio.play().catch(() => runClientSpeech())
+      } else {
+        runClientSpeech()
+      }
+    }).catch(() => runClientSpeech())
+
     const runClientSpeech = () => {
       const utterance = new SpeechSynthesisUtterance(cleanedText)
 
@@ -505,8 +514,6 @@ export default function Practice() {
         handleFinish()
       }
     }
-
-    runClientSpeech()
   }
 
   const triggerGreeting = () => {

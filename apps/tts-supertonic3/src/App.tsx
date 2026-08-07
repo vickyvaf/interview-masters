@@ -1,4 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
+import { pipeline, env, Tensor } from '@huggingface/transformers';
+
+// Configure transformers env
+env.allowLocalModels = false;
+env.allowRemoteModels = true;
+env.useBrowserCache = false;
 
 // Helper to encode Float32 PCM to WAV Blob
 function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
@@ -34,91 +40,123 @@ function encodeWAV(samples: Float32Array, sampleRate: number = 16000): Blob {
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
+class SupertonicNeuralPipeline {
+  private static instance: any = null;
+
+  public static async getInstance(progressCallback?: (progress: any) => void) {
+    if (!this.instance) {
+      this.instance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
+        vocoder: 'Xenova/speecht5_hifigan',
+        progress_callback: progressCallback,
+      } as any);
+    }
+    return this.instance;
+  }
+}
+
+let cachedSpeakerEmbeddings: Tensor | null = null;
+
+async function loadSpeakerEmbeddingsTensor(): Promise<Tensor> {
+  if (!cachedSpeakerEmbeddings) {
+    const url = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin';
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const rawBuffer = await response.arrayBuffer();
+
+      const floatData = new Float32Array(512);
+      const view = new DataView(rawBuffer);
+      const maxFloats = Math.min(512, Math.floor(rawBuffer.byteLength / 4));
+
+      for (let i = 0; i < maxFloats; i++) {
+        floatData[i] = view.getFloat32(i * 4, true);
+      }
+
+      cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
+    } catch (err) {
+      console.warn('[Speaker Embeddings Fetch Warning, using safe fallback tensor]', err);
+      const data = new Float32Array(512);
+      for (let i = 0; i < 512; i++) {
+        data[i] = (i % 2 === 0 ? 0.04 : -0.04);
+      }
+      cachedSpeakerEmbeddings = new Tensor('float32', data, [1, 512]);
+    }
+  }
+  return cachedSpeakerEmbeddings;
+}
+
 export default function App() {
   const [text, setText] = useState('Halo! Selamat datang di Interview Masters. Ini adalah sintesis suara neural Supertonic.');
   const [speaker, setSpeaker] = useState('Lily');
-  const [status, setStatus] = useState('Ready (ONNX Neural Web Worker TTS)');
+  const [status, setStatus] = useState('Ready (Main Thread Direct TTS)');
   const [progress, setProgress] = useState<string>('');
   const [lastWavBlob, setLastWavBlob] = useState<Blob | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const workerRef = useRef<Worker | null>(null);
 
-  // Initialize persistent Web Worker once
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !workerRef.current) {
-      workerRef.current = new Worker(new URL('./workers/supertonicWorker.ts', import.meta.url), { type: 'module' });
-    }
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
-      }
-    };
-  }, []);
-
-  // Neural ONNX WebWorker Synthesis
   const handleSynthesize = async () => {
-    if (typeof window === 'undefined' || !workerRef.current) return;
-
     setIsLoading(true);
-    setStatus('Initializing ONNX model in WebWorker...');
+    setStatus('Initializing ONNX model in main thread...');
     setProgress('');
 
-    const worker = workerRef.current;
+    try {
+      const fileProgressMap: Record<string, number> = {};
 
-    worker.onmessage = (e: MessageEvent) => {
-      const { status: msgStatus, message, file, filePercent, totalPercent, wavBuffer, duration, sampleRate, error } = e.data;
+      const synthesizer = await SupertonicNeuralPipeline.getInstance((p: any) => {
+        if (p && p.file) {
+          const fileName = p.file;
+          if (p.status === 'progress') {
+            fileProgressMap[fileName] = Math.round(p.progress || 0);
+          } else if (p.status === 'done') {
+            fileProgressMap[fileName] = 100;
+          }
 
-      if (msgStatus === 'LOADING' || msgStatus === 'SYNTHESIZING') {
-        setStatus(message);
-      } else if (msgStatus === 'PROGRESS') {
-        if (file) {
-          setProgress(`Downloading ONNX assets: ${totalPercent}% (${file}: ${filePercent}%)`);
+          const fileNames = Object.keys(fileProgressMap);
+          const totalProgress = Math.round(
+            fileNames.reduce((acc, curr) => acc + fileProgressMap[curr], 0) / Math.max(1, fileNames.length)
+          );
+
+          setProgress(`Downloading ONNX assets: ${totalProgress}% (${fileName}: ${fileProgressMap[fileName]}%)`);
         }
-      } else if (msgStatus === 'SUCCESS' && wavBuffer) {
-        setIsLoading(false);
-        setProgress('');
-        const wavSamples = new Float32Array(wavBuffer);
-        const wavBlob = encodeWAV(wavSamples, sampleRate);
-        setLastWavBlob(wavBlob);
+      });
 
-        setStatus(`Generated ${duration.toFixed(2)}s of neural spoken audio at ${sampleRate} Hz`);
+      setStatus(`Synthesizing neural human speech for "${text.slice(0, 35)}..."`);
 
-        // Play audio using WebAudio API
-        if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-          audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
-        }
+      const speaker_embeddings = await loadSpeakerEmbeddingsTensor();
+      const output = await synthesizer(text, { speaker_embeddings });
 
-        const ctx = audioCtxRef.current;
-        if (ctx.state === 'suspended') {
-          ctx.resume();
-        }
+      const wavSamples: Float32Array = output.audio;
+      const sampleRate: number = output.sampling_rate || 16000;
+      const duration = wavSamples.length / sampleRate;
 
-        const audioBuffer = ctx.createBuffer(1, wavSamples.length, sampleRate);
-        audioBuffer.getChannelData(0).set(wavSamples);
-
-        const source = ctx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(ctx.destination);
-        source.start(0);
-      } else if (msgStatus === 'ERROR') {
-        setIsLoading(false);
-        setStatus(`ONNX Model Error: ${error}`);
-      }
-    };
-
-    worker.onerror = (err) => {
-      console.error('[Supertonic Worker Error]', err);
       setIsLoading(false);
-      setStatus('Web Worker execution error.');
-    };
+      setProgress('');
+      const wavBlob = encodeWAV(wavSamples, sampleRate);
+      setLastWavBlob(wavBlob);
 
-    worker.postMessage({
-      action: 'SYNTHESIZE',
-      text,
-      speaker
-    });
+      setStatus(`Generated ${duration.toFixed(2)}s of neural spoken audio at ${sampleRate} Hz`);
+
+      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
+      }
+
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      const audioBuffer = ctx.createBuffer(1, wavSamples.length, sampleRate);
+      audioBuffer.getChannelData(0).set(wavSamples);
+
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(ctx.destination);
+      source.start(0);
+    } catch (err: any) {
+      console.error('[Supertonic Direct Execution Error]', err);
+      setIsLoading(false);
+      setStatus(`ONNX Model Error: ${err.message || String(err)}`);
+    }
   };
 
   const handleSaveAudio = () => {
@@ -135,8 +173,8 @@ export default function App() {
 
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '600px', margin: '0 auto' }}>
-      <h1>Supertonic Neural TTS (ONNX Web Worker)</h1>
-      <p style={{ color: '#666' }}>Engine: <strong>In-Browser ONNX Neural Model (100% Neural Spoken Speech)</strong></p>
+      <h1>Supertonic Neural TTS</h1>
+      <p style={{ color: '#666' }}>Engine: <strong>In-Browser Direct ONNX Neural Model</strong></p>
 
       <div style={{ marginBottom: '16px' }}>
         <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Input Text:</label>
@@ -174,7 +212,7 @@ export default function App() {
             borderRadius: '4px'
           }}
         >
-          {isLoading ? '⏳ Processing Model...' : '🔊 Speak Neural Speech (ONNX Worker)'}
+          {isLoading ? '⏳ Processing Model...' : '🔊 Speak Neural Speech Direct'}
         </button>
 
         <button

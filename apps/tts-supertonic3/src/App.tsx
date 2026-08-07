@@ -1,5 +1,8 @@
 import { useState } from 'react';
 
+// Use production Hugging Face Space URL in production, or local server during dev
+const SERVER_URL = 'https://vickyvaf-tts-supertonic3.hf.space';
+
 export default function App() {
   const [text, setText] = useState('Halo! Ini adalah sintesis suara resmi Supertonic 3.');
   const [speaker, setSpeaker] = useState('F1');
@@ -11,9 +14,7 @@ export default function App() {
     setStatus('Mengirim permintaan ke Supertonic 3 service...');
 
     try {
-      const serverUrl = 'http://127.0.0.1:7788';
-      
-      const response = await fetch(`${serverUrl}/v1/audio/speech`, {
+      const response = await fetch(`${SERVER_URL}/v1/audio/speech`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,7 +29,7 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Silakan jalankan 'supertonic serve --port 7788'`);
+        throw new Error(`HTTP ${response.status}: Silakan periksa server Supertonic 3`);
       }
 
       const audioBlob = await response.blob();
@@ -49,9 +50,9 @@ export default function App() {
       setStatus('Sedang memutar audio Supertonic 3...');
     } catch (err: any) {
       console.warn('[Fallback Web Speech]', err);
-      setStatus(`Menjalankan via HTTP Endpoint (7788): ${err?.message || String(err)}`);
-      
-      // Fallback fallback audio player
+      setStatus(`Gagal terhubung ke Supertonic Service: ${err?.message || String(err)}`);
+
+      // Fallback to browser Web Speech API if server is unavailable
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -111,6 +112,7 @@ export default function App() {
 
       <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '4px', fontSize: '13px' }}>
         <div><strong>Status:</strong> {status}</div>
+        <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>Endpoint: {SERVER_URL}</div>
       </div>
     </div>
   );

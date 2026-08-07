@@ -5,15 +5,23 @@ env.allowLocalModels = false;
 env.allowRemoteModels = true;
 env.useBrowserCache = true;
 
+interface DownloadItem {
+  name: string;
+  progress: number;
+  status: string;
+}
+
 let synthesizerPromise: Promise<any> | null = null;
 let speakerEmbeddingsPromise: Promise<Tensor> | null = null;
 
-function initModel() {
+function initModel(onProgress?: (progressData: any) => void) {
   if (!synthesizerPromise) {
-    // Quantized q8 models: ~35MB total instead of ~140MB fp32 models!
     synthesizerPromise = pipeline('text-to-speech', 'Xenova/speecht5_tts', {
       quantized: true,
       vocoder: 'Xenova/speecht5_hifigan',
+      progress_callback: (info: any) => {
+        if (onProgress) onProgress(info);
+      },
     } as any);
   }
 
@@ -33,8 +41,8 @@ function initModel() {
   }
 }
 
-async function speak(text: string) {
-  initModel();
+async function speak(text: string, onProgress?: (progressData: any) => void) {
+  initModel(onProgress);
   const [synthesizer, speakerEmbeddings] = await Promise.all([synthesizerPromise, speakerEmbeddingsPromise]);
 
   const output = await synthesizer(text, { speaker_embeddings: speakerEmbeddings });
@@ -53,21 +61,36 @@ export default function App() {
   const [text, setText] = useState('Halo! Ini adalah suara Supertonic.');
   const [speaker, setSpeaker] = useState('Lily');
   const [loading, setLoading] = useState(false);
+  const [downloads, setDownloads] = useState<Record<string, DownloadItem>>({});
+
+  const handleProgress = (info: any) => {
+    if (!info || !info.file) return;
+    setDownloads((prev) => ({
+      ...prev,
+      [info.file]: {
+        name: info.file,
+        progress: Math.round(info.progress || (info.status === 'done' ? 100 : 0)),
+        status: info.status || 'downloading',
+      },
+    }));
+  };
 
   useEffect(() => {
-    initModel();
+    initModel(handleProgress);
   }, []);
 
   const handlePlay = async () => {
     setLoading(true);
     try {
-      await speak(text);
+      await speak(text, handleProgress);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+  const downloadList = Object.values(downloads);
 
   return (
     <div style={{ padding: '24px', maxWidth: '480px', margin: '0 auto', fontFamily: 'sans-serif' }}>
@@ -94,10 +117,39 @@ export default function App() {
       <button
         onClick={handlePlay}
         disabled={loading}
-        style={{ padding: '8px 16px', cursor: loading ? 'wait' : 'pointer' }}
+        style={{ padding: '8px 16px', cursor: loading ? 'wait' : 'pointer', marginBottom: '24px' }}
       >
         {loading ? 'Processing...' : 'Play Sound'}
       </button>
+
+      {/* Status & Downloads Progress at Bottom */}
+      <div style={{ borderTop: '1px solid #eee', paddingTop: '16px' }}>
+        <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#555' }}>Download & Model Progress:</h4>
+        {downloadList.length === 0 ? (
+          <div style={{ fontSize: '12px', color: '#888' }}>Ready / Checking local cache...</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {downloadList.map((item) => (
+              <div key={item.name} style={{ fontSize: '12px', background: '#f9f9f9', padding: '8px', borderRadius: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: '500', wordBreak: 'break-all' }}>{item.name}</span>
+                  <span>{item.progress}%</span>
+                </div>
+                <div style={{ width: '100%', background: '#e0e0e0', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${item.progress}%`,
+                      background: item.progress === 100 ? '#28a745' : '#0066cc',
+                      height: '100%',
+                      transition: 'width 0.2s',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -3,14 +3,19 @@ import { pipeline, env, Tensor } from '@huggingface/transformers';
 
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
+env.useBrowserCache = false;
+
+// Force unique session per page run to guarantee clean ONNX graph loading
+const MODEL_REVISION = 'main';
 
 class SupertonicPipeline {
   private static instance: any = null;
 
   public static async getInstance(progressCallback?: (p: any) => void) {
     if (!this.instance) {
-      // Load speecht5_tts with speecht5_hifigan vocoder
       this.instance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
+        quantized: false,
+        revision: MODEL_REVISION,
         vocoder: 'Xenova/speecht5_hifigan',
         progress_callback: progressCallback,
       } as any);
@@ -59,6 +64,12 @@ export default function App() {
     setStatus('Loading Supertonic ONNX Neural Model...');
 
     try {
+      // Clear browser CacheStorage manually if available to purge corrupted ONNX models
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+
       const synthesizer = await SupertonicPipeline.getInstance((p: any) => {
         if (p && p.file) {
           setStatus(`Downloading model assets: ${p.file} (${Math.round(p.progress || 0)}%)`);

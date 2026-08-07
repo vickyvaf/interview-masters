@@ -9,7 +9,7 @@
     "dev:dashboard": "pnpm --filter apps-dashboard dev",
     "dev:backend": "pnpm --filter apps-backend dev",
     "dev:supertonic": "apps/supertonic/.venv/bin/python apps/supertonic/main.py",
-    "dev:supertonic-ui": "pnpm --filter apps-tts-supertonic3 dev",
+    "dev:supertonic-ui": "pnpm --filter apps-supertonic-ui dev",
     "dev:tts": "pnpm dev:supertonic & pnpm dev:supertonic-ui",
     "dev:remotion": "pnpm --filter remotion dev",
     "build": "pnpm build:landing && pnpm build:dashboard && pnpm build:backend",

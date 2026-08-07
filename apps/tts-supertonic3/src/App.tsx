@@ -10,7 +10,9 @@ let speakerEmbeddingsPromise: Promise<Tensor> | null = null;
 
 function initModel() {
   if (!synthesizerPromise) {
+    // Quantized q8 models: ~35MB total instead of ~140MB fp32 models!
     synthesizerPromise = pipeline('text-to-speech', 'Xenova/speecht5_tts', {
+      quantized: true,
       vocoder: 'Xenova/speecht5_hifigan',
     } as any);
   }
@@ -53,7 +55,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Automatically preload ONNX model in background when page loads
     initModel();
   }, []);
 

@@ -1,19 +1,19 @@
 import { useState } from 'react';
 
-const LOCAL_SERVER_URL = 'http://127.0.0.1:7788';
+const KOYEB_SERVER_URL = 'https://marxist-melicent-vaf-6532610f.koyeb.app';
 
 export default function App() {
-  const [text, setText] = useState('Halo! Ini adalah sintesis suara Supertonic 3 lokal.');
+  const [text, setText] = useState('Halo! Ini adalah sintesis suara Supertonic 3 via Koyeb production.');
   const [speaker, setSpeaker] = useState('F1');
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState('Supertonic 3 Local Server - Ready');
+  const [status, setStatus] = useState('Supertonic 3 Koyeb Production API - Ready');
 
   const handleSynthesize = async () => {
     setIsLoading(true);
-    setStatus('Mengirim permintaan ke Supertonic 3 server lokal (http://127.0.0.1:7788)...');
+    setStatus(`Mengirim permintaan ke Koyeb Production (${KOYEB_SERVER_URL})...`);
 
     try {
-      const response = await fetch(`${LOCAL_SERVER_URL}/v1/audio/speech`, {
+      const response = await fetch(`${KOYEB_SERVER_URL}/v1/audio/speech`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,7 +28,7 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Server Supertonic 3 belum berjalan di port 7788`);
+        throw new Error(`HTTP ${response.status}: Server Supertonic 3 Koyeb belum siap`);
       }
 
       const audioBlob = await response.blob();
@@ -48,7 +48,7 @@ export default function App() {
       await audio.play();
       setStatus('Sedang memutar audio Supertonic 3...');
     } catch (err: any) {
-      console.error('[Supertonic 3 Local Error]', err);
+      console.error('[Supertonic 3 Koyeb Error]', err);
       setStatus(`Error: ${err?.message || String(err)}`);
       setIsLoading(false);
     }
@@ -56,9 +56,9 @@ export default function App() {
 
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '500px', margin: '0 auto' }}>
-      <h2>Supertonic 3 TTS (Local Python Engine)</h2>
+      <h2>Supertonic 3 TTS (Koyeb Production Engine)</h2>
       <p style={{ color: '#666', fontSize: '13px' }}>
-        Server: <code>http://127.0.0.1:7788/v1/audio/speech</code>
+        Server: <code>{KOYEB_SERVER_URL}/v1/audio/speech</code>
       </p>
 
       <div style={{ marginBottom: '16px' }}>

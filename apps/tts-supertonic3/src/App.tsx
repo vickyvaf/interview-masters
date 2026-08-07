@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
-const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const SERVER_URL = isLocal ? 'http://127.0.0.1:7788' : 'https://vickyvaf-tts-supertonic3.hf.space';
+const SERVER_URL = 'https://vickyvaf-tts-supertonic3.hf.space';
 
 export default function App() {
   const [text, setText] = useState('Halo! Ini adalah sintesis suara resmi Supertonic 3.');

@@ -17,7 +17,7 @@ let speakerEmbeddingsPromise: Promise<Tensor> | null = null;
 function initModel(onProgress?: (progressData: any) => void) {
   if (!synthesizerPromise) {
     synthesizerPromise = pipeline('text-to-speech', 'Xenova/speecht5_tts', {
-      quantized: true,
+      quantized: false,
       vocoder: 'Xenova/speecht5_hifigan',
       progress_callback: (info: any) => {
         if (onProgress) onProgress(info);

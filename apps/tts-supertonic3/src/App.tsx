@@ -1,34 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { pipeline, env, Tensor } from '@huggingface/transformers';
 
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
 env.useBrowserCache = true;
 
-let synthesizer: any = null;
-let speakerEmbeddings: Tensor | null = null;
+let synthesizerPromise: Promise<any> | null = null;
+let speakerEmbeddingsPromise: Promise<Tensor> | null = null;
 
-async function speak(text: string) {
-  if (!synthesizer) {
-    synthesizer = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
+function initModel() {
+  if (!synthesizerPromise) {
+    synthesizerPromise = pipeline('text-to-speech', 'Xenova/speecht5_tts', {
       vocoder: 'Xenova/speecht5_hifigan',
     } as any);
   }
 
-  if (!speakerEmbeddings) {
-    try {
-      const res = await fetch('https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin');
-      const buf = await res.arrayBuffer();
-      const floatData = new Float32Array(512);
-      const view = new DataView(buf);
-      for (let i = 0; i < Math.min(512, Math.floor(buf.byteLength / 4)); i++) {
-        floatData[i] = view.getFloat32(i * 4, true);
-      }
-      speakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
-    } catch {
-      speakerEmbeddings = new Tensor('float32', new Float32Array(512).fill(0.04), [1, 512]);
-    }
+  if (!speakerEmbeddingsPromise) {
+    speakerEmbeddingsPromise = fetch('https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin')
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const buf = await res.arrayBuffer();
+        const floatData = new Float32Array(512);
+        const view = new DataView(buf);
+        for (let i = 0; i < Math.min(512, Math.floor(buf.byteLength / 4)); i++) {
+          floatData[i] = view.getFloat32(i * 4, true);
+        }
+        return new Tensor('float32', floatData, [1, 512]);
+      })
+      .catch(() => new Tensor('float32', new Float32Array(512).fill(0.04), [1, 512]));
   }
+}
+
+async function speak(text: string) {
+  initModel();
+  const [synthesizer, speakerEmbeddings] = await Promise.all([synthesizerPromise, speakerEmbeddingsPromise]);
 
   const output = await synthesizer(text, { speaker_embeddings: speakerEmbeddings });
   const sampleRate = output.sampling_rate || 16000;
@@ -46,6 +51,11 @@ export default function App() {
   const [text, setText] = useState('Halo! Ini adalah suara Supertonic.');
   const [speaker, setSpeaker] = useState('Lily');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Automatically preload ONNX model in background when page loads
+    initModel();
+  }, []);
 
   const handlePlay = async () => {
     setLoading(true);

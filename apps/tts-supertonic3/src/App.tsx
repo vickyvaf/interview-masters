@@ -11,41 +11,55 @@ interface DownloadItem {
   status: string;
 }
 
-let synthesizerPromise: Promise<any> | null = null;
-let speakerEmbeddingsPromise: Promise<Tensor> | null = null;
+let synthesizerInstance: any = null;
+let speakerEmbeddingsTensor: Tensor | null = null;
+let modelInitPromise: Promise<any> | null = null;
+
+async function getSpeakerEmbeddings(): Promise<Tensor> {
+  if (speakerEmbeddingsTensor) return speakerEmbeddingsTensor;
+
+  try {
+    const res = await fetch('https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    const floatData = new Float32Array(512);
+    const view = new DataView(buf);
+    for (let i = 0; i < Math.min(512, Math.floor(buf.byteLength / 4)); i++) {
+      floatData[i] = view.getFloat32(i * 4, true);
+    }
+    speakerEmbeddingsTensor = new Tensor('float32', floatData, [1, 512]);
+  } catch (e) {
+    console.warn('[Speaker Embeddings fallback]', e);
+    const fallback = new Float32Array(512);
+    for (let i = 0; i < 512; i++) {
+      fallback[i] = (i % 2 === 0 ? 0.04 : -0.04);
+    }
+    speakerEmbeddingsTensor = new Tensor('float32', fallback, [1, 512]);
+  }
+  return speakerEmbeddingsTensor;
+}
 
 function initModel(onProgress?: (progressData: any) => void) {
-  if (!synthesizerPromise) {
-    synthesizerPromise = pipeline('text-to-speech', 'Xenova/speecht5_tts', {
-      quantized: false,
-      vocoder: 'Xenova/speecht5_hifigan',
-      progress_callback: (info: any) => {
-        if (onProgress) onProgress(info);
-      },
-    } as any);
+  if (!modelInitPromise) {
+    modelInitPromise = (async () => {
+      synthesizerInstance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
+        vocoder: 'Xenova/speecht5_hifigan',
+        progress_callback: (info: any) => {
+          if (onProgress) onProgress(info);
+        },
+      } as any);
+      await getSpeakerEmbeddings();
+      return synthesizerInstance;
+    })();
   }
-
-  if (!speakerEmbeddingsPromise) {
-    speakerEmbeddingsPromise = fetch('https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin')
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const buf = await res.arrayBuffer();
-        const floatData = new Float32Array(512);
-        const view = new DataView(buf);
-        for (let i = 0; i < Math.min(512, Math.floor(buf.byteLength / 4)); i++) {
-          floatData[i] = view.getFloat32(i * 4, true);
-        }
-        return new Tensor('float32', floatData, [1, 512]);
-      })
-      .catch(() => new Tensor('float32', new Float32Array(512).fill(0.04), [1, 512]));
-  }
+  return modelInitPromise;
 }
 
 async function speak(text: string, onProgress?: (progressData: any) => void) {
-  initModel(onProgress);
-  const [synthesizer, speakerEmbeddings] = await Promise.all([synthesizerPromise, speakerEmbeddingsPromise]);
+  const synthesizer = await initModel(onProgress);
+  const speaker_embeddings = await getSpeakerEmbeddings();
 
-  const output = await synthesizer(text, { speaker_embeddings: speakerEmbeddings });
+  const output = await synthesizer(text, { speaker_embeddings });
   const sampleRate = output.sampling_rate || 16000;
   const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
   const buffer = ctx.createBuffer(1, output.audio.length, sampleRate);
@@ -95,8 +109,9 @@ export default function App() {
     setLoading(true);
     try {
       await speak(text, handleProgress);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(`Error playing sound: ${err?.message || String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -134,7 +149,6 @@ export default function App() {
         {loading ? 'Processing...' : 'Play Sound'}
       </button>
 
-      {/* Status & Downloads Progress at Bottom */}
       <div style={{ borderTop: '1px solid #eee', paddingTop: '16px' }}>
         <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#555' }}>Download & Model Progress:</h4>
         {downloadList.length === 0 ? (

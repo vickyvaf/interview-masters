@@ -65,11 +65,23 @@ export default function App() {
 
   const handleProgress = (info: any) => {
     if (!info || !info.file) return;
+
+    let p = 0;
+    if (typeof info.progress === 'number') {
+      p = Math.round(info.progress);
+    } else if (typeof info.loaded === 'number' && typeof info.total === 'number' && info.total > 0) {
+      p = Math.round((info.loaded / info.total) * 100);
+    }
+
+    if (info.status === 'done') {
+      p = 100;
+    }
+
     setDownloads((prev) => ({
       ...prev,
       [info.file]: {
         name: info.file,
-        progress: Math.round(info.progress || (info.status === 'done' ? 100 : 0)),
+        progress: p,
         status: info.status || 'downloading',
       },
     }));

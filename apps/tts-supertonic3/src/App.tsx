@@ -1,36 +1,38 @@
 import { useState } from 'react';
-import { Client } from '@gradio/client';
+
+const LOCAL_SERVER_URL = 'http://127.0.0.1:7788';
 
 export default function App() {
-  const [text, setText] = useState('Halo! Ini adalah suara Supertonic 3 via official Hugging Face Space.');
+  const [text, setText] = useState('Halo! Ini adalah sintesis suara Supertonic 3 lokal.');
   const [speaker, setSpeaker] = useState('F1');
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState('Supertonic 3 Official API - Ready');
+  const [status, setStatus] = useState('Supertonic 3 Local Server - Ready');
 
   const handleSynthesize = async () => {
     setIsLoading(true);
-    setStatus('Menghubungkan ke Official Supertonic 3 Hugging Face Space...');
+    setStatus('Mengirim permintaan ke Supertonic 3 server lokal (http://127.0.0.1:7788)...');
 
     try {
-      // Connect directly to official public Supertone Space
-      const client = await Client.connect('Supertone/supertonic-3');
-      setStatus('Synthesizing audio...');
-
-      // Call predicting endpoint with text, voice profile, and language
-      const result = await client.predict('/predict', {
-        text: text,
-        voice: speaker,
-        lang: 'id',
-        total_steps: 8,
-        speed: 1.0,
+      const response = await fetch(`${LOCAL_SERVER_URL}/v1/audio/speech`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'supertonic-3',
+          input: text,
+          voice: speaker,
+          language: 'id',
+          speed: 1.0,
+        }),
       });
 
-      const audioData: any = (result as any).data?.[0];
-      const audioUrl = typeof audioData === 'string' ? audioData : audioData?.url;
-
-      if (!audioUrl) {
-        throw new Error('Gagal menerima URL audio dari server Supertonic 3.');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Server Supertonic 3 belum berjalan di port 7788`);
       }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
 
       const audio = new Audio(audioUrl);
       audio.onended = () => {
@@ -46,7 +48,7 @@ export default function App() {
       await audio.play();
       setStatus('Sedang memutar audio Supertonic 3...');
     } catch (err: any) {
-      console.error('[Official Supertonic Error]', err);
+      console.error('[Supertonic 3 Local Error]', err);
       setStatus(`Error: ${err?.message || String(err)}`);
       setIsLoading(false);
     }
@@ -54,9 +56,9 @@ export default function App() {
 
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '500px', margin: '0 auto' }}>
-      <h2>Supertonic 3 TTS (Official Hugging Face API)</h2>
+      <h2>Supertonic 3 TTS (Local Python Engine)</h2>
       <p style={{ color: '#666', fontSize: '13px' }}>
-        Engine: <strong>Supertone/supertonic-3 (Official Space API)</strong>
+        Server: <code>http://127.0.0.1:7788/v1/audio/speech</code>
       </p>
 
       <div style={{ marginBottom: '16px' }}>

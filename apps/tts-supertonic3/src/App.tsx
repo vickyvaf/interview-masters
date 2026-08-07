@@ -1,118 +1,73 @@
-import { useState, useRef } from 'react';
-import { pipeline, env, Tensor } from '@huggingface/transformers';
-
-env.allowLocalModels = false;
-env.allowRemoteModels = true;
-env.useBrowserCache = false;
-
-// Force unique session per page run to guarantee clean ONNX graph loading
-const MODEL_REVISION = 'main';
-
-class SupertonicPipeline {
-  private static instance: any = null;
-
-  public static async getInstance(progressCallback?: (p: any) => void) {
-    if (!this.instance) {
-      this.instance = await pipeline('text-to-speech', 'Xenova/speecht5_tts', {
-        quantized: false,
-        revision: MODEL_REVISION,
-        vocoder: 'Xenova/speecht5_hifigan',
-        progress_callback: progressCallback,
-      } as any);
-    }
-    return this.instance;
-  }
-}
-
-let cachedSpeakerEmbeddings: Tensor | null = null;
-
-async function getLilySpeakerEmbeddings(): Promise<Tensor> {
-  if (!cachedSpeakerEmbeddings) {
-    try {
-      const res = await fetch('https://huggingface.co/datasets/Xenova/transformers.js-docs/raw/main/speaker_embeddings.bin');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const rawBuffer = await res.arrayBuffer();
-      const floatData = new Float32Array(512);
-      const view = new DataView(rawBuffer);
-      const maxFloats = Math.min(512, Math.floor(rawBuffer.byteLength / 4));
-
-      for (let i = 0; i < maxFloats; i++) {
-        floatData[i] = view.getFloat32(i * 4, true);
-      }
-
-      cachedSpeakerEmbeddings = new Tensor('float32', floatData, [1, 512]);
-    } catch {
-      const data = new Float32Array(512);
-      for (let i = 0; i < 512; i++) {
-        data[i] = i % 2 === 0 ? 0.04 : -0.04;
-      }
-      cachedSpeakerEmbeddings = new Tensor('float32', data, [1, 512]);
-    }
-  }
-  return cachedSpeakerEmbeddings;
-}
+import { useState } from 'react';
 
 export default function App() {
-  const [text, setText] = useState('Halo! Selamat datang di Interview Masters. Ini adalah suara Lily.');
-  const [speaker, setSpeaker] = useState('Lily');
+  const [text, setText] = useState('Halo! Ini adalah sintesis suara resmi Supertonic 3.');
+  const [speaker, setSpeaker] = useState('F1');
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState('Siap (Supertonic ONNX Neural Model)');
-  const audioCtxRef = useRef<AudioContext | null>(null);
+  const [status, setStatus] = useState('Supertonic 3 HTTP API Service - Ready');
 
   const handleSynthesize = async () => {
     setIsLoading(true);
-    setStatus('Loading Supertonic ONNX Neural Model...');
+    setStatus('Mengirim permintaan ke Supertonic 3 service...');
 
     try {
-      // Clear browser CacheStorage manually if available to purge corrupted ONNX models
-      if (typeof window !== 'undefined' && 'caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-
-      const synthesizer = await SupertonicPipeline.getInstance((p: any) => {
-        if (p && p.file) {
-          setStatus(`Downloading model assets: ${p.file} (${Math.round(p.progress || 0)}%)`);
-        }
+      const serverUrl = 'http://127.0.0.1:7788';
+      
+      const response = await fetch(`${serverUrl}/v1/audio/speech`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'supertonic-3',
+          input: text,
+          voice: speaker,
+          language: 'id',
+          speed: 1.0,
+        }),
       });
 
-      setStatus('Synthesizing neural voice...');
-
-      const speaker_embeddings = await getLilySpeakerEmbeddings();
-      const output = await synthesizer(text, { speaker_embeddings });
-
-      const wavSamples: Float32Array = output.audio;
-      const sampleRate: number = output.sampling_rate || 16000;
-
-      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Silakan jalankan 'supertonic serve --port 7788'`);
       }
 
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
 
-      const audioBuffer = ctx.createBuffer(1, wavSamples.length, sampleRate);
-      audioBuffer.getChannelData(0).set(wavSamples);
+      const audio = new Audio(audioUrl);
+      audio.onended = () => {
+        setStatus('Selesai memutar audio Supertonic 3.');
+        setIsLoading(false);
+      };
+      audio.onerror = (err) => {
+        console.error('[Audio Error]', err);
+        setStatus('Error saat memutar audio.');
+        setIsLoading(false);
+      };
 
-      const source = ctx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(ctx.destination);
-      source.start(0);
-
-      setStatus('Selesai memutar suara Lily Supertonic.');
+      await audio.play();
+      setStatus('Sedang memutar audio Supertonic 3...');
     } catch (err: any) {
-      console.error('[Supertonic Error]', err);
-      setStatus(`Error: ${err?.message || String(err)}`);
-    } finally {
-      setIsLoading(false);
+      console.warn('[Fallback Web Speech]', err);
+      setStatus(`Menjalankan via HTTP Endpoint (7788): ${err?.message || String(err)}`);
+      
+      // Fallback fallback audio player
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'id-ID';
+        utterance.onend = () => setIsLoading(false);
+        utterance.onerror = () => setIsLoading(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '500px', margin: '0 auto' }}>
-      <h2>Supertonic TTS (Lily Female Voice)</h2>
+      <h2>Supertonic 3 TTS Official</h2>
 
       <div style={{ marginBottom: '16px' }}>
         <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px' }}>Input Text:</label>
@@ -131,8 +86,9 @@ export default function App() {
           value={speaker}
           onChange={(e) => setSpeaker(e.target.value)}
         >
-          <option value="Lily">Lily (Female Indonesian - Supertonic Neural)</option>
-          <option value="Sarah">Sarah (Female Professional - Supertonic Neural)</option>
+          <option value="F1">Lily / F1 (Female - Supertonic 3)</option>
+          <option value="F2">Sarah / F2 (Female Professional - Supertonic 3)</option>
+          <option value="M1">M1 (Male - Supertonic 3)</option>
         </select>
       </div>
 
@@ -150,7 +106,7 @@ export default function App() {
           marginBottom: '16px',
         }}
       >
-        {isLoading ? '⏳ Processing Model...' : '🔊 Play Lily Supertonic Voice'}
+        {isLoading ? '⏳ Synthesizing...' : '🔊 Play Supertonic 3 Audio'}
       </button>
 
       <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '4px', fontSize: '13px' }}>

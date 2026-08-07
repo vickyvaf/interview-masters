@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { pipeline, env, Tensor } from '@huggingface/transformers';
 
+// Clear previous cache state to prevent ONNX tensor binding mismatch
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
-env.useBrowserCache = true;
+env.useBrowserCache = false;
 
 interface DownloadItem {
   name: string;

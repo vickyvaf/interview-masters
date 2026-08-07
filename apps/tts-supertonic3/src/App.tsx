@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { pipeline, Tensor } from '@huggingface/transformers';
+import { pipeline, env, Tensor } from '@huggingface/transformers';
+
+env.allowLocalModels = false;
+env.allowRemoteModels = true;
+env.useBrowserCache = true;
 
 let synthesizer: any = null;
 let speakerEmbeddings: Tensor | null = null;
@@ -57,7 +61,7 @@ export default function App() {
   return (
     <div style={{ padding: '24px', maxWidth: '480px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <h2>Supertonic TTS</h2>
-      
+
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', marginBottom: '4px' }}>Text</label>
         <textarea

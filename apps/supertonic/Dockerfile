@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY apps/supertonic/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pre-download Supertonic 3 model weights into container image during build phase
+RUN python -c "from supertonic import TTS; TTS(auto_download=True)"
+
 COPY apps/supertonic/ .
 
 EXPOSE 7788

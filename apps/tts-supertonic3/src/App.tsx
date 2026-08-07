@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-// Use production Hugging Face Space URL in production, or local server during dev
-const SERVER_URL = 'https://vickyvaf-tts-supertonic3.hf.space';
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const SERVER_URL = isLocal ? 'http://127.0.0.1:7788' : 'https://vickyvaf-tts-supertonic3.hf.space';
 
 export default function App() {
   const [text, setText] = useState('Halo! Ini adalah sintesis suara resmi Supertonic 3.');
@@ -29,7 +29,7 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Silakan periksa server Supertonic 3`);
+        throw new Error(`HTTP ${response.status}: Server Supertonic 3 belum siap`);
       }
 
       const audioBlob = await response.blob();
@@ -50,7 +50,7 @@ export default function App() {
       setStatus('Sedang memutar audio Supertonic 3...');
     } catch (err: any) {
       console.warn('[Fallback Web Speech]', err);
-      setStatus(`Gagal terhubung ke Supertonic Service: ${err?.message || String(err)}`);
+      setStatus(`Gagal terhubung ke Supertonic Service (${SERVER_URL}): ${err?.message || String(err)}`);
 
       // Fallback to browser Web Speech API if server is unavailable
       if (typeof window !== 'undefined' && window.speechSynthesis) {

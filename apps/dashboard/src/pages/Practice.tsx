@@ -372,6 +372,10 @@ export default function Practice() {
         setSystemLanguage(sysLang)
         systemLanguageRef.current = sysLang
         setWsStatus('connected')
+
+        // Immediately pre-fetch TTS audio in background while user views modal / countdown
+        const initialText = data.initialQuestionText || `Hai ${activeName}, apa kabar? Terima kasih ya sudah melamar sebagai ${roleParam} di tim kami. Boleh perkenalkan diri kamu dulu?`
+        supertonic.preload(initialText)
       } catch (err) {
         console.error('Error initializing interview session:', err)
         setWsStatus('error')

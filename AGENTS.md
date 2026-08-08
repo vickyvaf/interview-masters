@@ -16,6 +16,7 @@ Before writing any code, stop at the first rung that holds:
 ### Key Operating Rules
 - **Shortest working diff wins**: Deletion over addition. Clean, simple, to the point. No unnecessary abstractions or boilerplate.
 - **Immediate Atomic Commits**: After completing changes, stage (`git add`) and commit them immediately using clear atomic commit messages.
+- **Always Synchronize Documentation**: Whenever there are changes to applications (`apps/`), database schema/tables (`supabase/`), or business/system flow, ALWAYS update the relevant project documentation files immediately ([README.md](file:///Users/vickyadifirmansyah/Documents/Projects/interview-masters/README.md), [docs/PRD.md](file:///Users/vickyadifirmansyah/Documents/Projects/interview-masters/docs/PRD.md), [docs/ERD.md](file:///Users/vickyadifirmansyah/Documents/Projects/interview-masters/docs/ERD.md)).
 - **No browser SpeechSynthesis fallback**: Always use the Supertonic server for TTS synthesis.
 
 ---
@@ -49,6 +50,8 @@ This is a `pnpm` monorepo containing 5 specialized workspace applications:
   - `POST /api/interview/start`: Initializes mock interview session and returns initial seed question.
   - `POST /api/interview/answer`: Evaluates candidate answer (STAR methodology) and returns next question.
   - `POST /api/interview/finish`: Finalizes mock interview scores and metrics.
+  - `POST /api/interview/summary`: Generates cumulative AI progress summary across past and current interviews.
+  - `POST /api-tts/*`: Proxies TTS audio requests to Supertonic microservice.
   - `POST /payments/create-checkout`: Generates Mayar payment links for Pro & Starter Pass plans.
   - `POST /webhook/mayar`: Validates transaction signatures and activates user subscriptions.
 

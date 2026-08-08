@@ -422,7 +422,10 @@ stateDiagram-v2
 ### Quick Start Commands
 
 ```bash
-# Install dependencies across all monorepo workspaces
+# Option A: Run via Docker Compose (All services in containers)
+docker compose up --build
+
+# Option B: Run locally via pnpm
 pnpm install
 
 # Start all applications concurrently (Landing, Dashboard, Backend, Supertonic TTS)

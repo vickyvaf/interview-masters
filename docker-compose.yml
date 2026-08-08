@@ -1,0 +1,58 @@
+name: interview-masters
+
+services:
+  # 1. Python Supertonic 3 ONNX TTS Microservice (Port 7788)
+  supertonic:
+    build:
+      context: ./apps/supertonic
+      dockerfile: Dockerfile
+    container_name: interview-masters-supertonic
+    ports:
+      - "7788:7788"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=7788
+    restart: unless-stopped
+
+  # 2. Hono Node.js REST API Backend (Port 5005)
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: interview-masters-backend
+    ports:
+      - "5005:5005"
+    env_file:
+      - .env.local
+    environment:
+      - PORT=5005
+      - NODE_ENV=production
+    depends_on:
+      - supertonic
+    restart: unless-stopped
+
+  # 3. Candidate Dashboard - React + Vite (Port 5173)
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    container_name: interview-masters-dashboard
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5005
+      - VITE_TTS_URL=http://localhost:7788
+    depends_on:
+      - backend
+      - supertonic
+    restart: unless-stopped
+
+  # 4. Astro Landing Page (Port 4321)
+  landing-page:
+    build:
+      context: .
+      dockerfile: apps/landing-page/Dockerfile
+    container_name: interview-masters-landing
+    ports:
+      - "4321:4321"
+    restart: unless-stopped

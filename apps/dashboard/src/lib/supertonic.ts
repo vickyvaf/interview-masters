@@ -130,8 +130,8 @@ export class SupertonicTTS {
     }
 
     const promise = (async () => {
-      // If VITE_TTS_URL is not explicitly configured on serverless production, skip server fetch to prevent 404 console errors
-      if (!import.meta.env.VITE_TTS_URL && import.meta.env.PROD) {
+      // If VITE_TTS_URL is not explicitly configured in production environment, skip server fetch entirely to run 100% client-side
+      if (!import.meta.env.VITE_TTS_URL && (import.meta.env.PROD || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'))) {
         return null;
       }
 

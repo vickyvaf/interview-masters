@@ -410,7 +410,14 @@ async function generateGroqResponse(
     console.error('[Groq] generateGroqResponse error:', err)
   }
 
-  return `Bagus sekali! Boleh dijelaskan lebih spesifik tantangan terbesar dan solusi konkret yang kamu terapkan saat itu?`
+  const fallbacks = [
+    `Menarik sekali! Boleh diceritakan lebih detail mengenai arsitektur atau pendekatan teknis yang kamu pilih?`,
+    `Terima kasih penjelasannya! Apa pertimbangan utama kamu saat mengambil keputusan teknis tersebut?`,
+    `Penjelasan yang bagus! Bagaimana kamu mengukur keberhasilan atau dampak dari solusi yang kamu terapkan tersebut?`,
+    `Boleh bagikan contoh kasus nyata saat kamu menerapkan hal itu di project sebelumnya?`,
+    `Sangat jelas! Apa kendala teknis paling menantang yang pernah kamu hadapi terkait hal ini dan bagaimana cara kamu mengatasinya?`
+  ]
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)]
 }
 
 const supabaseUrl = process.env.SUPABASE_URL || ''

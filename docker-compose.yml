@@ -23,7 +23,12 @@ services:
     ports:
       - "5005:5005"
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
+      - path: .env.production
+        required: false
+      - path: .env
+        required: false
     environment:
       - PORT=5005
       - NODE_ENV=production
@@ -41,11 +46,18 @@ services:
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-sb_publishable_bKLxENwOmDwt1CQJLSz4Fg_YpiJaNdU}
         VITE_API_URL: ${VITE_API_URL:-http://localhost:5005}
         VITE_TTS_URL: ${VITE_TTS_URL:-http://localhost:7788}
+        VITE_LANDING_URL: ${VITE_LANDING_URL:-http://localhost:4321}
+        PUBLIC_DASHBOARD_URL: ${PUBLIC_DASHBOARD_URL:-http://localhost:5173}
     container_name: interview-masters-dashboard
     ports:
       - "5173:5173"
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
+      - path: .env.production
+        required: false
+      - path: .env
+        required: false
     depends_on:
       - backend
       - supertonic
@@ -58,11 +70,18 @@ services:
       dockerfile: apps/landing-page/Dockerfile
       args:
         PUBLIC_DASHBOARD_URL: ${PUBLIC_DASHBOARD_URL:-http://localhost:5173}
-        PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-https://dcouzpirkktfxklgqqwv.supabase.co}
-        PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_PUBLISHABLE_KEY:-sb_publishable_bKLxENwOmDwt1CQJLSz4Fg_YpiJaNdU}
+        PUBLIC_SUPABASE_URL: ${VITE_SUPABASE_URL:-https://dcouzpirkktfxklgqqwv.supabase.co}
+        PUBLIC_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-sb_publishable_bKLxENwOmDwt1CQJLSz4Fg_YpiJaNdU}
+        VITE_LANDING_URL: ${VITE_LANDING_URL:-http://localhost:4321}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5005}
     container_name: interview-masters-landing
     ports:
       - "4321:4321"
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
+      - path: .env.production
+        required: false
+      - path: .env
+        required: false
     restart: unless-stopped

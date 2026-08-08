@@ -36,7 +36,7 @@ export class SupertonicTTS {
         body: JSON.stringify({
           model: 'supertonic-3',
           input: text,
-          voice: 'Lily',
+          voice: 'F1',
           language: 'id',
           speed: 1.0,
         }),

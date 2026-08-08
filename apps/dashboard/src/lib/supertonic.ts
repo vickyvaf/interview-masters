@@ -131,9 +131,9 @@ export class SupertonicTTS {
 
     const promise = (async () => {
       try {
-        const baseUrl = import.meta.env.PROD
-          ? 'https://backend-interviewmasters.netlify.app/api-tts'
-          : '/api-tts';
+        const baseUrl = import.meta.env.VITE_TTS_URL || (import.meta.env.PROD
+          ? 'http://altaria.proxy.rlwy.net:42145'
+          : '/api-tts');
         const endpoint = `${baseUrl}/v1/audio/speech`;
 
         const res = await fetch(endpoint, {

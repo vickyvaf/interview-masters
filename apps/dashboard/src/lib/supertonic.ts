@@ -1,3 +1,5 @@
+import * as ort from 'onnxruntime-web';
+
 /**
  * Supertonic TTS Client & Available Preset Voices
  */
@@ -24,6 +26,73 @@ export const SupertonicVoice = {
 
 export type SupertonicVoiceKey = keyof typeof SupertonicVoice;
 export type SupertonicVoiceValue = (typeof SupertonicVoice)[SupertonicVoiceKey];
+
+// Configure ONNX Runtime WebAssembly SIMD environment for high-performance browser execution
+if (typeof window !== 'undefined') {
+  try {
+    ort.env.wasm.numThreads = Math.min(4, typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4);
+    ort.env.wasm.simd = true;
+  } catch (e) { }
+}
+
+export class BrowserSupertonicONNX {
+  private static instance: BrowserSupertonicONNX | null = null;
+  private isInitializing = false;
+  private isLoaded = false;
+  private sessions: {
+    textEncoder?: ort.InferenceSession;
+    vectorEstimator?: ort.InferenceSession;
+    vocoder?: ort.InferenceSession;
+  } = {};
+
+  public static getInstance(): BrowserSupertonicONNX {
+    if (!BrowserSupertonicONNX.instance) {
+      BrowserSupertonicONNX.instance = new BrowserSupertonicONNX();
+    }
+    return BrowserSupertonicONNX.instance;
+  }
+
+  public async init(modelRepoUrl: string = 'https://huggingface.co/Supertone/supertonic-3/resolve/main/onnx'): Promise<boolean> {
+    if (this.isLoaded) return true;
+    if (this.isInitializing) return false;
+
+    this.isInitializing = true;
+    try {
+      console.log('[ONNX Web] Initializing client-side Supertonic 3 ONNX engine in browser...');
+
+      const opts: ort.InferenceSession.SessionOptions = {
+        executionProviders: ['wasm', 'webgl'],
+        graphOptimizationLevel: 'all',
+      };
+
+      const [textEncoder, vectorEstimator, vocoder] = await Promise.all([
+        ort.InferenceSession.create(`${modelRepoUrl}/text_encoder.onnx`, opts).catch(() => undefined),
+        ort.InferenceSession.create(`${modelRepoUrl}/vector_estimator.onnx`, opts).catch(() => undefined),
+        ort.InferenceSession.create(`${modelRepoUrl}/vocoder.onnx`, opts).catch(() => undefined),
+      ]);
+
+      if (textEncoder && vectorEstimator && vocoder) {
+        this.sessions = { textEncoder, vectorEstimator, vocoder };
+        this.isLoaded = true;
+        console.log('[ONNX Web] Client-side Supertonic 3 ONNX engine ready in browser (0ms network latency)!');
+        return true;
+      }
+    } catch (err) {
+      console.warn('[ONNX Web Init Warning]', err);
+    } finally {
+      this.isInitializing = false;
+    }
+    return false;
+  }
+
+  public isReady(): boolean {
+    return this.isLoaded;
+  }
+
+  public getSessions() {
+    return this.sessions;
+  }
+}
 
 export class SupertonicTTS {
   private static instance: SupertonicTTS | null = null;
@@ -148,7 +217,9 @@ export class SupertonicTTS {
     return this.speak(text);
   }
 
-  public init(): void { }
+  public init(): void {
+    BrowserSupertonicONNX.getInstance().init().catch(() => { });
+  }
 }
 
 export const supertonic = SupertonicTTS.getInstance();

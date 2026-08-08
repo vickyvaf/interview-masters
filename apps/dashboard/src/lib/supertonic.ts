@@ -197,7 +197,9 @@ export class SupertonicTTS {
       }
 
       if (!audio) {
-        console.warn('[Supertonic TTS] Server audio unavailable (404/Network). Triggering graceful audio fallback flow.');
+        if (import.meta.env.DEV) {
+          console.warn('[Supertonic TTS] Server audio unavailable. Triggering graceful audio fallback flow.');
+        }
         if (onStart) onStart();
         const durationMs = Math.max(2500, Math.min(10000, cleanedText.length * 65));
         return new Promise<void>((resolve) => setTimeout(resolve, durationMs));

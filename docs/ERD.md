@@ -108,6 +108,19 @@ erDiagram
         timestamp created_at
     }
 
+    question_bank {
+        uuid id PK
+        string target_role
+        string category
+        string difficulty "e.g., easy, medium, hard"
+        text question_text
+        text_array expected_points
+        text sample_star_answer "Nullable"
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
     users ||--o{ organization_members : "belongs to"
     organizations ||--o{ organization_members : "contains"
     users ||--o{ subscriptions : "owns"
@@ -129,10 +142,12 @@ erDiagram
 
 ### 2. Billing & Payments
 - **`subscriptions`**: Tracks the subscription status (active, canceled, past_due) and the renewal dates for both users (Pro) and organizations (B2B).
-- **`payments`**: Records transactional logs coming from DOKU webhooks. Essential for refund processing and tracking monetization.
+- **`payments`**: Records transactional logs coming from DOKU / Mayar webhooks. Essential for refund processing and tracking monetization.
 
 ### 3. Interview Sessions & Analytics
 - **`mock_interviews`**: Represents a single mock interview practice session. Contains user feedback like pre- and post-confidence scores to track self-reported progression.
 - **`interview_questions`**: Questions generated sequentially for a specific interview session.
 - **`interview_answers`**: Candidate responses, supporting both text and speech-to-text inputs.
 - **`ai_feedbacks`**: The resulting analysis showing ratings on the STAR method structure, brevity, and relevance, along with suggestions.
+- **`question_bank`**: Master repository of role-specific interview questions, expected key points, and STAR sample answers used by the AI engine to seed session questions.
+

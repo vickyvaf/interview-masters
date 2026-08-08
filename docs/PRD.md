@@ -41,41 +41,49 @@ If we provide candidates with a realistic, interactive, and repeatable mock inte
 ### First Prototype Target
 - **Platform URL**: https:// (Placeholder / To Be Determined)
 - **Tech Stack**:
-  - **Frontend**: Astro (Landing Page), React / Vite (Dashboard)
-  - **Backend**: Hono (Node.js/TypeScript)
-  - **Database**: Supabase (PostgreSQL)
+  - **Frontend**: Astro (`apps/landing-page`), React / Vite (`apps/dashboard`)
+  - **Backend**: Hono / Node.js (`apps/backend`)
+  - **TTS Server**: Python Supertonic 3 ONNX Server (`apps/supertonic`)
+  - **Video Marketing**: Remotion (`apps/remotion`)
+  - **Database**: Supabase (PostgreSQL) with `question_bank` seed repository
 - **Core Functionality**:
-  - Role-specific interactive question generation.
+  - Role-specific interactive question generation seeded by `question_bank` and candidate JD.
+  - On-device / local Supertonic 3 TTS synthesis with background pre-fetching for 0-latency speech.
   - Voice-only mock response capture (with settings-based defaults).
-  - Actionable feedback highlighting structural improvements, clarity, and relevance.
+  - Actionable feedback highlighting structural improvements (STAR method), clarity, and relevance.
 
 ---
 
 ## 4. Key MVP Features (Proposed Scope)
 
-### A. Role Selection & Interview Context Setup
-- Users can select or write their target role.
-- Users can upload/paste the job description to personalize questions.
+### A. Role Selection & Question Bank Integration
+- Users select target role and optionally paste/upload job description.
+- AI engine queries `question_bank` table (filtered by role, category, difficulty) to seed relevant technical & behavioral questions with expected STAR key points.
 
 ### B. Interactive Mock Interview Session
-- AI generates questions sequentially based on the role and job description.
-- Candidates respond via voice only (text-chat mode removed for strict voice focus).
-- Realistic pacing simulating a real interview flow.
+- AI generates questions sequentially based on role, job description, and question bank context.
+- Candidates respond via voice (Speech-to-Text with phonemes and tech vocabulary refiner).
+- Realistic pacing with background audio pre-fetching (`supertonic.preload`) ensuring zero-latency speech playback upon session start and countdown.
 
 ### C. Instant AI Feedback Engine
 - Analyzes candidate answers for structure (STAR method), relevance, and brevity.
 - Highlights ramblings or areas lacking specific evidence.
 - Provides a revised version ("What you could have said") to guide improvement.
 
-### D. Voice-Enabled Backend Services & APIs (Hono / Node.js)
-- **Architecture**: TypeScript codebase powered by Hono for HTTP API routing and Node's native websocket capabilities for real-time streams.
-- **Core AI Voice Flow**: User voice input transcribed to text at frontend → Sent over WebSocket to backend → LLM/Chat Engine generates response → Sent back to frontend → Read aloud via text-to-speech.
+### D. Supertonic 3 TTS Engine (`apps/supertonic`)
+- Python-based ONNX microservice running `supertonic serve` (`POST /v1/audio/speech`).
+- Supports preset voices mapped via `SupertonicVoice` (e.g. `F1` for Lily, `F2` for Sarah).
+- Client module in `apps/dashboard` manages background audio pre-fetching to eliminate speech synthesis playback delay.
+
+### E. Backend Services & APIs (Hono / Node.js - `apps/backend`)
+- **Architecture**: TypeScript codebase powered by Hono for HTTP API routing and REST interview endpoints.
 - **REST HTTP Endpoints**:
   - `GET /health` - Health check endpoint.
+  - `POST /api/interview/start` - Starts a mock interview session.
+  - `POST /api/interview/answer` - Evaluates user answer and generates next question.
+  - `POST /api/interview/finish` - Finalizes session score and metrics.
   - `POST /payments/create-checkout` - Generates a secure checkout payment link using Mayar API based on target plan (Pro or Starter Pass).
   - `POST /webhook/mayar` - Receives payment status updates from Mayar, validates transaction signatures, updates user tiers, and syncs history.
-- **WebSocket Endpoint**:
-  - `WS /ws/voice` - Real-time interview session using WebSocket connection handling events like `session.started`, `user.transcript`, `assistant.text`, and `error`.
 
 ---
 

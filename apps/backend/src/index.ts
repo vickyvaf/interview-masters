@@ -16,6 +16,29 @@ app.use('*', cors())
 app.get('/', (c) => c.json({ message: 'Interview Masters API Backend is running', status: 'healthy' }))
 app.get('/health', (c) => c.json({ status: 'healthy' }))
 
+// Proxy TTS requests to Supertonic microservice
+app.post('/api-tts/*', async (c) => {
+  const ttsHost = process.env.TTS_URL || 'http://127.0.0.1:7788'
+  const subPath = c.req.path.replace('/api-tts', '')
+  try {
+    const body = await c.req.json()
+    const res = await fetch(`${ttsHost}${subPath}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    if (!res.ok) return c.json({ error: `TTS Server HTTP ${res.status}` }, res.status as any)
+    const audioBuffer = await res.arrayBuffer()
+    return c.body(audioBuffer, 200, {
+      'Content-Type': 'audio/wav',
+      'Access-Control-Allow-Origin': '*'
+    })
+  } catch (err: any) {
+    console.error('[API Proxy /api-tts] Error:', err)
+    return c.json({ error: err.message }, 500)
+  }
+})
+
 // Create Mayar Payment Link Checkout Session
 app.post('/payments/create-checkout', async (c) => {
   try {

@@ -27,9 +27,8 @@ export class SupertonicTTS {
     this.stop();
 
     try {
-      const endpoint = import.meta.env.VITE_API_URL
-        ? `${import.meta.env.VITE_API_URL}/v1/audio/speech`
-        : '/api-tts/v1/audio/speech';
+      const baseUrl = import.meta.env.VITE_TTS_URL || '/api-tts';
+      const endpoint = `${baseUrl}/v1/audio/speech`;
 
       const res = await fetch(endpoint, {
         method: 'POST',

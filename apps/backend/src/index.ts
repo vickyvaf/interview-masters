@@ -23,7 +23,7 @@ app.post('/api-tts/*', async (c) => {
   try {
     const body = await c.req.json()
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 2500)
+    const timeoutId = setTimeout(() => controller.abort(), 60000)
 
     const res = await fetch(`${ttsHost}${subPath}`, {
       method: 'POST',

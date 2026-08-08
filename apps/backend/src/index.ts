@@ -346,7 +346,9 @@ async function generateGroqResponse(
     systemPrompt += `\n\nATURAN RESPON SANGAT PENTING:
 1. Respon WAJIB SINGKAT, PADAT, dan TO THE POINT (maksimal 1-2 kalimat).
 2. DILARANG mengulang jawaban kandidat secara berbelit-belit atau membuat kata pengantar/pembukaan yang panjang.
-3. Berikan apresiasi singkat 1-3 kata (misal: "Bagus sekali!", "Menarik!"), lalu langsung ajukan 1 pertanyaan berikutnya yang relevan dengan Deskripsi Pekerjaan (JD) atau Panduan Pertanyaan Master.`
+3. JIKA DALAM PROSES WAWANCARA: Berikan apresiasi singkat 1-3 kata (misal: "Bagus sekali!", "Menarik!"), lalu langsung ajukan 1 pertanyaan berikutnya yang relevan dengan Deskripsi Pekerjaan (JD) atau Panduan Pertanyaan Master.
+4. JIKA KANDIDAT MENYATAKAN TIDAK ADA PERTANYAAN LAGI ATAU MENGUCAPKAN SALAM PENUTUP (misal: "terima kasih kembali", "selamat sore", "sampai jumpa", "sama-sama", "belum ada", "cukup", "sudah cukup"):
+   BERIKAN UCAPAN PENUTUP DEFINITIF TANPA MENGAJUKAN PERTANYAAN BARU. Contoh: "Terima kasih banyak atas waktunya! Wawancara hari ini telah selesai. Rekap evaluasi dan skor kamu sudah siap di dashboard. Semoga sukses dan sampai jumpa!"`
   }
 
   try {
@@ -635,9 +637,29 @@ app.post('/api/interview/answer', async (c) => {
       }
     }
 
+    // Detect if interview is closing
+    const normAssistant = assistantText.toLowerCase()
+    const normUser = answerText.toLowerCase()
+    const closingKeywords = [
+      'sampai jumpa', 'selamat sore', 'selamat malam', 'sama-sama',
+      'terima kasih kembali', 'belum ada', 'tidak ada', 'cukup', 'sudah cukup', 'makasih'
+    ]
+    const isUserClosing = closingKeywords.some(kw => normUser.includes(kw))
+    const isAssistantClosing = normAssistant.includes('telah selesai') || normAssistant.includes('sampai jumpa') || normAssistant.includes('semoga sukses') || normAssistant.includes('di dashboard')
+
+    const isFinished = isAssistantClosing || (isUserClosing && sequenceNumber >= 3) || sequenceNumber >= 8
+
+    if (isFinished && mockInterviewId) {
+      await supabaseRequest(`mock_interviews?id=eq.${mockInterviewId}`, 'PATCH', {
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      })
+    }
+
     return c.json({
       assistantText,
-      nextQuestionId
+      nextQuestionId,
+      isFinished
     })
   } catch (err: any) {
     console.error('[API /interview/answer] Error:', err)

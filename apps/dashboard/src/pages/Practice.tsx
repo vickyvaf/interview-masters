@@ -778,7 +778,27 @@ export default function Practice() {
               currentQuestionIdRef.current = data.nextQuestionId
 
               setHistory((prev) => [...prev, { role: 'assistant', text: data.assistantText }])
-              speakText(data.assistantText)
+
+              const isFinished = data.isFinished || sequenceNumberRef.current >= 8
+
+              speakText(data.assistantText, () => {
+                if (isFinished) {
+                  if (mockInterviewIdRef.current) {
+                    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
+                    fetch(`${apiBaseUrl}/api/interview/finish`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        mockInterviewId: mockInterviewIdRef.current,
+                        status: 'completed',
+                        scores: scoresRef.current
+                      })
+                    }).catch(err => console.error('Error finalizing session:', err))
+                  }
+                  stopAllMediaAndListeners()
+                  navigate('/', { replace: true, state: { sessionCompleted: true } })
+                }
+              })
             } else {
               setIsThinking(false)
             }

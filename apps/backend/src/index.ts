@@ -22,20 +22,25 @@ app.post('/api-tts/*', async (c) => {
   const subPath = c.req.path.replace('/api-tts', '')
   try {
     const body = await c.req.json()
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 2500)
+
     const res = await fetch(`${ttsHost}${subPath}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    })
-    if (!res.ok) return c.json({ error: `TTS Server HTTP ${res.status}` }, res.status as any)
+      body: JSON.stringify(body),
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId))
+
+    if (!res.ok) return c.json({ error: `TTS Server HTTP ${res.status}` }, 404 as any)
     const audioBuffer = await res.arrayBuffer()
     return c.body(audioBuffer, 200, {
       'Content-Type': 'audio/wav',
       'Access-Control-Allow-Origin': '*'
     })
   } catch (err: any) {
-    console.error('[API Proxy /api-tts] Error:', err)
-    return c.json({ error: err.message }, 500)
+    console.warn('[API Proxy /api-tts] Supertonic server unreachable:', err.message)
+    return c.json({ error: 'TTS microservice server is offline or unreachable' }, 404)
   }
 })
 

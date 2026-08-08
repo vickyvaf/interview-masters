@@ -18,5 +18,13 @@
     "preview:landing": "pnpm --filter apps-landing-page preview",
     "db:migrate": "cd supabase && ./migrate.sh",
     "db:migrate:prod": "cd supabase && ./migrate.sh production"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "onnxruntime-node",
+      "protobufjs",
+      "sharp"
+    ]
   }
 }

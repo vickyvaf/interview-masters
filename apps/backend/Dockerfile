@@ -12,7 +12,7 @@ COPY apps/landing-page/package.json ./apps/landing-page/
 COPY apps/remotion/package.json ./apps/remotion/
 
 # Install workspace dependencies
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm config set approve-builds true && pnpm install --no-frozen-lockfile
 
 # Copy application source code
 COPY apps/backend ./apps/backend

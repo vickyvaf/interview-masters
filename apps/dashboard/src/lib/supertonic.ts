@@ -91,38 +91,6 @@ export class SupertonicTTS {
     return promise;
   }
 
-  public speakNative(text: string, onStart?: () => void): Promise<void> {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return Promise.resolve();
-
-    this.stop();
-    const cleanedText = text.replace(/\*/g, '').trim();
-
-    return new Promise<void>((resolve) => {
-      try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(cleanedText);
-        utterance.lang = 'id-ID';
-        utterance.rate = 1.05;
-        utterance.pitch = 1.0;
-
-        const voices = window.speechSynthesis.getVoices();
-        const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
-        if (idVoice) utterance.voice = idVoice;
-
-        utterance.onstart = () => {
-          if (onStart) onStart();
-        };
-        utterance.onend = () => resolve();
-        utterance.onerror = () => resolve();
-
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        console.warn('[Native Speech Synthesis Error]', err);
-        resolve();
-      }
-    });
-  }
-
   public async speak(
     text: string,
     voice: string = SupertonicVoice.Lily,
@@ -143,16 +111,10 @@ export class SupertonicTTS {
       }
 
       if (!audio) {
-        // Fetch audio with 4-second timeout limit for server response
-        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
-        audio = await Promise.race([this.preload(text, voice), timeoutPromise]);
+        audio = await this.preload(text, voice);
       }
 
-      // If server TTS audio is slow (>4s) or unavailable, fallback instantly to client-side synthesis
-      if (!audio) {
-        console.warn('[Supertonic TTS] Server response exceeded 4s timeout. Using high-speed local browser synthesis fallback.');
-        return this.speakNative(cleanedText, onStart);
-      }
+      if (!audio) return;
 
       this.currentAudio = audio;
 
@@ -166,7 +128,7 @@ export class SupertonicTTS {
           console.warn('[Supertonic Audio Error]', err);
           if (audio!.src) URL.revokeObjectURL(audio!.src);
           this.currentAudio = null;
-          this.speakNative(cleanedText, onStart).then(resolve);
+          resolve();
         };
         audio!.play().then(() => {
           if (onStart) onStart();
@@ -174,12 +136,11 @@ export class SupertonicTTS {
           console.warn('[Supertonic Play Error]', err);
           if (audio!.src) URL.revokeObjectURL(audio!.src);
           this.currentAudio = null;
-          this.speakNative(cleanedText, onStart).then(resolve);
+          resolve();
         });
       });
     } catch (err) {
       console.error('[Supertonic TTS Exception]', err);
-      return this.speakNative(cleanedText, onStart);
     }
   }
 

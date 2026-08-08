@@ -740,18 +740,18 @@ app.post('/api/interview/summary', async (c) => {
       'GET'
     )
 
-    if (!interviews || interviews.length === 0) {
+    const completed = (interviews || []).filter((i: any) => i.status === 'completed')
+    const totalSessions = completed.length
+
+    if (totalSessions === 0) {
       return c.json({
         totalSessions: 0,
-        summaryText: 'Belum ada sesi wawancara yang diselesaikan. Mulai sesi latihan pertama Anda untuk mendapatkan analisis perkembangan AI.',
-        strengths: ['Siap memulai latihan wawancara pertama.'],
-        improvements: ['Selesaikan sesi latihan untuk mengukur struktur STAR dan komunikasi.'],
+        summaryText: 'Belum ada sesi latihan yang diselesaikan. Selesaikan sesi latihan pertama Anda untuk membuka analisis dan rekap perkembangan kumulatif AI.',
+        strengths: [],
+        improvements: [],
         trendLabel: 'Belum Ada Data'
       })
     }
-
-    const completed = interviews.filter((i: any) => i.status === 'completed')
-    const totalSessions = completed.length
 
     const sessionSummaries = completed.map((i: any, idx: number) => {
       return `Sesi ${idx + 1} (${i.target_role}): Skor ${i.overall_score ?? 'N/A'}/100, Kepercayaan Diri Awal ${i.pre_confidence_score ?? 3}/5`

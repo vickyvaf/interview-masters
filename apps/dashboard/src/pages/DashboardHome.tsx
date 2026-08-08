@@ -340,6 +340,12 @@ export default function DashboardHome() {
 
             {loadingSummary ? (
               <Skeleton height="60px" width="100%" />
+            ) : (!summary || summary.totalSessions === 0 || stats.completedSessions === 0) ? (
+              <Box style={{ padding: '12px 0' }}>
+                <Text size="2" color="gray">
+                  Belum ada data sesi latihan yang diselesaikan. Klik <strong>"Mulai Interview Baru"</strong> untuk mencoba simulasi wawancara pertama Anda dan membuka rekap perkembangan AI.
+                </Text>
+              </Box>
             ) : (
               <>
                 <Text size="2" style={{ lineHeight: '1.6', opacity: 0.9 }}>

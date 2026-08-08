@@ -130,8 +130,13 @@ export class SupertonicTTS {
     }
 
     const promise = (async () => {
+      // If VITE_TTS_URL is not explicitly configured on serverless production, skip server fetch to prevent 404 console errors
+      if (!import.meta.env.VITE_TTS_URL && import.meta.env.PROD) {
+        return null;
+      }
+
       try {
-        const baseUrl = import.meta.env.VITE_TTS_URL || (import.meta.env.PROD ? 'https://backend-interviewmasters.netlify.app/api-tts' : '/api-tts');
+        const baseUrl = import.meta.env.VITE_TTS_URL || '/api-tts';
         const endpoint = `${baseUrl}/v1/audio/speech`;
 
         const res = await fetch(endpoint, {

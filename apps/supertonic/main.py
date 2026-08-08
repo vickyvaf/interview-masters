@@ -3,7 +3,7 @@ import multiprocessing
 
 if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
-    port = os.getenv("PORT", "7788")
+    port = os.getenv("PORT", "8080")
     
     # Maximize ONNX SIMD CPU execution threads across all available CPU cores
     cpu_count = str(os.cpu_count() or multiprocessing.cpu_count() or 4)

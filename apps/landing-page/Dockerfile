@@ -6,10 +6,13 @@ RUN npm install -g pnpm
 
 # Copy root workspace configurations & lockfile
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/dashboard/package.json ./apps/dashboard/
 COPY apps/landing-page/package.json ./apps/landing-page/
+COPY apps/remotion/package.json ./apps/remotion/
 
 # Install workspace dependencies
-RUN pnpm install
+RUN pnpm install --no-frozen-lockfile
 
 # Copy application source code
 COPY apps/landing-page ./apps/landing-page

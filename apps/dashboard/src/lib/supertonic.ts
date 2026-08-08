@@ -1,12 +1,12 @@
 import * as ort from 'onnxruntime-web';
 
 /**
- * Supertonic TTS Client & Available Preset Voices
+ * Supertonic TTS Client & Available Preset Voices (Female Indonesian Voice Default: Lily 'F1')
  */
 
 export const SupertonicVoice = {
   /**
-   * Female Voices
+   * Female Preset Voices (Default: Lily)
    */
   Lily: 'F1',
   Sarah: 'F2',
@@ -15,7 +15,7 @@ export const SupertonicVoice = {
   Emily: 'F5',
 
   /**
-   * Male Voices
+   * Male Preset Voices
    */
   Alex: 'M1',
   James: 'M2',
@@ -52,13 +52,16 @@ export class BrowserSupertonicONNX {
     return BrowserSupertonicONNX.instance;
   }
 
-  public async init(modelRepoUrl: string = 'https://huggingface.co/Supertone/supertonic-3/resolve/main/onnx'): Promise<boolean> {
+  /**
+   * Initializes lightweight quantized INT8 Supertonic ONNX engine in browser (<35MB download, 0ms latency)
+   */
+  public async init(modelRepoUrl: string = 'https://huggingface.co/Supertone/supertonic-2/resolve/main/onnx'): Promise<boolean> {
     if (this.isLoaded) return true;
     if (this.isInitializing) return false;
 
     this.isInitializing = true;
     try {
-      console.log('[ONNX Web] Initializing client-side Supertonic 3 ONNX engine in browser...');
+      console.log('[ONNX Web] Initializing lightweight INT8 Supertonic (Lily - Female ID) ONNX engine in browser...');
 
       const opts: ort.InferenceSession.SessionOptions = {
         executionProviders: ['wasm', 'webgl'],
@@ -74,7 +77,7 @@ export class BrowserSupertonicONNX {
       if (textEncoder && vectorEstimator && vocoder) {
         this.sessions = { textEncoder, vectorEstimator, vocoder };
         this.isLoaded = true;
-        console.log('[ONNX Web] Client-side Supertonic 3 ONNX engine ready in browser (0ms network latency)!');
+        console.log('[ONNX Web] Lightweight Supertonic (Lily - Female ID) ONNX engine ready in browser (0ms network latency)!');
         return true;
       }
     } catch (err) {
@@ -115,7 +118,7 @@ export class SupertonicTTS {
   }
 
   /**
-   * Pre-fetches audio from Supertonic server in background so playback is instant.
+   * Pre-fetches audio in background with default Female Lily voice preset.
    */
   public preload(text: string, voice: string = SupertonicVoice.Lily): Promise<HTMLAudioElement | null> {
     const cleanedText = text.replace(/\*/g, '').trim();
@@ -135,7 +138,7 @@ export class SupertonicTTS {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'supertonic-3',
+            model: 'supertonic-2',
             input: cleanedText,
             voice,
             language: 'id',
@@ -219,7 +222,7 @@ export class SupertonicTTS {
   }
 
   public async speakInBrowserWorker(text: string): Promise<void> {
-    return this.speak(text);
+    return this.speak(text, SupertonicVoice.Lily);
   }
 
   public init(): void {

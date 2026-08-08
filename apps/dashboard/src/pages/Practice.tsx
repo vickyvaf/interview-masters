@@ -217,10 +217,8 @@ export default function Practice() {
 
   // Comprehensive Media & Audio Listener Cleanup
   const stopAllMediaAndListeners = () => {
-    // 1. Immediately cancel SpeechSynthesis (TTS)
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel()
-    }
+    // 1. Immediately stop Supertonic TTS audio
+    supertonic.stop()
 
     // 2. Abort SpeechRecognition (STT) and strip all event listeners
     if (recognitionRef.current) {
@@ -408,12 +406,6 @@ export default function Practice() {
 
   const handleStartPractice = () => {
     setShowReadyModal(false)
-    // Unlock browser audio / Web Speech autoplay policies on user gesture
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.resume()
-      const dummy = new SpeechSynthesisUtterance('')
-      window.speechSynthesis.speak(dummy)
-    }
     setCountdown(3)
   }
 
@@ -449,8 +441,7 @@ export default function Practice() {
       if (onComplete) onComplete()
     }
 
-    supertonic.init({ speaker: 'Lily', lang: 'indonesian', qualitySteps: 8, speechSpeed: 1.00 })
-    supertonic.speakInBrowserWorker(cleanedText).then(handleFinish).catch(handleFinish)
+    supertonic.speak(cleanedText).then(handleFinish).catch(handleFinish)
   }
 
   const triggerGreeting = () => {

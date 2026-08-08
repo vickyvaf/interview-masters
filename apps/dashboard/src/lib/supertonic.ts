@@ -143,7 +143,7 @@ export class SupertonicTTS {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'supertonic-2',
+            model: 'supertonic-3',
             input: cleanedText,
             voice,
             language: 'id',

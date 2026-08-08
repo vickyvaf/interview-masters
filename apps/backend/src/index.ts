@@ -591,13 +591,14 @@ app.post('/api/interview/answer', async (c) => {
 
     const questionBankText = await fetchQuestionBankContext(targetRole || 'General')
 
-    // Save candidate's answer and trigger AI evaluation in background
+    // Save candidate's answer and trigger AI evaluation synchronously to guarantee database persistence
     if (questionId) {
-      supabaseRequest('interview_answers', 'POST', {
-        interview_question_id: questionId,
-        answer_text: answerText,
-        response_mode: 'voice'
-      }).then(async (answerRes) => {
+      try {
+        const answerRes = await supabaseRequest('interview_answers', 'POST', {
+          interview_question_id: questionId,
+          answer_text: answerText,
+          response_mode: 'voice'
+        })
         if (answerRes && answerRes.length > 0) {
           const answerId = answerRes[0].id
           const evaluation = await generateEvaluation(questionText || '', answerText)
@@ -614,7 +615,9 @@ app.post('/api/interview/answer', async (c) => {
             })
           }
         }
-      }).catch(err => console.error('[API /interview/answer] Error saving evaluation:', err))
+      } catch (err) {
+        console.error('[API /interview/answer] Error saving answer & feedback:', err)
+      }
     }
 
     // Generate next question via Groq using combined JD and Question Bank context
@@ -720,6 +723,99 @@ app.post('/api/interview/finish', async (c) => {
     return c.json({ success: true })
   } catch (err: any) {
     console.error('[API /interview/finish] Error:', err)
+    return c.json({ error: err.message }, 500)
+  }
+})
+
+// 5. Generate Cumulative Progress Summary across Current and Past Interviews
+app.post('/api/interview/summary', async (c) => {
+  try {
+    const { userId } = await c.req.json()
+    if (!userId) {
+      return c.json({ error: 'userId is required' }, 400)
+    }
+
+    const interviews = await supabaseRequest(
+      `mock_interviews?user_id=eq.${userId}&order=created_at.asc`,
+      'GET'
+    )
+
+    if (!interviews || interviews.length === 0) {
+      return c.json({
+        totalSessions: 0,
+        summaryText: 'Belum ada sesi wawancara yang diselesaikan. Mulai sesi latihan pertama Anda untuk mendapatkan analisis perkembangan AI.',
+        strengths: ['Siap memulai latihan wawancara pertama.'],
+        improvements: ['Selesaikan sesi latihan untuk mengukur struktur STAR dan komunikasi.'],
+        trendLabel: 'Belum Ada Data'
+      })
+    }
+
+    const completed = interviews.filter((i: any) => i.status === 'completed')
+    const totalSessions = completed.length
+
+    const sessionSummaries = completed.map((i: any, idx: number) => {
+      return `Sesi ${idx + 1} (${i.target_role}): Skor ${i.overall_score ?? 'N/A'}/100, Kepercayaan Diri Awal ${i.pre_confidence_score ?? 3}/5`
+    }).join('\n')
+
+    const prompt = `Anda adalah Executive Career Coach dan Evaluator Wawancara AI Profesional.
+Berdasarkan riwayat ${totalSessions} sesi latihan wawancara kerja kandidat berikut:
+
+${sessionSummaries}
+
+Hasilkan rangkuman kesimpulan perkembangan kumulatif kandidat dalam format JSON valid (tanpa markdown):
+{
+  "summaryText": "(Ringkasan perkembangan kandidat dari sesi awal hingga sesi terbaru dalam 2-3 kalimat Bahasa Indonesia yang menyemangati & profesional)",
+  "strengths": ["(Poin kekuatan 1)", "(Poin kekuatan 2)"],
+  "improvements": ["(Poin area perbaikan 1)", "(Poin area perbaikan 2)"],
+  "trendLabel": "(misal: 'Meningkat Pesat', 'Stabil & Konsisten', 'Perlu Latihan Tambahan')"
+}`
+
+    let result = {
+      totalSessions,
+      summaryText: `Kandidat telah menyelesaikan ${totalSessions} sesi latihan wawancara. Terjadi peningkatan dalam penyampaian struktur jawaban STAR dan kejelasan komunikasi.`,
+      strengths: ['Komunikasi artikulatif dan respon cepat', 'Pemahaman peran dan konteks pekerjaan yang baik'],
+      improvements: ['Tambahkan metrik kuantitatif pada poin pencapaian', 'Gunakan metode STAR secara lebih disiplin'],
+      trendLabel: totalSessions > 1 ? 'Meningkat Pesat' : 'Awal Yang Baik'
+    }
+
+    if (GROQ_API_KEY) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: LLM_MODEL,
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 512,
+            temperature: 0.3,
+            response_format: { type: 'json_object' }
+          })
+        })
+        if (response.ok) {
+          const resData: any = await response.json()
+          const text = resData.choices?.[0]?.message?.content
+          if (text) {
+            const parsed = JSON.parse(text)
+            result = {
+              totalSessions,
+              summaryText: parsed.summaryText || result.summaryText,
+              strengths: parsed.strengths || result.strengths,
+              improvements: parsed.improvements || result.improvements,
+              trendLabel: parsed.trendLabel || result.trendLabel
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[Groq] Summary error:', err)
+      }
+    }
+
+    return c.json(result)
+  } catch (err: any) {
+    console.error('[API /interview/summary] Error:', err)
     return c.json({ error: err.message }, 500)
   }
 })

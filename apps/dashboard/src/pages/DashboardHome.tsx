@@ -81,6 +81,24 @@ export default function DashboardHome() {
     }
   })
 
+  // 2. Fetch cumulative AI summary across current and past interviews
+  const { data: summary, isLoading: loadingSummary } = useQuery({
+    queryKey: ['cumulativeSummary'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5005'
+      const res = await fetch(`${apiBaseUrl}/api/interview/summary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id })
+      })
+      if (!res.ok) return null
+      return await res.json()
+    }
+  })
+
   const getBadgeColor = (score: number) => {
     if (score >= 80) return 'green'
     if (score >= 60) return 'amber'
@@ -302,6 +320,59 @@ export default function DashboardHome() {
             </Card>
           </Grid>
         </Box>
+
+        {/* Section 2.5: Cumulative AI Progress & Summary */}
+        <Card size="3" style={{
+          background: 'linear-gradient(135deg, rgba(37,99,235,0.06) 0%, rgba(59,130,246,0.02) 100%)',
+          border: '1px solid rgba(59,130,246,0.25)',
+          borderRadius: '16px',
+          padding: '24px'
+        }}>
+          <Flex direction="column" gap="4">
+            <Flex justify="between" align="center" wrap="wrap" gap="2">
+              <Heading size="4" style={{ color: 'var(--blue-11)' }}>Kesimpulan Kumulatif AI & Rekap Perkembangan</Heading>
+              {summary?.trendLabel && (
+                <Badge color="blue" size="2" radius="full">
+                  {summary.trendLabel}
+                </Badge>
+              )}
+            </Flex>
+
+            {loadingSummary ? (
+              <Skeleton height="60px" width="100%" />
+            ) : (
+              <>
+                <Text size="2" style={{ lineHeight: '1.6', opacity: 0.9 }}>
+                  {summary?.summaryText || 'Menampilkan rangkuman evaluasi perkembangan Anda berdasarkan seluruh sesi latihan yang telah dijalani.'}
+                </Text>
+
+                <Grid columns={{ initial: '1', md: '2' }} gap="4" mt="2">
+                  <Card style={{ backgroundColor: 'var(--green-2)', border: '1px solid var(--green-4)' }}>
+                    <Text size="2" weight="bold" color="green" mb="2" as="div">
+                      ✓ Kekuatan Utama Terdeteksi
+                    </Text>
+                    <Flex direction="column" gap="1">
+                      {(summary?.strengths || []).map((s: string, idx: number) => (
+                        <Text key={idx} size="2" color="gray">• {s}</Text>
+                      ))}
+                    </Flex>
+                  </Card>
+
+                  <Card style={{ backgroundColor: 'var(--amber-2)', border: '1px solid var(--amber-4)' }}>
+                    <Text size="2" weight="bold" color="amber" mb="2" as="div">
+                      💡 Area Penguatan & Rekomendasi
+                    </Text>
+                    <Flex direction="column" gap="1">
+                      {(summary?.improvements || []).map((imp: string, idx: number) => (
+                        <Text key={idx} size="2" color="gray">• {imp}</Text>
+                      ))}
+                    </Flex>
+                  </Card>
+                </Grid>
+              </>
+            )}
+          </Flex>
+        </Card>
 
         {/* Section 3: Recent Mock Interviews Table */}
         <Box>

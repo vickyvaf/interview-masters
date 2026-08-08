@@ -14,5 +14,5 @@ if __name__ == "__main__":
     os.environ["NUMEXPR_NUM_THREADS"] = cpu_count
     os.environ["ONNXRUNTIME_NUM_THREADS"] = cpu_count
 
-    print(f"Starting Supertonic 2 Server on {host}:{port} using {cpu_count} CPU worker threads...")
-    os.system(f"supertonic serve --host {host} --port {port} --model supertonic-2 --cors '*'")
+    print(f"Starting Supertonic 3 Server on {host}:{port} using {cpu_count} CPU worker threads...")
+    os.system(f"supertonic serve --host {host} --port {port} --model supertonic-3 --cors '*'")

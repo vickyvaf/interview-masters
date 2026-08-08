@@ -2,17 +2,17 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Copy root workspace configurations & lockfile
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
 COPY apps/dashboard/package.json ./apps/dashboard/
 COPY apps/landing-page/package.json ./apps/landing-page/
 COPY apps/remotion/package.json ./apps/remotion/
 
 # Install workspace dependencies
-RUN pnpm install --no-frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile
 
 # Copy application source code
 COPY apps/backend ./apps/backend
@@ -23,7 +23,7 @@ RUN pnpm --filter apps-backend build
 FROM node:22-alpine AS runner
 WORKDIR /app
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 COPY --from=builder /app /app
 

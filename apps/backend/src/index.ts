@@ -410,14 +410,32 @@ async function generateGroqResponse(
     console.error('[Groq] generateGroqResponse error:', err)
   }
 
-  const fallbacks = [
-    `Menarik sekali! Boleh diceritakan lebih detail mengenai arsitektur atau pendekatan teknis yang kamu pilih?`,
-    `Terima kasih penjelasannya! Apa pertimbangan utama kamu saat mengambil keputusan teknis tersebut?`,
-    `Penjelasan yang bagus! Bagaimana kamu mengukur keberhasilan atau dampak dari solusi yang kamu terapkan tersebut?`,
-    `Boleh bagikan contoh kasus nyata saat kamu menerapkan hal itu di project sebelumnya?`,
-    `Sangat jelas! Apa kendala teknis paling menantang yang pernah kamu hadapi terkait hal ini dan bagaimana cara kamu mengatasinya?`
-  ]
-  return fallbacks[Math.floor(Math.random() * fallbacks.length)]
+  // Fallback: Pick an unasked question directly from question_bank database
+  try {
+    const cleanRole = context?.role ? context.role.trim() : 'General'
+    let qBank = await supabaseRequest(
+      `question_bank?select=question_text&target_role=ilike.*${encodeURIComponent(cleanRole)}*&is_active=eq.true&limit=10`,
+      'GET'
+    )
+    if (!qBank || qBank.length === 0) {
+      qBank = await supabaseRequest(
+        `question_bank?select=question_text&is_active=eq.true&limit=10`,
+        'GET'
+      )
+    }
+    if (qBank && qBank.length > 0) {
+      const askedQuestions = history.map((h: any) => h.content)
+      const unasked = qBank.filter((q: any) => !askedQuestions.includes(q.question_text))
+      const picked = unasked.length > 0 ? unasked[Math.floor(Math.random() * unasked.length)] : qBank[Math.floor(Math.random() * qBank.length)]
+      if (picked?.question_text) {
+        return `Terima kasih atas penjelasannya. Pertanyaan selanjutnya: ${picked.question_text}`
+      }
+    }
+  } catch (dbErr) {
+    console.error('[QuestionBank Fallback Error]', dbErr)
+  }
+
+  return `Terima kasih atas penjelasannya! Bisa diceritakan lebih spesifik tentang pengalaman kamu saat menangani tantangan teknis paling sulit di proyek sebelumnya?`
 }
 
 const supabaseUrl = process.env.SUPABASE_URL || ''

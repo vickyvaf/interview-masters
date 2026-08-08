@@ -130,13 +130,16 @@ export class SupertonicTTS {
     }
 
     const promise = (async () => {
-      // If VITE_TTS_URL is not explicitly configured in production environment, skip server fetch entirely to run 100% client-side
-      if (!import.meta.env.VITE_TTS_URL && (import.meta.env.PROD || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'))) {
+      // If VITE_TTS_URL is unconfigured or points to Netlify serverless backend (where python process is unavailable), skip server fetch to run 100% client-side
+      const configuredTtsUrl = import.meta.env.VITE_TTS_URL || '';
+      const isServerlessUnreachable = !configuredTtsUrl || configuredTtsUrl.includes('netlify.app');
+
+      if (isServerlessUnreachable && (import.meta.env.PROD || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'))) {
         return null;
       }
 
       try {
-        const baseUrl = import.meta.env.VITE_TTS_URL || '/api-tts';
+        const baseUrl = configuredTtsUrl || '/api-tts';
         const endpoint = `${baseUrl}/v1/audio/speech`;
 
         const res = await fetch(endpoint, {

@@ -17,8 +17,9 @@
 5. [System Architecture](#5-system-architecture)
 6. [Business Flow Diagrams](#6-business-flow-diagrams)
 7. [Monetization & Payment System](#7-monetization--payment-system)
-8. [Success Metrics](#8-success-metrics)
-9. [Documentation](#9-documentation)
+8. [Getting Started & Monorepo Development](#8-getting-started--monorepo-development)
+9. [Success Metrics](#9-success-metrics)
+10. [Documentation References](#10-documentation-references)
 
 ---
 
@@ -411,7 +412,36 @@ stateDiagram-v2
 
 ---
 
-## 8. Success Metrics
+## 8. Getting Started & Monorepo Development
+
+### Prerequisites
+- **Node.js**: v18+ and `pnpm` (`npm i -g pnpm`)
+- **Python**: v3.10+ (for `apps/supertonic` ONNX TTS microservice)
+- **Supabase**: PostgreSQL database with `.env.local` configured
+
+### Quick Start Commands
+
+```bash
+# Install dependencies across all monorepo workspaces
+pnpm install
+
+# Start all applications concurrently (Landing, Dashboard, Backend, Supertonic TTS)
+pnpm dev
+
+# Run individual applications
+pnpm dev:landing     # Astro Landing Page (http://localhost:4321)
+pnpm dev:dashboard   # Candidate Dashboard (http://localhost:5173)
+pnpm dev:backend     # Hono REST API Server (http://localhost:5005)
+pnpm dev:supertonic  # Python Supertonic 3 TTS Server (http://127.0.0.1:7788)
+pnpm dev:remotion    # Remotion Motion Graphics Studio
+
+# Database Migrations
+pnpm db:migrate      # Apply Supabase schema migrations
+```
+
+---
+
+## 9. Success Metrics
 
 | Metric | Description |
 |---|---|
@@ -422,10 +452,11 @@ stateDiagram-v2
 
 ---
 
-## 9. Documentation
+## 10. Documentation References
 
 | File | Description |
 |---|---|
 | [docs/PRD.md](./docs/PRD.md) | Full Product Requirements Document |
-| [docs/DIAGRAM.md](./docs/DIAGRAM.md) | All business flow diagrams |
 | [docs/ERD.md](./docs/ERD.md) | Database Entity Relationship Diagram (ERD) |
+| [AGENTS.md](./AGENTS.md) | AI Agent Rules, Philosophy, and System Context |
+| [apps/remotion/STORYBOARD.md](./apps/remotion/STORYBOARD.md) | Motion Graphics Storyboard & Video Script Breakdown |

@@ -315,7 +315,7 @@ app.post('/webhook/doku', handleMayarWebhook)
 // Environment configurations
 const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
 const SYSTEM_LANGUAGE = process.env.SYSTEM_LANGUAGE || 'id'
-const LLM_MODEL = process.env.LLM_MODEL || 'llama-3.3-70b-versatile'
+const LLM_MODEL = process.env.LLM_MODEL || 'llama-3.1-8b-instant'
 
 const SYSTEM_INSTRUCTION = SYSTEM_LANGUAGE === 'en'
   ? promptsConfig.systemInstructions.en

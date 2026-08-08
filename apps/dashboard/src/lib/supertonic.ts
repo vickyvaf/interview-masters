@@ -1,6 +1,25 @@
 /**
- * Supertonic TTS Client (Indonesian, Female - Sarah)
+ * Supertonic TTS Client & Available Preset Voices
  */
+
+export const SupertonicVoice = {
+  // Female Voices
+  Lily: 'F1',
+  Sarah: 'F2',
+  Jessica: 'F3',
+  Olivia: 'F4',
+  Emily: 'F5',
+
+  // Male Voices
+  Alex: 'M1',
+  James: 'M2',
+  Robert: 'M3',
+  Sam: 'M4',
+  Daniel: 'M5',
+} as const;
+
+export type SupertonicVoiceKey = keyof typeof SupertonicVoice;
+export type SupertonicVoiceValue = (typeof SupertonicVoice)[SupertonicVoiceKey];
 
 export class SupertonicTTS {
   private static instance: SupertonicTTS | null = null;
@@ -21,7 +40,7 @@ export class SupertonicTTS {
     }
   }
 
-  public async speak(text: string): Promise<void> {
+  public async speak(text: string, voice: string = SupertonicVoice.Lily): Promise<void> {
     if (typeof window === 'undefined' || !text.trim()) return;
 
     this.stop();
@@ -36,7 +55,7 @@ export class SupertonicTTS {
         body: JSON.stringify({
           model: 'supertonic-3',
           input: text,
-          voice: 'F1',
+          voice,
           language: 'id',
           speed: 1.0,
         }),
@@ -67,7 +86,6 @@ export class SupertonicTTS {
           console.warn('[Supertonic Play Error]', err);
           URL.revokeObjectURL(url);
           this.currentAudio = null;
-          resolve();
         });
       });
     } catch (err) {

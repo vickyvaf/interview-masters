@@ -91,7 +91,11 @@ export class SupertonicTTS {
     return promise;
   }
 
-  public async speak(text: string, voice: string = SupertonicVoice.Lily): Promise<void> {
+  public async speak(
+    text: string,
+    voice: string = SupertonicVoice.Lily,
+    onStart?: () => void
+  ): Promise<void> {
     if (typeof window === 'undefined' || !text.trim()) return;
 
     this.stop();
@@ -126,7 +130,9 @@ export class SupertonicTTS {
           this.currentAudio = null;
           resolve();
         };
-        audio!.play().catch((err) => {
+        audio!.play().then(() => {
+          if (onStart) onStart();
+        }).catch((err) => {
           console.warn('[Supertonic Play Error]', err);
           if (audio!.src) URL.revokeObjectURL(audio!.src);
           this.currentAudio = null;

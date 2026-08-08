@@ -434,18 +434,28 @@ export default function Practice() {
       try { recognitionRef.current.abort() } catch (e) { }
     }
     setIsRecording(false)
-    setIsSpeaking(true)
-    isSpeakingRef.current = true
+    // Keep status as "Sedang memproses..." while audio is fetching/loading
+    setIsThinking(true)
+    setIsSpeaking(false)
+    isSpeakingRef.current = false
 
     const cleanedText = textToSpeak.replace(/\*/g, '')
 
+    const handleStart = () => {
+      // Audio is ready and actually playing! Transition status to "Sedang berbicara..."
+      setIsThinking(false)
+      setIsSpeaking(true)
+      isSpeakingRef.current = true
+    }
+
     const handleFinish = () => {
+      setIsThinking(false)
       setIsSpeaking(false)
       isSpeakingRef.current = false
       if (onComplete) onComplete()
     }
 
-    supertonic.speak(cleanedText).then(handleFinish).catch(handleFinish)
+    supertonic.speak(cleanedText, undefined, handleStart).then(handleFinish).catch(handleFinish)
   }
 
   const triggerGreeting = () => {
@@ -455,7 +465,7 @@ export default function Practice() {
     const greetingText = currentQuestionTextRef.current || `Hai ${displayName.split(' ')[0]}, apa kabar? Terima kasih ya sudah melamar sebagai ${role || 'Umum'} di tim kami. Boleh perkenalkan diri kamu dulu?`
 
     setHistory((prev) => [...prev, { role: 'assistant', text: greetingText }])
-    setIsThinking(false)
+    setIsThinking(true)
 
     speakText(greetingText, () => {
       setGreetingActive(false)
@@ -761,7 +771,6 @@ export default function Practice() {
             const data = await res.json()
             pendingTranscriptRef.current = ''
             abortControllerRef.current = null
-            setIsThinking(false)
 
             if (data.assistantText) {
               sequenceNumberRef.current += 1
@@ -770,6 +779,8 @@ export default function Practice() {
 
               setHistory((prev) => [...prev, { role: 'assistant', text: data.assistantText }])
               speakText(data.assistantText)
+            } else {
+              setIsThinking(false)
             }
           }).catch((err) => {
             if (err.name === 'AbortError') return // user started speaking again — expected

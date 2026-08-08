@@ -159,7 +159,9 @@ export class SupertonicTTS {
         audio.preload = 'auto';
         return audio;
       } catch (err) {
-        console.warn('[Supertonic Preload Error]', err);
+        if (import.meta.env.DEV) {
+          console.warn('[Supertonic Preload Notice]', err);
+        }
         return null;
       }
     })();

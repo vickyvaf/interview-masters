@@ -334,14 +334,16 @@ flowchart TD
 ```mermaid
 flowchart TD
     M1([Candidate]) --> M2{Tier}
-    M2 -- Free --> M3[3 Mock Interviews / Month\nBasic Feedback]
-    M2 -- Pro --> M4[Unlimited Sessions\nAdvanced Feedback\nRole-Specific Deep Dive\nProgress Analytics]
+    M2 -- Free --> M3[1 Mock Interview / Month\nBasic Feedback]
+    M2 -- Starter Pass --> M3b[3 Mock Interviews / Package\nSekali Bayar Rp 9.000]
+    M2 -- Pro --> M4[Unlimited Sessions\nRp 29.000/Month\nAdvanced Feedback\nRole-Specific Deep Dive\nProgress Analytics]
     M2 -- Team / B2B --> M5[Bulk Licenses\nHR Dashboard\nCandidate Tracking\nWhite-label Option\n*Link Hidden for MVP*]
 
-    M3 --> M6{Upgrade?}
+    M3 & M3b --> M6{Upgrade to Pro?}
     M6 -- Yes --> M4
-    M4 --> M7[Revenue: Subscription]
-    M5 --> M8[Revenue: B2B Contract]
+    M3b --> M7[Revenue: Pay-per-use]
+    M4 --> M8[Revenue: Subscription]
+    M5 --> M9[Revenue: B2B Contract]
 ```
 
 ---
@@ -352,9 +354,9 @@ flowchart TD
 
 | Tier | Price | Quota | Target User |
 |---|---|---|---|
-| **Free** | Rp 0 / month | 3 mock interviews/month, basic feedback | First-time users, students |
-| **Pro** | Rp 99.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers |
-| **14-Day Sprint** | Rp 390.000 / package | Masa aktif program 14 hari, umpan balik instan & terstruktur, posisi spesifik & kustom | Job seekers dengan jadwal wawancara ketat |
+| **Free** | Rp 0 / month | 1 mock interview/month, basic feedback | First-time users, perkenalan awal |
+| **Starter Pass** *(Pay-per-use)* | Rp 9.000 / package | 3 mock interviews (masa aktif 1 bulan), umpan balik instan & terstruktur | Candidate kepepet interview & anti-berlangganan (sekali bayar) |
+| **Pro** *(Most Popular)* | Rp 29.000 / month | Unlimited sessions, advanced AI feedback, progress analytics, role deep-dive | Active job seekers (latihan rutin sepuasnya) |
 | **Team / B2B** *(Link Hidden for MVP)* | Custom | Bulk licenses, HR dashboard, candidate tracking, white-label | Bootcamps, universities, enterprise HR |
 
 ### Payment System Flow
@@ -362,11 +364,13 @@ flowchart TD
 ```mermaid
 flowchart TD
     P1([Candidate]) --> P2{Choose Plan}
-    P2 -- Free --> P3[Create Account\nFree Tier Activated\n3 sessions/month]
-    P2 -- Pro --> P4[Checkout Page\nRp 99.000/month]
+    P1 --> P2
+    P2 -- Free --> P3[Create Account\nFree Tier Activated\n1 session/month]
+    P2 -- Starter Pass --> P3b[Checkout Page\nRp 9.000 / package]
+    P2 -- Pro --> P4[Checkout Page\nRp 29.000/month]
     P2 -- B2B --> P5[Contact Sales\nCustom Quote & Invoice]
 
-    P4 --> P7[Mayar Gateway]
+    P3b & P4 --> P7[Mayar Gateway]
 
     P7 --> P10{Payment Status}
     P10 -- Success --> P11[Webhook: Payment Confirmed]

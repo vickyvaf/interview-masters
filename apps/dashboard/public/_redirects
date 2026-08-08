@@ -1,1 +1,7 @@
+# Netlify API & TTS Proxy Rewrites (MUST BE AT THE TOP)
+# Replace the target URLs below with your deployed Backend and Supertonic server URLs if not setting VITE_API_URL / VITE_TTS_URL at build time.
+# /api-tts/*   https://your-supertonic-server.com/:splat  200!
+# /api/*       https://your-backend-api.com/:splat        200!
+
+# SPA Fallback (MUST BE AT THE BOTTOM)
 /*    /index.html   200

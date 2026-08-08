@@ -17,6 +17,15 @@ RUN pnpm install --frozen-lockfile
 # Copy application source code
 COPY apps/landing-page ./apps/landing-page
 
+# Build-time environment variables for Astro bundling
+ARG PUBLIC_DASHBOARD_URL
+ARG PUBLIC_SUPABASE_URL
+ARG PUBLIC_SUPABASE_ANON_KEY
+
+ENV PUBLIC_DASHBOARD_URL=$PUBLIC_DASHBOARD_URL
+ENV PUBLIC_SUPABASE_URL=$PUBLIC_SUPABASE_URL
+ENV PUBLIC_SUPABASE_ANON_KEY=$PUBLIC_SUPABASE_ANON_KEY
+
 # Build landing page
 RUN pnpm --filter apps-landing-page build
 

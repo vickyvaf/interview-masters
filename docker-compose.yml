@@ -36,12 +36,16 @@ services:
     build:
       context: .
       dockerfile: apps/dashboard/Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-https://dcouzpirkktfxklgqqwv.supabase.co}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-sb_publishable_bKLxENwOmDwt1CQJLSz4Fg_YpiJaNdU}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5005}
+        VITE_TTS_URL: ${VITE_TTS_URL:-http://localhost:7788}
     container_name: interview-masters-dashboard
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:5005
-      - VITE_TTS_URL=http://localhost:7788
+    env_file:
+      - .env.local
     depends_on:
       - backend
       - supertonic
@@ -52,7 +56,13 @@ services:
     build:
       context: .
       dockerfile: apps/landing-page/Dockerfile
+      args:
+        PUBLIC_DASHBOARD_URL: ${PUBLIC_DASHBOARD_URL:-http://localhost:5173}
+        PUBLIC_SUPABASE_URL: ${SUPABASE_URL:-https://dcouzpirkktfxklgqqwv.supabase.co}
+        PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_PUBLISHABLE_KEY:-sb_publishable_bKLxENwOmDwt1CQJLSz4Fg_YpiJaNdU}
     container_name: interview-masters-landing
     ports:
       - "4321:4321"
+    env_file:
+      - .env.local
     restart: unless-stopped

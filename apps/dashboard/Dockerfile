@@ -17,6 +17,17 @@ RUN pnpm install --frozen-lockfile
 # Copy application source code
 COPY apps/dashboard ./apps/dashboard
 
+# Build-time environment variables for Vite bundling
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_API_URL
+ARG VITE_TTS_URL
+
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_TTS_URL=$VITE_TTS_URL
+
 # Build candidate dashboard
 RUN pnpm --filter apps-dashboard build
 
